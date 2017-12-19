@@ -35,39 +35,36 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-final class BooksControllerSyncTask implements Runnable
-{
+final class BooksControllerSyncTask implements Runnable {
   private static final Logger LOG;
 
   static {
-    LOG = NullCheck.notNull(
-      LoggerFactory.getLogger(BooksControllerSyncTask.class));
+    LOG = NullCheck.notNull(LoggerFactory.getLogger(BooksControllerSyncTask.class));
   }
 
-  private final OPDSFeedParserType               feed_parser;
-  private final HTTPType                         http;
-  private final AccountSyncListenerType          listener;
-  private final AtomicBoolean                    running;
-  private final BooksControllerType              books_controller;
-  private final BookDatabaseType                 books_database;
-  private final AccountsDatabaseType             accounts_database;
-  private final URI                              loans_uri;
+  private final OPDSFeedParserType feed_parser;
+  private final HTTPType http;
+  private final AccountSyncListenerType listener;
+  private final AtomicBoolean running;
+  private final BooksControllerType books_controller;
+  private final BookDatabaseType books_database;
+  private final AccountsDatabaseType accounts_database;
+  private final URI loans_uri;
   private final OptionType<AdobeAdeptExecutorType> adobe_drm;
-  private final DeviceActivationListenerType      device_activation_listener;
+  private final DeviceActivationListenerType device_activation_listener;
 
   BooksControllerSyncTask(
-    final BooksControllerType in_books,
-    final BookDatabaseType in_books_database,
-    final AccountsDatabaseType in_accounts_database,
-    final BooksControllerConfigurationType in_config,
-    final HTTPType in_http,
-    final OPDSFeedParserType in_feed_parser,
-    final AccountSyncListenerType in_listener,
-    final AtomicBoolean in_running,
-    final URI in_loans_uri,
-    final OptionType<AdobeAdeptExecutorType> in_adobe_drm,
-    final DeviceActivationListenerType in_device_activation_listener)
-  {
+      final BooksControllerType in_books,
+      final BookDatabaseType in_books_database,
+      final AccountsDatabaseType in_accounts_database,
+      final BooksControllerConfigurationType in_config,
+      final HTTPType in_http,
+      final OPDSFeedParserType in_feed_parser,
+      final AccountSyncListenerType in_listener,
+      final AtomicBoolean in_running,
+      final URI in_loans_uri,
+      final OptionType<AdobeAdeptExecutorType> in_adobe_drm,
+      final DeviceActivationListenerType in_device_activation_listener) {
     this.books_controller = NullCheck.notNull(in_books);
     this.books_database = NullCheck.notNull(in_books_database);
     this.accounts_database = NullCheck.notNull(in_accounts_database);
@@ -81,8 +78,8 @@ final class BooksControllerSyncTask implements Runnable
 
   }
 
-  @Override public void run()
-  {
+  @Override
+  public void run() {
     if (this.running.compareAndSet(false, true)) {
       try {
         BooksControllerSyncTask.LOG.debug("running");
@@ -90,7 +87,7 @@ final class BooksControllerSyncTask implements Runnable
         this.listener.onAccountSyncSuccess();
       } catch (final Throwable x) {
         this.listener.onAccountSyncFailure(
-          Option.some(x), NullCheck.notNull(x.getMessage()));
+            Option.some(x), NullCheck.notNull(x.getMessage()));
       } finally {
         this.running.set(false);
         BooksControllerSyncTask.LOG.debug("completed");
@@ -101,41 +98,40 @@ final class BooksControllerSyncTask implements Runnable
   }
 
   private void sync()
-    throws Exception
-  {
-//    final URI loans_uri = this.config.getCurrentRootFeedURI().resolve("loans/");
-
+      throws Exception {
     final OptionType<AccountCredentials> credentials_opt =
-      this.accounts_database.accountGetCredentials();
-    if (credentials_opt.isSome()) {
+        this.accounts_database.accountGetCredentials();
 
-      final AccountCredentials credentials =
-        ((Some<AccountCredentials>) credentials_opt).get();
-      final AccountBarcode barcode = credentials.getBarcode();
-      final AccountPIN pin = credentials.getPin();
-      final AccountSyncListenerType in_listener = this.listener;
-      HTTPAuthType auth =
-        new HTTPAuthBasic(barcode.toString(), pin.toString());
+    if (credentials_opt.isNone()) {
+      LOG.debug("no credentials, aborting!");
+      return;
+    }
 
-      if (credentials.getAuthToken().isSome()) {
-        final AccountAuthToken token = ((Some<AccountAuthToken>) credentials.getAuthToken()).get();
-        if (token != null) {
-          auth = new HTTPAuthOAuth(token.toString());
-        }
+    final AccountCredentials credentials = ((Some<AccountCredentials>) credentials_opt).get();
+    final AccountBarcode barcode = credentials.getBarcode();
+    final AccountPIN pin = credentials.getPin();
+    final AccountSyncListenerType in_listener = this.listener;
+
+    HTTPAuthType auth = new HTTPAuthBasic(barcode.toString(), pin.toString());
+    if (credentials.getAuthToken().isSome()) {
+      final AccountAuthToken token = ((Some<AccountAuthToken>) credentials.getAuthToken()).get();
+      if (token != null) {
+        auth = new HTTPAuthOAuth(token.toString());
       }
+    }
 
-      final HTTPResultType<InputStream> r =
+    final HTTPResultType<InputStream> r =
         this.http.get(Option.some(auth), this.loans_uri, 0L);
 
-      r.matchResult(
+    r.matchResult(
         new HTTPResultMatcherType<InputStream, Unit, Exception>() {
           @Override
           public Unit onHTTPError(
-            final HTTPResultError<InputStream> e)
-            throws Exception {
+              final HTTPResultError<InputStream> e)
+              throws Exception {
             final String m = NullCheck.notNull(
-              String.format(
-                "%s: %d: %s", BooksControllerSyncTask.this.loans_uri, e.getStatus(), e.getMessage()));
+                String.format(
+                    "%s: %d: %s", BooksControllerSyncTask.this.loans_uri, e.getStatus(), e.getMessage()));
 
             switch (e.getStatus()) {
               case HttpURLConnection.HTTP_UNAUTHORIZED: {
@@ -151,43 +147,39 @@ final class BooksControllerSyncTask implements Runnable
 
           @Override
           public Unit onHTTPException(
-            final HTTPResultException<InputStream> e)
-            throws Exception {
+              final HTTPResultException<InputStream> e)
+              throws Exception {
             throw e.getError();
           }
 
           @Override
           public Unit onHTTPOK(
-            final HTTPResultOKType<InputStream> e)
-            throws Exception {
+              final HTTPResultOKType<InputStream> e)
+              throws Exception {
             try {
-               BooksControllerSyncTask.this.syncFeedEntries(e);
+              BooksControllerSyncTask.this.syncFeedEntries(e);
               return Unit.unit();
             } finally {
               e.close();
             }
           }
         });
-    }
   }
 
   private void syncFeedEntries(
-    final HTTPResultOKType<InputStream> r_feed)
-    throws Exception
-  {
+      final HTTPResultOKType<InputStream> r_feed)
+      throws Exception {
     final BooksStatusCacheType books_status =
-      this.books_controller.bookGetStatusCache();
+        this.books_controller.bookGetStatusCache();
 
     final OPDSAcquisitionFeed feed =
-      this.feed_parser.parse(this.loans_uri, r_feed.getValue());
+        this.feed_parser.parse(this.loans_uri, r_feed.getValue());
 
-
-    if (feed.getLicensor().isSome())
-    {
+    if (feed.getLicensor().isSome()) {
       final DRMLicensor licensor = ((Some<DRMLicensor>) feed.getLicensor()).get();
 
       final OptionType<AccountCredentials> credentials_opt =
-        this.accounts_database.accountGetCredentials();
+          this.accounts_database.accountGetCredentials();
 
 
       if (credentials_opt.isSome()) {
@@ -206,11 +198,11 @@ final class BooksControllerSyncTask implements Runnable
 
 
         final BooksControllerDeviceActivationTask activation_task = new BooksControllerDeviceActivationTask(
-          this.adobe_drm,
-          credentials,
-          this.accounts_database,
-          this.books_database,
-          this.device_activation_listener
+            this.adobe_drm,
+            credentials,
+            this.accounts_database,
+            this.books_database,
+            this.device_activation_listener
         );
         activation_task.run();
 
@@ -238,13 +230,13 @@ final class BooksControllerSyncTask implements Runnable
       try {
         received.add(book_id);
         final BookDatabaseEntryType db_e =
-          this.books_database.databaseOpenEntryForWriting(book_id);
+            this.books_database.databaseOpenEntryForWriting(book_id);
         db_e.entryUpdateAll(e_nn, books_status, this.http);
 
         this.listener.onAccountSyncBook(book_id);
       } catch (final Throwable x) {
         BooksControllerSyncTask.LOG.error(
-          "[{}]: unable to save entry: {}: ", book_id.getShortID(), x);
+            "[{}]: unable to save entry: {}: ", book_id.getShortID(), x);
       }
     }
 
@@ -259,7 +251,7 @@ final class BooksControllerSyncTask implements Runnable
       try {
         if (received.contains(existing_id) == false) {
           final BookDatabaseEntryType e =
-            this.books_database.databaseOpenEntryForWriting(existing_id);
+              this.books_database.databaseOpenEntryForWriting(existing_id);
 
           final OPDSAvailabilityType a = e.entryGetFeedData().getAvailability();
           if (a instanceof OPDSAvailabilityRevoked) {
@@ -272,7 +264,7 @@ final class BooksControllerSyncTask implements Runnable
         }
       } catch (final Throwable x) {
         BooksControllerSyncTask.LOG.error(
-          "[{}]: unable to delete entry: ", existing_id.getShortID(), x);
+            "[{}]: unable to delete entry: ", existing_id.getShortID(), x);
       }
     }
 
