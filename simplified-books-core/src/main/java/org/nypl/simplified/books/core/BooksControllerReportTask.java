@@ -63,7 +63,7 @@ public class BooksControllerReportTask
       final AccountPIN pin = account_credentials.getPin();
 
       http_auth =
-        Option.some((HTTPAuthType) new HTTPAuthBasic(barcode.toString(), pin.toString()));
+          Option.some((HTTPAuthType) HTTPAuthBasic.create(barcode.toString(), pin.toString()));
 
       if (account_credentials.getOAuthToken().isSome()) {
         final HTTPOAuthToken token = ((Some<HTTPOAuthToken>) account_credentials.getOAuthToken()).get();

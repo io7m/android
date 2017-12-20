@@ -112,7 +112,7 @@ final class BooksControllerSyncTask implements Runnable {
     final AccountPIN pin = credentials.getPin();
     final AccountSyncListenerType in_listener = this.listener;
 
-    HTTPAuthType auth = new HTTPAuthBasic(barcode.toString(), pin.toString());
+    HTTPAuthType auth = HTTPAuthBasic.create(barcode.toString(), pin.toString());
     if (credentials.getOAuthToken().isSome()) {
       final HTTPOAuthToken token = ((Some<HTTPOAuthToken>) credentials.getOAuthToken()).get();
       if (token != null) {

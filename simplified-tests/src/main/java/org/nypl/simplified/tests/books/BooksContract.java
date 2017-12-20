@@ -1018,8 +1018,8 @@ public abstract class BooksContract {
             new HTTPAuthMatcherType<HTTPResultType<InputStream>, IOException>() {
               private boolean isAuthorized(
                   final HTTPAuthBasic b) {
-                boolean ok = b.getUser().equals(barcode.toString());
-                ok = ok && b.getPassword().equals(pin.toString());
+                boolean ok = b.user().equals(barcode.toString());
+                ok = ok && b.password().equals(pin.toString());
                 LOG.debug("isAuthorized: {}", ok);
                 return ok;
               }
@@ -1088,8 +1088,8 @@ public abstract class BooksContract {
             new HTTPAuthMatcherType<HTTPResultType<InputStream>, IOException>() {
               private boolean isAuthorized(
                   final HTTPAuthBasic b) {
-                boolean ok = b.getUser().equals(barcode.toString());
-                ok = ok && b.getPassword().equals(pin.toString());
+                boolean ok = b.user().equals(barcode.toString());
+                ok = ok && b.password().equals(pin.toString());
                 return ok;
               }
 

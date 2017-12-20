@@ -114,9 +114,7 @@ final class BooksControllerFulFillTask implements Runnable
       final AccountBarcode barcode = credentials.getBarcode();
       final AccountPIN pin = credentials.getPin();
 
-      HTTPAuthType auth =
-        new HTTPAuthBasic(barcode.toString(), pin.toString());
-
+      HTTPAuthType auth = HTTPAuthBasic.create(barcode.toString(), pin.toString());
       if (credentials.getOAuthToken().isSome()) {
         final HTTPOAuthToken token = ((Some<HTTPOAuthToken>) credentials.getOAuthToken()).get();
         if (token != null) {

@@ -441,7 +441,7 @@ final class BooksControllerBorrowTask implements Runnable
     final AccountBarcode barcode = credentials.getBarcode();
     final AccountPIN pin = credentials.getPin();
      HTTPAuthType auth =
-      new HTTPAuthBasic(barcode.toString(), pin.toString());
+         HTTPAuthBasic.create(barcode.toString(), pin.toString());
 
     if (credentials.getOAuthToken().isSome()) {
       final HTTPOAuthToken token = ((Some<HTTPOAuthToken>) credentials.getOAuthToken()).get();
@@ -780,7 +780,7 @@ final class BooksControllerBorrowTask implements Runnable
       final AccountBarcode barcode = credentials.getBarcode();
       final AccountPIN pin = credentials.getPin();
       auth =
-        Option.some((HTTPAuthType) new HTTPAuthBasic(barcode.toString(), pin.toString()));
+        Option.some((HTTPAuthType) HTTPAuthBasic.create(barcode.toString(), pin.toString()));
 
       if (credentials.getOAuthToken().isSome()) {
         final HTTPOAuthToken token = ((Some<HTTPOAuthToken>) credentials.getOAuthToken()).get();

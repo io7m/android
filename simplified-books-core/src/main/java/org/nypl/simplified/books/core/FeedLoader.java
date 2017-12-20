@@ -468,7 +468,7 @@ public final class FeedLoader
     final String user = result.getBarcode().toString();
     final String pass = result.getPin().toString();
 
-    HTTPAuthType auth = new HTTPAuthBasic(user, pass);
+    HTTPAuthType auth = HTTPAuthBasic.create(user, pass);
     if (result.getOAuthToken().isSome()) {
       final HTTPOAuthToken token = ((Some<HTTPOAuthToken>) result.getOAuthToken()).get();
       if (token != null) {

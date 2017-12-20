@@ -31,7 +31,7 @@ public abstract class HTTPAuthOAuth implements HTTPAuthType
 
   public abstract HTTPOAuthToken token();
 
-  @Override public void setConnectionParameters(
+  @Override public final void setConnectionParameters(
     final HttpURLConnection c)
     throws IOException
   {
@@ -39,7 +39,7 @@ public abstract class HTTPAuthOAuth implements HTTPAuthType
     c.addRequestProperty("Authorization", "Bearer " + this.token().value());
   }
 
-  @Override public <A, E extends Exception> A matchAuthType(
+  @Override public final <A, E extends Exception> A matchAuthType(
     final HTTPAuthMatcherType<A, E> m)
     throws E
   {

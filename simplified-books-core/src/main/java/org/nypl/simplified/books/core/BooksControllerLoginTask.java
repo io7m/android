@@ -87,12 +87,9 @@ final class BooksControllerLoginTask implements Runnable,
      * server and seeing whether or not it rejects the given credentials.
      */
 
-
     final AccountBarcode user = this.credentials.getBarcode();
     final AccountPIN pass = this.credentials.getPin();
-    HTTPAuthType auth =
-      new HTTPAuthBasic(user.toString(), pass.toString());
-
+    HTTPAuthType auth = HTTPAuthBasic.create(user.toString(), pass.toString());
     if (this.credentials.getOAuthToken().isSome()) {
       final HTTPOAuthToken token = ((Some<HTTPOAuthToken>) this.credentials.getOAuthToken()).get();
       if (token != null) {
