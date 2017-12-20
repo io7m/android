@@ -58,22 +58,4 @@ public final class AccountPIN implements Serializable
     return this.value;
   }
 
-  /**
-   * Write the pin to the {@code f_tmp}, atomically renaming {@code f_tmp} to
-   * {@code f} on success. For platform independence, {@code f_tmp} and {@code
-   * f} should be in the same directory.
-   *
-   * @param file_pin     The resulting file
-   * @param file_pin_tmp The temporary file
-   *
-   * @throws IOException On I/O errors
-   */
-
-  public void writeToFile(
-    final File file_pin,
-    final File file_pin_tmp)
-    throws IOException
-  {
-    FileUtilities.fileWriteUTF8Atomically(file_pin, file_pin_tmp, this.value);
-  }
 }

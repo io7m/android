@@ -57,7 +57,6 @@ final class BooksControllerSyncTask implements Runnable {
       final BooksControllerType in_books,
       final BookDatabaseType in_books_database,
       final AccountsDatabaseType in_accounts_database,
-      final BooksControllerConfigurationType in_config,
       final HTTPType in_http,
       final OPDSFeedParserType in_feed_parser,
       final AccountSyncListenerType in_listener,
@@ -201,7 +200,6 @@ final class BooksControllerSyncTask implements Runnable {
             this.adobe_drm,
             credentials,
             this.accounts_database,
-            this.books_database,
             this.device_activation_listener
         );
         activation_task.run();

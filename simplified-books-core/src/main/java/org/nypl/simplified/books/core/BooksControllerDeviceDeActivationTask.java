@@ -27,7 +27,6 @@ public class BooksControllerDeviceDeActivationTask implements Runnable,
 
   private final OptionType<AdobeAdeptExecutorType> adobe_drm;
   private final AccountCredentials credentials;
-  private final BookDatabaseType book_database;
   private final AccountsDatabaseType accounts_database;
 
   private static final Logger LOG;
@@ -37,13 +36,11 @@ public class BooksControllerDeviceDeActivationTask implements Runnable,
   }
 
   BooksControllerDeviceDeActivationTask(
-    final OptionType<AdobeAdeptExecutorType> in_adobe_drm,
-    final AccountCredentials in_credentials,
-    final AccountsDatabaseType in_accounts_database,
-    final BookDatabaseType in_book_database) {
+      final OptionType<AdobeAdeptExecutorType> in_adobe_drm,
+      final AccountCredentials in_credentials,
+      final AccountsDatabaseType in_accounts_database) {
     this.adobe_drm = in_adobe_drm;
     this.credentials = in_credentials;
-    this.book_database = in_book_database;
     this.accounts_database = in_accounts_database;
   }
 
