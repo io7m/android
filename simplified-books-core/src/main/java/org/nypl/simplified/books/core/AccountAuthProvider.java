@@ -32,24 +32,6 @@ public final class AccountAuthProvider implements Serializable
     this.value = NullCheck.notNull(in_value);
   }
 
-  /**
-   * Read a barcode from the first line of the given file.
-   *
-   * @param f The file
-   *
-   * @return A barcode
-   *
-   * @throws IOException On I/O errors
-   */
-
-  public static AccountAuthProvider readFromFile(
-    final File f)
-    throws IOException
-  {
-    final String text = FileUtilities.fileReadUTF8(f);
-    return new AccountAuthProvider(NullCheck.notNull(text));
-  }
-
   @Override public boolean equals(
     final @Nullable Object obj)
   {
@@ -76,22 +58,4 @@ public final class AccountAuthProvider implements Serializable
     return this.value;
   }
 
-  /**
-   * Write the barcode to the {@code f_tmp}, atomically renaming {@code f_tmp}
-   * to {@code f} on success. For platform independence, {@code f_tmp} and
-   * {@code f} should be in the same directory.
-   *
-   * @param f     The resulting file
-   * @param f_tmp The temporary file
-   *
-   * @throws IOException On I/O errors
-   */
-
-  public void writeToFile(
-    final File f,
-    final File f_tmp)
-    throws IOException
-  {
-    FileUtilities.fileWriteUTF8Atomically(f, f_tmp, this.toString());
-  }
 }

@@ -37,11 +37,10 @@ public class BooksControllerDeviceActivationTask implements Runnable,
   }
 
   BooksControllerDeviceActivationTask(
-    final OptionType<AdobeAdeptExecutorType> in_adobe_drm,
-    final AccountCredentials in_credentials,
-    final AccountsDatabaseType in_accounts_database,
-    final BookDatabaseType book_database,
-    final DeviceActivationListenerType in_device_activation_listener) {
+      final OptionType<AdobeAdeptExecutorType> in_adobe_drm,
+      final AccountCredentials in_credentials,
+      final AccountsDatabaseType in_accounts_database,
+      final DeviceActivationListenerType in_device_activation_listener) {
     this.adobe_drm = in_adobe_drm;
     this.credentials = in_credentials;
     this.accounts_database = in_accounts_database;

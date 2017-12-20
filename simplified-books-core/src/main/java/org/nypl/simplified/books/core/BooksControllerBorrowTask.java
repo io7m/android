@@ -372,8 +372,7 @@ final class BooksControllerBorrowTask implements Runnable
                   this.adobe_drm,
                   credentials_some.get(),
                   this.accounts_database,
-                  this.books_database,
-                  new DeviceActivationListenerType() {
+                    new DeviceActivationListenerType() {
                     @Override
                     public void onDeviceActivationFailure(final String message) {
                       BooksControllerBorrowTask.LOG.debug("device activation failed: {}", message);

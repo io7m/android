@@ -17,8 +17,6 @@ import org.nypl.simplified.opds.core.DRMLicensor;
 import org.nypl.simplified.opds.core.OPDSAcquisition;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 import org.nypl.simplified.opds.core.OPDSFeedParserType;
-import org.nypl.simplified.opds.core.OPDSJSONParserType;
-import org.nypl.simplified.opds.core.OPDSJSONSerializerType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -260,9 +258,7 @@ public final class BooksController implements BooksType {
           this.accounts_database,
           this.adobe_drm,
           listener,
-          this.config,
-          this.http,
-          account));
+            account));
     }
   }
 
@@ -276,8 +272,7 @@ public final class BooksController implements BooksType {
         this,
         this.book_database,
         this.accounts_database,
-        this.config,
-        this.http,
+          this.http,
         this.feed_parser,
         listener,
         this.syncing,
@@ -302,8 +297,7 @@ public final class BooksController implements BooksType {
         this.adobe_drm,
         credentials_some.get(),
         this.accounts_database,
-        this.book_database,
-        listener);
+          listener);
       this.submitRunnable(activation_task);
 
 
@@ -334,8 +328,7 @@ public final class BooksController implements BooksType {
         this.adobe_drm,
         credentials_some.get(),
         this.accounts_database,
-        this.book_database,
-        device_listener);
+          device_listener);
       this.submitRunnable(activation_task);
 
     }
@@ -368,8 +361,7 @@ public final class BooksController implements BooksType {
         this.adobe_drm,
         credentials_some.get(),
         this.accounts_database,
-        this.book_database,
-        device_listener);
+          device_listener);
       this.submitRunnable(activation_task);
 
       //fulfill book which were already downloaded when device was active.
@@ -386,8 +378,7 @@ public final class BooksController implements BooksType {
       final BooksControllerDeviceDeActivationTask deactivation_task = new BooksControllerDeviceDeActivationTask(
         this.adobe_drm,
         credentials_some.get(),
-        this.accounts_database,
-        this.book_database
+        this.accounts_database
       );
       this.submitRunnable(deactivation_task);
     }

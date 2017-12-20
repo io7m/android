@@ -181,13 +181,6 @@ public final class AccountCredentials {
   }
 
   /**
-   * @param in_auth_token token for registration and deregistration
-   */
-  public void setAuthToken(final OptionType<AccountAuthToken> in_auth_token) {
-    this.auth_token = in_auth_token;
-  }
-
-  /**
    * @return The adobe token
    */
 
@@ -255,13 +248,6 @@ public final class AccountCredentials {
   }
 
   /**
-   * @param in_provider provider name
-   */
-  public void setProvider(final OptionType<AccountAuthProvider> in_provider) {
-    this.provider = in_provider;
-  }
-
-  /**
    * @return The patron information
    */
 
@@ -269,17 +255,4 @@ public final class AccountCredentials {
     return this.patron;
   }
 
-  /**
-   * @param in_pin library card pin
-   */
-  public void setAdobePIN(final AccountPIN in_pin) {
-    this.pin = in_pin;
-  }
-
-  /**
-   * @param in_barcode library card barcode
-   */
-  public void setUser(final AccountBarcode in_barcode) {
-    this.barcode = in_barcode;
-  }
 }

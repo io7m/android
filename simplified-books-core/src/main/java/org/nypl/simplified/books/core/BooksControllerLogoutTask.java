@@ -5,7 +5,6 @@ import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;
 
 import org.nypl.drm.core.AdobeAdeptExecutorType;
-import org.nypl.simplified.http.core.HTTPType;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -25,13 +24,11 @@ final class BooksControllerLogoutTask implements Runnable {
 
 
   BooksControllerLogoutTask(
-    final BookDatabaseType in_book_database,
-    final AccountsDatabaseType in_accounts_database,
-    final OptionType<AdobeAdeptExecutorType> in_adobe_drm,
-    final AccountLogoutListenerType in_listener,
-    final BooksControllerConfigurationType in_config,
-    final HTTPType in_http,
-    final AccountCredentials in_credentials) {
+      final BookDatabaseType in_book_database,
+      final AccountsDatabaseType in_accounts_database,
+      final OptionType<AdobeAdeptExecutorType> in_adobe_drm,
+      final AccountLogoutListenerType in_listener,
+      final AccountCredentials in_credentials) {
     this.database = NullCheck.notNull(in_book_database);
     this.adobe_drm = NullCheck.notNull(in_adobe_drm);
     this.accounts_database = NullCheck.notNull(in_accounts_database);
@@ -51,7 +48,7 @@ final class BooksControllerLogoutTask implements Runnable {
     if (this.adobe_drm.isSome() && this.credentials.getAdobeUserID().isSome()) {
 
       BooksControllerDeviceDeActivationTask device_deactivation_task = new BooksControllerDeviceDeActivationTask(this.adobe_drm,
-        this.credentials, this.accounts_database, this.database) {
+        this.credentials, this.accounts_database) {
 
         @Override
         public void onDeactivationError(final String message) {

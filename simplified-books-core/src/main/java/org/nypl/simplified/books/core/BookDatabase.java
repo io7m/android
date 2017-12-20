@@ -17,9 +17,6 @@ import org.nypl.drm.core.AdobeLoanID;
 import org.nypl.simplified.files.DirectoryUtilities;
 import org.nypl.simplified.files.FileLocking;
 import org.nypl.simplified.files.FileUtilities;
-import org.nypl.simplified.http.core.HTTPAuthType;
-import org.nypl.simplified.http.core.HTTPResultOKType;
-import org.nypl.simplified.http.core.HTTPResultToException;
 import org.nypl.simplified.http.core.HTTPType;
 import org.nypl.simplified.json.core.JSONParserUtilities;
 import org.nypl.simplified.json.core.JSONSerializerUtilities;
@@ -36,9 +33,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -78,68 +73,6 @@ public final class BookDatabase implements BookDatabaseType
     this.snapshots = new HashMap<BookID, BookDatabaseEntrySnapshot>(64);
 
     BookDatabase.LOG.debug("opened database {}", this.directory);
-  }
-
-  private static OptionType<File> makeCover(
-    final HTTPType http,
-    final BookID id,
-    final OptionType<URI> cover_opt)
-    throws IOException
-  {
-    if (cover_opt.isSome()) {
-      final Some<URI> some = (Some<URI>) cover_opt;
-      final URI cover_uri = some.get();
-
-      final File cover_file_tmp = File.createTempFile("cover", ".jpg");
-      cover_file_tmp.deleteOnExit();
-      BookDatabase.makeCoverDownload(http, id, cover_file_tmp, cover_uri);
-      return Option.some(cover_file_tmp);
-    }
-
-    return Option.none();
-  }
-
-  private static void makeCoverDownload(
-    final HTTPType http,
-    final BookID id,
-    final File cover_file_tmp,
-    final URI cover_uri)
-    throws IOException
-  {
-    final String sid = id.getShortID();
-    BookDatabase.LOG.debug("[{}]: fetching cover at {}", sid, cover_uri);
-
-    final OptionType<HTTPAuthType> no_auth = Option.none();
-    final HTTPResultOKType<InputStream> r =
-      http.get(no_auth, cover_uri, 0L).matchResult(
-        new HTTPResultToException<InputStream>(cover_uri));
-
-    try {
-      final FileOutputStream fs = new FileOutputStream(cover_file_tmp);
-      try {
-        final InputStream in = NullCheck.notNull(r.getValue());
-        try {
-          final byte[] buffer = new byte[8192];
-          while (true) {
-            final int rb = in.read(buffer);
-            if (rb == -1) {
-              break;
-            }
-            fs.write(buffer, 0, rb);
-          }
-        } finally {
-          in.close();
-        }
-
-        fs.flush();
-      } finally {
-        fs.close();
-      }
-    } finally {
-      r.close();
-    }
-
-    BookDatabase.LOG.debug("[{}]: fetched cover {}", sid, cover_uri);
   }
 
   /**
