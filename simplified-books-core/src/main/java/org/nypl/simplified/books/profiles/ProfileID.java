@@ -1,11 +1,13 @@
 package org.nypl.simplified.books.profiles;
 
+import com.google.auto.value.AutoValue;
+
 /**
  * A unique profile identifier.
  */
 
-public final class ProfileID implements Comparable<ProfileID> {
-  private final int id;
+@AutoValue
+public abstract class ProfileID implements Comparable<ProfileID> {
 
   /**
    * Construct a profile identifier.
@@ -13,48 +15,22 @@ public final class ProfileID implements Comparable<ProfileID> {
    * @param id A non-negative integer
    */
 
-  public ProfileID(int id) {
+  public static ProfileID create(int id)
+  {
     if (id < 0) {
       throw new IllegalArgumentException("Profile identifiers must be non-negative");
     }
-
-    this.id = id;
+    return new AutoValue_ProfileID(id);
   }
 
   /**
-   * @return The raw integer value of the identifier
+   * @return The raw identifier value
    */
 
-  public int value()
-  {
-    return this.id;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-
-    ProfileID profileID = (ProfileID) o;
-    return id == profileID.id;
-  }
-
-  @Override
-  public String toString() {
-    return Integer.toString(id);
-  }
-
-  @Override
-  public int hashCode() {
-    return id;
-  }
+  public abstract int id();
 
   @Override
   public int compareTo(ProfileID other) {
-    return Integer.compare(this.id, other.id);
+    return Integer.compare(this.id(), other.id());
   }
 }

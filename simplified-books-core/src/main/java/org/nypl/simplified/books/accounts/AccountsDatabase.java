@@ -91,7 +91,7 @@ public final class AccountsDatabase implements AccountsDatabaseType {
 
         try {
           AccountDescription desc = AccountDescriptionJSON.deserializeFromFile(jom, account_file);
-          AccountID account_id = new AccountID(id);
+          AccountID account_id = AccountID.create(id);
           Account account = new Account(account_id, account_dir, desc);
           accounts.put(account_id, account);
         } catch (IOException e) {
@@ -136,16 +136,16 @@ public final class AccountsDatabase implements AccountsDatabaseType {
 
   @Override
   public AccountType createAccount(
-      AccountProviderType account_provider)
+      AccountProvider account_provider)
       throws AccountsDatabaseException {
 
     NullCheck.notNull(account_provider, "Account provider");
 
     final AccountID next;
     if (!this.accounts.isEmpty()) {
-      next = new AccountID(this.accounts.lastKey().value() + 1);
+      next = AccountID.create(this.accounts.lastKey().id() + 1);
     } else {
-      next = new AccountID(0);
+      next = AccountID.create(0);
     }
 
     Assertions.checkInvariant(
@@ -154,7 +154,7 @@ public final class AccountsDatabase implements AccountsDatabaseType {
 
     try {
       final File account_dir =
-          new File(this.directory, Integer.toString(next.value()));
+          new File(this.directory, Integer.toString(next.id()));
       final File account_file =
           new File(account_dir, "account.json");
       final File account_file_tmp =

@@ -6,15 +6,15 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountType;
-import org.nypl.simplified.books.core.LogUtilities;
-import org.nypl.simplified.books.accounts.AccountsDatabaseException;
 import org.nypl.simplified.books.accounts.AccountsDatabase;
+import org.nypl.simplified.books.accounts.AccountsDatabaseException;
 import org.nypl.simplified.books.accounts.AccountsDatabaseType;
+import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.books.profiles.ProfileID;
 import org.nypl.simplified.files.DirectoryUtilities;
 import org.nypl.simplified.files.FileUtilities;
-import org.nypl.simplified.tests.books.profiles.FakeAccountProvider;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -80,7 +80,7 @@ public abstract class AccountsDatabaseContract {
     f_p.mkdirs();
     final File f_acc = new File(f_p, "accounts");
 
-    FakeProfile owner = new FakeProfile(new ProfileID(0), f_pro, "Kermit");
+    FakeProfile owner = new FakeProfile(ProfileID.create(0), f_pro, "Kermit");
     FileUtilities.fileWriteUTF8(f_acc, "Hello!");
 
     expected.expect(AccountsDatabaseException.class);
@@ -102,7 +102,7 @@ public abstract class AccountsDatabaseContract {
     final File f_a = new File(f_acc, "xyz");
     f_a.mkdirs();
 
-    FakeProfile owner = new FakeProfile(new ProfileID(0), f_pro, "Kermit");
+    FakeProfile owner = new FakeProfile(ProfileID.create(0), f_pro, "Kermit");
 
     expected.expect(AccountsDatabaseException.class);
     expected.expect(new CausesContains<>(
@@ -124,7 +124,7 @@ public abstract class AccountsDatabaseContract {
     final File f_a = new File(f_acc, "0");
     f_a.mkdirs();
 
-    FakeProfile owner = new FakeProfile(new ProfileID(0), f_pro, "Kermit");
+    FakeProfile owner = new FakeProfile(ProfileID.create(0), f_pro, "Kermit");
 
     expected.expect(AccountsDatabaseException.class);
     expected.expect(new CausesContains<>(IOException.class, "Could not parse account: "));
@@ -145,7 +145,7 @@ public abstract class AccountsDatabaseContract {
     final File f_a = new File(f_acc, "0");
     f_a.mkdirs();
 
-    FakeProfile owner = new FakeProfile(new ProfileID(0), f_pro, "Kermit");
+    FakeProfile owner = new FakeProfile(ProfileID.create(0), f_pro, "Kermit");
 
     final File f_f = new File(f_a, "account.json");
     FileUtilities.fileWriteUTF8(f_f, "} { this is not JSON { } { }");
@@ -166,7 +166,7 @@ public abstract class AccountsDatabaseContract {
     f_p.mkdirs();
     final File f_acc = new File(f_p, "accounts");
 
-    FakeProfile owner = new FakeProfile(new ProfileID(0), f_pro, "Kermit");
+    FakeProfile owner = new FakeProfile(ProfileID.create(0), f_pro, "Kermit");
 
     AccountsDatabaseType db = AccountsDatabase.open(owner, f_acc);
     Assert.assertEquals(0, db.accounts().size());
@@ -185,15 +185,15 @@ public abstract class AccountsDatabaseContract {
     f_p.mkdirs();
     final File f_acc = new File(f_p, "accounts");
 
-    FakeProfile owner = new FakeProfile(new ProfileID(0), f_pro, "Kermit");
+    FakeProfile owner = new FakeProfile(ProfileID.create(0), f_pro, "Kermit");
 
     AccountsDatabaseType db =
         AccountsDatabase.open(owner, f_acc);
 
-    FakeAccountProvider provider0 =
-        new FakeAccountProvider("http://example.com/accounts0/");
-    FakeAccountProvider provider1 =
-        new FakeAccountProvider("http://example.com/accounts1/");
+    AccountProvider provider0 =
+        fakeProvider("http://www.example.com/accounts0/");
+    AccountProvider provider1 =
+        fakeProvider("http://www.example.com/accounts1/");
 
     AccountType acc0 = db.createAccount(provider0);
     AccountType acc1 = db.createAccount(provider1);
@@ -208,8 +208,8 @@ public abstract class AccountsDatabaseContract {
         "Account 1 file exists",
         new File(acc1.directory(), "account.json").isFile());
 
-    Assert.assertEquals(URI.create("http://example.com/accounts0/"), acc0.provider());
-    Assert.assertEquals(URI.create("http://example.com/accounts1/"), acc1.provider());
+    Assert.assertEquals(URI.create("http://www.example.com/accounts0/"), acc0.provider());
+    Assert.assertEquals(URI.create("http://www.example.com/accounts1/"), acc1.provider());
 
     Assert.assertNotEquals(acc0.id(), acc1.id());
     Assert.assertNotEquals(acc0.directory(), acc1.directory());
@@ -226,14 +226,14 @@ public abstract class AccountsDatabaseContract {
     f_p.mkdirs();
     final File f_acc = new File(f_p, "accounts");
 
-    FakeProfile owner = new FakeProfile(new ProfileID(0), f_pro, "Kermit");
+    FakeProfile owner = new FakeProfile(ProfileID.create(0), f_pro, "Kermit");
 
     AccountsDatabaseType db0 = AccountsDatabase.open(owner, f_acc);
 
-    FakeAccountProvider provider0 =
-        new FakeAccountProvider("http://example.com/accounts0/");
-    FakeAccountProvider provider1 =
-        new FakeAccountProvider("http://example.com/accounts1/");
+    AccountProvider provider0 =
+        fakeProvider("http://www.example.com/accounts0/");
+    AccountProvider provider1 =
+        fakeProvider("http://www.example.com/accounts1/");
 
     AccountType acc0 = db0.createAccount(provider0);
     AccountType acc1 = db0.createAccount(provider1);
@@ -249,5 +249,16 @@ public abstract class AccountsDatabaseContract {
     Assert.assertEquals(acc1.directory(), acr1.directory());
     Assert.assertEquals(acc0.provider(), acr0.provider());
     Assert.assertEquals(acc1.provider(), acr1.provider());
+  }
+
+  private static AccountProvider fakeProvider(String provider_id) {
+    return AccountProvider.builder()
+        .setId(URI.create(provider_id))
+        .setDisplayName("Fake Library")
+        .setSubtitle("Imaginary books")
+        .setLogo(URI.create("http://example.com/logo.png"))
+        .setCatalogURI(URI.create("http://example.com/accounts0/feed.xml"))
+        .setSupportEmail("postmaster@example.com")
+        .build();
   }
 }

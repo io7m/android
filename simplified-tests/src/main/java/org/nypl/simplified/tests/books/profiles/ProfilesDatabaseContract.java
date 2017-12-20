@@ -9,6 +9,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.books.profiles.ProfileDatabaseException;
 import org.nypl.simplified.books.profiles.ProfileID;
@@ -21,6 +22,7 @@ import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 
 public abstract class ProfilesDatabaseContract {
 
@@ -150,7 +152,8 @@ public abstract class ProfilesDatabaseContract {
 
     ProfilesDatabaseType db = ProfilesDatabase.open(f_pro);
 
-    FakeAccountProvider acc = new FakeAccountProvider("urn:fake");
+    AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+
     ProfileType p0 = db.createProfile(acc, "Kermit");
     ProfileType p1 = db.createProfile(acc, "Gonzo");
     ProfileType p2 = db.createProfile(acc, "Beaker");
@@ -200,7 +203,9 @@ public abstract class ProfilesDatabaseContract {
     final File f_pro = new File(f_tmp, "profiles");
 
     ProfilesDatabaseType db0 = ProfilesDatabase.open(f_pro);
-    FakeAccountProvider acc = new FakeAccountProvider("urn:fake");
+
+    AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+
     ProfileType p0 = db0.createProfile(acc, "Kermit");
     ProfileType p1 = db0.createProfile(acc, "Gonzo");
     ProfileType p2 = db0.createProfile(acc, "Beaker");
@@ -231,7 +236,8 @@ public abstract class ProfilesDatabaseContract {
 
     ProfilesDatabaseType db = ProfilesDatabase.open(f_pro);
 
-    FakeAccountProvider acc = new FakeAccountProvider("urn:fake");
+    AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+
     ProfileType p0 = db.createProfile(acc, "Kermit");
 
     expected.expect(ProfileDatabaseException.class);
@@ -246,7 +252,9 @@ public abstract class ProfilesDatabaseContract {
     final File f_pro = new File(f_tmp, "profiles");
 
     ProfilesDatabaseType db0 = ProfilesDatabase.open(f_pro);
-    FakeAccountProvider acc = new FakeAccountProvider("urn:fake");
+
+    AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+
     ProfileType p0 = db0.createProfile(acc, "Kermit");
 
     db0.setProfileCurrent(p0.id());
@@ -262,12 +270,24 @@ public abstract class ProfilesDatabaseContract {
     final File f_pro = new File(f_tmp, "profiles");
 
     ProfilesDatabaseType db0 = ProfilesDatabase.open(f_pro);
-    FakeAccountProvider acc = new FakeAccountProvider("urn:fake");
+
+    AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+
     ProfileType p0 = db0.createProfile(acc, "Kermit");
 
     expected.expect(ProfileDatabaseException.class);
     expected.expectMessage(StringContains.containsString("Profile does not exist"));
-    db0.setProfileCurrent(new ProfileID(23));
+    db0.setProfileCurrent(ProfileID.create(23));
   }
 
+  private static AccountProvider fakeProvider(String provider_id) {
+    return AccountProvider.builder()
+        .setId(URI.create(provider_id))
+        .setDisplayName("Fake Library")
+        .setSubtitle("Imaginary books")
+        .setLogo(URI.create("http://example.com/logo.png"))
+        .setCatalogURI(URI.create("http://example.com/accounts0/feed.xml"))
+        .setSupportEmail("postmaster@example.com")
+        .build();
+  }
 }

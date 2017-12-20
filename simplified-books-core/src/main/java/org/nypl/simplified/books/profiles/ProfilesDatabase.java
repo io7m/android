@@ -9,7 +9,7 @@ import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.simplified.assertions.Assertions;
 import org.nypl.simplified.books.accounts.AccountID;
-import org.nypl.simplified.books.accounts.AccountProviderType;
+import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabase;
 import org.nypl.simplified.books.accounts.AccountsDatabaseException;
@@ -115,7 +115,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
           continue;
         }
 
-        final ProfileID profile_id = new ProfileID(id);
+        final ProfileID profile_id = ProfileID.create(id);
         final Profile profile = new Profile(null, profile_id, profile_dir, desc);
         final File profile_accounts = new File(profile_dir, "accounts");
 
@@ -151,7 +151,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
 
   @Override
   public ProfileType createProfile(
-      AccountProviderType account_provider,
+      AccountProvider account_provider,
       String display_name)
       throws ProfileDatabaseException {
 
@@ -167,9 +167,9 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
 
     final ProfileID next;
     if (!this.profiles.isEmpty()) {
-      next = new ProfileID(this.profiles.lastKey().value() + 1);
+      next = ProfileID.create(this.profiles.lastKey().id() + 1);
     } else {
-      next = new ProfileID(0);
+      next = ProfileID.create(0);
     }
 
     Assertions.checkInvariant(
@@ -178,7 +178,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
 
     try {
       final File profile_dir =
-          new File(this.directory, Integer.toString(next.value()));
+          new File(this.directory, Integer.toString(next.id()));
       final File profile_file =
           new File(profile_dir, "profile.json");
       final File profile_file_tmp =

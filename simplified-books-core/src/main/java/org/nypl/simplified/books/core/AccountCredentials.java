@@ -25,7 +25,6 @@ public final class AccountCredentials {
   private OptionType<AdobeDeviceID>         device_id;
   private OptionType<DRMLicensor>           licensor;
 
-
   /**
    * Construct account credentials
    *

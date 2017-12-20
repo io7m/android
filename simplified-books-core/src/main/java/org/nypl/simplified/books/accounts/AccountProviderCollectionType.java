@@ -6,7 +6,7 @@ import java.util.SortedMap;
 /**
  * A collection of account providers.
  *
- * @see AccountProviderType
+ * @see AccountProvider
  */
 
 public interface AccountProviderCollectionType {
@@ -15,11 +15,11 @@ public interface AccountProviderCollectionType {
    * @return The available account providers
    */
 
-  SortedMap<URI, AccountProviderType> providers();
+  SortedMap<URI, AccountProvider> providers();
 
   /**
    * @return The default account provider that will be used to create new profiles
    */
 
-  AccountProviderType defaultProvider();
+  AccountProvider defaultProvider();
 }

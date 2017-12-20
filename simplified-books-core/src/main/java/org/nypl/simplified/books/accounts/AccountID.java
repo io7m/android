@@ -1,11 +1,13 @@
 package org.nypl.simplified.books.accounts;
 
+import com.google.auto.value.AutoValue;
+
 /**
  * A unique account identifier.
  */
 
-public final class AccountID implements Comparable<AccountID> {
-  private final int id;
+@AutoValue
+public abstract class AccountID implements Comparable<AccountID> {
 
   /**
    * Construct a account identifier.
@@ -13,48 +15,22 @@ public final class AccountID implements Comparable<AccountID> {
    * @param id A non-negative integer
    */
 
-  public AccountID(int id) {
+  public static AccountID create(int id)
+  {
     if (id < 0) {
       throw new IllegalArgumentException("Account identifiers must be non-negative");
     }
-
-    this.id = id;
+    return new AutoValue_AccountID(id);
   }
 
   /**
-   * @return The raw integer value of the identifier
+   * @return The raw identifier value
    */
 
-  public int value()
-  {
-    return this.id;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-
-    AccountID accountID = (AccountID) o;
-    return id == accountID.id;
-  }
-
-  @Override
-  public String toString() {
-    return Integer.toString(id);
-  }
-
-  @Override
-  public int hashCode() {
-    return id;
-  }
+  public abstract int id();
 
   @Override
   public int compareTo(AccountID other) {
-    return Integer.compare(this.id, other.id);
+    return Integer.compare(this.id(), other.id());
   }
 }

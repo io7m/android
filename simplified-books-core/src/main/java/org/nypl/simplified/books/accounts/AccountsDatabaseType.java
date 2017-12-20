@@ -41,6 +41,6 @@ public interface AccountsDatabaseType {
    */
 
   AccountType createAccount(
-      AccountProviderType account_provider)
+      AccountProvider account_provider)
       throws AccountsDatabaseException;
 }

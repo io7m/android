@@ -2,12 +2,17 @@ buildscript {
   repositories {
     google()
     jcenter()
+
+    maven {
+      url 'https://plugins.gradle.org/m2/'
+    }
   }
 
   dependencies {
     classpath 'com.android.tools.build:gradle:3.0.1'
     classpath 'com.netflix.nebula:gradle-lint-plugin:7.4.0'
     classpath 'com.nabilhachicha:android-native-dependencies:0.1.2'
+    classpath 'net.ltgt.gradle:gradle-apt-plugin:0.13'
   }
 }
 

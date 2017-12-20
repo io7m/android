@@ -1,6 +1,6 @@
 package org.nypl.simplified.books.accounts;
 
-import com.io7m.jnull.NullCheck;
+import com.google.auto.value.AutoValue;
 
 import java.net.URI;
 
@@ -8,21 +8,23 @@ import java.net.URI;
  * A description of an account.
  */
 
-public final class AccountDescription {
+@AutoValue
+public abstract class AccountDescription {
 
-  private final URI provider;
+  /**
+   * Create an account description.
+   *
+   * @param provider The account provider ID
+   * @return An account description
+   */
 
-  private AccountDescription(
-      final URI provider) {
-    this.provider = NullCheck.notNull(provider, "provider");
+  public static AccountDescription create(final URI provider) {
+    return new AutoValue_AccountDescription(provider);
   }
 
-  public static AccountDescription create(
-      final URI provider) {
-    return new AccountDescription(provider);
-  }
+  /**
+   * @return The account provider associated with the account
+   */
 
-  public URI provider() {
-    return this.provider;
-  }
+  public abstract URI provider();
 }
