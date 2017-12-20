@@ -14,6 +14,7 @@ import com.io7m.junreachable.UnreachableCodeException;
 import org.nypl.drm.core.AdobeDeviceID;
 import org.nypl.drm.core.AdobeUserID;
 import org.nypl.drm.core.AdobeVendorID;
+import org.nypl.simplified.http.core.HTTPOAuthToken;
 import org.nypl.simplified.json.core.JSONParseException;
 import org.nypl.simplified.json.core.JSONParserUtilities;
 import org.nypl.simplified.json.core.JSONSerializerUtilities;
@@ -105,10 +106,10 @@ public final class AccountCredentialsJSON
           jo.put("patron", x.toString());
         }
       });
-    credentials.getAuthToken().map_(
-      new ProcedureType<AccountAuthToken>()
+    credentials.getOAuthToken().map_(
+      new ProcedureType<HTTPOAuthToken>()
       {
-        @Override public void call(final AccountAuthToken x)
+        @Override public void call(final HTTPOAuthToken x)
         {
           jo.put("auth_token", x.toString());
         }
@@ -209,13 +210,13 @@ public final class AccountCredentialsJSON
           return new AccountPatron(x);
         }
       });
-    final OptionType<AccountAuthToken> auth_token =
+    final OptionType<HTTPOAuthToken> auth_token =
       JSONParserUtilities.getStringOptional(obj, "auth_token").map(
-      new FunctionType<String, AccountAuthToken>()
+      new FunctionType<String, HTTPOAuthToken>()
       {
-        @Override public AccountAuthToken call(final String x)
+        @Override public HTTPOAuthToken call(final String x)
         {
-          return new AccountAuthToken(x);
+          return HTTPOAuthToken.create(x);
         }
       });
     final OptionType<AccountAdobeToken> adobe_token =

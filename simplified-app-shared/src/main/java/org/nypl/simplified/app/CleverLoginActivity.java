@@ -26,7 +26,6 @@ import org.nypl.drm.core.AdobeVendorID;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.core.AccountAdobeToken;
 import org.nypl.simplified.books.core.AccountAuthProvider;
-import org.nypl.simplified.books.core.AccountAuthToken;
 import org.nypl.simplified.books.core.AccountBarcode;
 import org.nypl.simplified.books.core.AccountCredentials;
 import org.nypl.simplified.books.core.AccountLoginListenerType;
@@ -35,6 +34,7 @@ import org.nypl.simplified.books.core.AccountPatron;
 import org.nypl.simplified.books.core.BookID;
 import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.LogUtilities;
+import org.nypl.simplified.http.core.HTTPOAuthToken;
 import org.nypl.simplified.http.core.HTTPProblemReport;
 import org.slf4j.Logger;
 
@@ -233,7 +233,7 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
 
             final AccountBarcode barcode = new AccountBarcode("");
             final AccountPIN pin = new AccountPIN("");
-            final AccountAuthToken auth_token = new AccountAuthToken(NullCheck.notNull(access_token));
+            final HTTPOAuthToken auth_token = HTTPOAuthToken.create(access_token);
             final AccountPatron patron = new AccountPatron(patron_info);
             final AccountAdobeToken adobe_token = new AccountAdobeToken("");
             final AccountAuthProvider auth_provider = new AccountAuthProvider("Clever");

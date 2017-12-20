@@ -7,6 +7,7 @@ import com.io7m.jnull.NullCheck;
 import org.nypl.drm.core.AdobeDeviceID;
 import org.nypl.drm.core.AdobeUserID;
 import org.nypl.drm.core.AdobeVendorID;
+import org.nypl.simplified.http.core.HTTPOAuthToken;
 import org.nypl.simplified.opds.core.DRMLicensor;
 
 /**
@@ -14,16 +15,16 @@ import org.nypl.simplified.opds.core.DRMLicensor;
  */
 
 public final class AccountCredentials {
-  private OptionType<AdobeVendorID>   adobe_vendor;
-  private final OptionType<AccountPatron>   patron;
-  private AccountBarcode                    barcode;
-  private AccountPIN                        pin;
-  private OptionType<AccountAuthProvider>   provider;
-  private OptionType<AccountAuthToken>      auth_token;
-  private OptionType<AccountAdobeToken>     adobe_token;
-  private OptionType<AdobeUserID>           user_id;
-  private OptionType<AdobeDeviceID>         device_id;
-  private OptionType<DRMLicensor>           licensor;
+  private OptionType<AdobeVendorID> adobe_vendor;
+  private final OptionType<AccountPatron> patron;
+  private AccountBarcode barcode;
+  private AccountPIN pin;
+  private OptionType<AccountAuthProvider> provider;
+  private OptionType<HTTPOAuthToken> oauth_token;
+  private OptionType<AccountAdobeToken> adobe_token;
+  private OptionType<AdobeUserID> user_id;
+  private OptionType<AdobeDeviceID> device_id;
+  private OptionType<DRMLicensor> licensor;
 
   /**
    * Construct account credentials
@@ -37,17 +38,17 @@ public final class AccountCredentials {
    */
 
   public AccountCredentials(
-    final OptionType<AdobeVendorID> in_adobe_vendor,
-    final AccountBarcode in_barcode,
-    final AccountPIN in_pin,
-    final OptionType<AccountAuthProvider> in_provider) {
+      final OptionType<AdobeVendorID> in_adobe_vendor,
+      final AccountBarcode in_barcode,
+      final AccountPIN in_pin,
+      final OptionType<AccountAuthProvider> in_provider) {
     this.adobe_vendor = NullCheck.notNull(in_adobe_vendor);
     this.barcode = NullCheck.notNull(in_barcode);
     this.pin = NullCheck.notNull(in_pin);
     this.provider = NullCheck.notNull(in_provider);
     this.user_id = Option.none();
     this.device_id = Option.none();
-    this.auth_token = Option.none();
+    this.oauth_token = Option.none();
     this.adobe_token = Option.none();
     this.patron = Option.none();
     this.licensor = Option.none();
@@ -69,17 +70,17 @@ public final class AccountCredentials {
    */
 
   public AccountCredentials(
-    final OptionType<AdobeVendorID> in_adobe_vendor,
-    final AccountBarcode in_barcode,
-    final AccountPIN in_pin,
-    final OptionType<AccountAuthProvider> in_provider,
-    final OptionType<AccountAuthToken> in_auth_token,
-    final OptionType<AccountAdobeToken> in_adobe_token,
-    final OptionType<AccountPatron> in_patron) {
+      final OptionType<AdobeVendorID> in_adobe_vendor,
+      final AccountBarcode in_barcode,
+      final AccountPIN in_pin,
+      final OptionType<AccountAuthProvider> in_provider,
+      final OptionType<HTTPOAuthToken> in_auth_token,
+      final OptionType<AccountAdobeToken> in_adobe_token,
+      final OptionType<AccountPatron> in_patron) {
     this.adobe_vendor = NullCheck.notNull(in_adobe_vendor);
     this.barcode = NullCheck.notNull(in_barcode);
     this.pin = NullCheck.notNull(in_pin);
-    this.auth_token = NullCheck.notNull(in_auth_token);
+    this.oauth_token = NullCheck.notNull(in_auth_token);
     this.adobe_token = in_adobe_token;
     this.provider = in_provider;
     this.patron = in_patron;
@@ -96,7 +97,7 @@ public final class AccountCredentials {
     sb.append(", barcode=").append(this.barcode);
     sb.append(", pin=").append(this.pin);
     sb.append(", adobe_token=").append(this.adobe_token);
-    sb.append(", auth_token=").append(this.auth_token);
+    sb.append(", oauth_token=").append(this.oauth_token);
     sb.append(", user_id=").append(this.user_id);
     sb.append(", device_id=").append(this.device_id);
     sb.append(", provider=").append(this.provider);
@@ -132,7 +133,7 @@ public final class AccountCredentials {
     result = 31 * result + this.getPin().hashCode();
     result = 31 * result + this.adobe_vendor.hashCode();
     result = 31 * result + this.adobe_token.hashCode();
-    result = 31 * result + this.auth_token.hashCode();
+    result = 31 * result + this.oauth_token.hashCode();
     result = 31 * result + this.user_id.hashCode();
     result = 31 * result + this.device_id.hashCode();
     result = 31 * result + this.provider.hashCode();
@@ -176,8 +177,8 @@ public final class AccountCredentials {
    * @return The aut token
    */
 
-  public OptionType<AccountAuthToken> getAuthToken() {
-    return this.auth_token;
+  public OptionType<HTTPOAuthToken> getOAuthToken() {
+    return this.oauth_token;
   }
 
   /**

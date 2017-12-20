@@ -9,6 +9,7 @@ import com.io7m.jnull.NullCheck;
 import org.nypl.simplified.http.core.HTTPAuthBasic;
 import org.nypl.simplified.http.core.HTTPAuthOAuth;
 import org.nypl.simplified.http.core.HTTPAuthType;
+import org.nypl.simplified.http.core.HTTPOAuthToken;
 import org.nypl.simplified.http.core.HTTPResultError;
 import org.nypl.simplified.http.core.HTTPResultException;
 import org.nypl.simplified.http.core.HTTPResultMatcherType;
@@ -116,10 +117,10 @@ final class BooksControllerFulFillTask implements Runnable
       HTTPAuthType auth =
         new HTTPAuthBasic(barcode.toString(), pin.toString());
 
-      if (credentials.getAuthToken().isSome()) {
-        final AccountAuthToken token = ((Some<AccountAuthToken>) credentials.getAuthToken()).get();
+      if (credentials.getOAuthToken().isSome()) {
+        final HTTPOAuthToken token = ((Some<HTTPOAuthToken>) credentials.getOAuthToken()).get();
         if (token != null) {
-          auth = new HTTPAuthOAuth(token.toString());
+          auth = HTTPAuthOAuth.create(token);
         }
       }
 
@@ -133,8 +134,7 @@ final class BooksControllerFulFillTask implements Runnable
             final HTTPResultError<InputStream> e)
             throws Exception {
             final String m = NullCheck.notNull(
-              String.format(
-                "%s: %d: %s", BooksControllerFulFillTask.this.loans_uri, e.getStatus(), e.getMessage()));
+              String.format("%s: %d: %s", BooksControllerFulFillTask.this.loans_uri, e.getStatus(), e.getMessage()));
 
             switch (e.getStatus()) {
               case HttpURLConnection.HTTP_UNAUTHORIZED: {

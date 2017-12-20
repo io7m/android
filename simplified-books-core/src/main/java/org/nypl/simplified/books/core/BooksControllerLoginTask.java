@@ -11,6 +11,7 @@ import org.nypl.drm.core.AdobeAdeptExecutorType;
 import org.nypl.simplified.http.core.HTTPAuthBasic;
 import org.nypl.simplified.http.core.HTTPAuthOAuth;
 import org.nypl.simplified.http.core.HTTPAuthType;
+import org.nypl.simplified.http.core.HTTPOAuthToken;
 import org.nypl.simplified.http.core.HTTPResultError;
 import org.nypl.simplified.http.core.HTTPResultException;
 import org.nypl.simplified.http.core.HTTPResultMatcherType;
@@ -92,10 +93,10 @@ final class BooksControllerLoginTask implements Runnable,
     HTTPAuthType auth =
       new HTTPAuthBasic(user.toString(), pass.toString());
 
-    if (this.credentials.getAuthToken().isSome()) {
-      final AccountAuthToken token = ((Some<AccountAuthToken>) this.credentials.getAuthToken()).get();
+    if (this.credentials.getOAuthToken().isSome()) {
+      final HTTPOAuthToken token = ((Some<HTTPOAuthToken>) this.credentials.getOAuthToken()).get();
       if (token != null) {
-        auth = new HTTPAuthOAuth(token.toString());
+        auth = HTTPAuthOAuth.create(token);
       }
     }
 

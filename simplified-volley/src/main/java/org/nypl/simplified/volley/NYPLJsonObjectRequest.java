@@ -9,10 +9,10 @@ import com.io7m.jnull.Nullable;
 import net.iharder.Base64;
 
 import org.json.JSONObject;
-import org.nypl.simplified.books.core.AccountAuthToken;
 import org.nypl.simplified.books.core.AccountBarcode;
 import org.nypl.simplified.books.core.AccountCredentials;
 import org.nypl.simplified.books.core.AccountPIN;
+import org.nypl.simplified.http.core.HTTPOAuthToken;
 
 import java.nio.charset.Charset;
 import java.util.HashMap;
@@ -111,10 +111,10 @@ public class NYPLJsonObjectRequest extends JsonObjectRequest {
 
     if (this.credentials != null) {
 
-      if (this.credentials.getAuthToken().isSome()) {
+      if (this.credentials.getOAuthToken().isSome()) {
 
-        final AccountAuthToken token = ((Some<AccountAuthToken>) this.credentials.getAuthToken()).get();
-        params.put("Authorization", "Bearer " + token);
+        final HTTPOAuthToken token = ((Some<HTTPOAuthToken>) this.credentials.getOAuthToken()).get();
+        params.put("Authorization", "Bearer " + token.value());
 
       } else {
 

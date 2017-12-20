@@ -10,6 +10,7 @@ import com.io7m.jnull.NullCheck;
 import org.nypl.simplified.http.core.HTTPAuthBasic;
 import org.nypl.simplified.http.core.HTTPAuthOAuth;
 import org.nypl.simplified.http.core.HTTPAuthType;
+import org.nypl.simplified.http.core.HTTPOAuthToken;
 import org.nypl.simplified.http.core.HTTPType;
 import org.nypl.simplified.json.core.JSONSerializerUtilities;
 import org.slf4j.Logger;
@@ -64,13 +65,12 @@ public class BooksControllerReportTask
       http_auth =
         Option.some((HTTPAuthType) new HTTPAuthBasic(barcode.toString(), pin.toString()));
 
-      if (account_credentials.getAuthToken().isSome()) {
-        final AccountAuthToken token = ((Some<AccountAuthToken>) account_credentials.getAuthToken()).get();
+      if (account_credentials.getOAuthToken().isSome()) {
+        final HTTPOAuthToken token = ((Some<HTTPOAuthToken>) account_credentials.getOAuthToken()).get();
         if (token != null) {
-          http_auth = Option.some((HTTPAuthType) new HTTPAuthOAuth(token.toString()));
+          http_auth = Option.some((HTTPAuthType) HTTPAuthOAuth.create(token));
         }
       }
-
     }
 
     try {

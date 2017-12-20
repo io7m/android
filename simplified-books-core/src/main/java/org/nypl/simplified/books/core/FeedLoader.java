@@ -15,6 +15,7 @@ import org.nypl.drm.core.Assertions;
 import org.nypl.simplified.http.core.HTTPAuthBasic;
 import org.nypl.simplified.http.core.HTTPAuthOAuth;
 import org.nypl.simplified.http.core.HTTPAuthType;
+import org.nypl.simplified.http.core.HTTPOAuthToken;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeed;
 import org.nypl.simplified.opds.core.OPDSFeedParserType;
 import org.nypl.simplified.opds.core.OPDSFeedTransportException;
@@ -467,14 +468,11 @@ public final class FeedLoader
     final String user = result.getBarcode().toString();
     final String pass = result.getPin().toString();
 
-    HTTPAuthType auth =
-      new HTTPAuthBasic(user, pass);
-
-
-    if (result.getAuthToken().isSome()) {
-      final AccountAuthToken token = ((Some<AccountAuthToken>) result.getAuthToken()).get();
+    HTTPAuthType auth = new HTTPAuthBasic(user, pass);
+    if (result.getOAuthToken().isSome()) {
+      final HTTPOAuthToken token = ((Some<HTTPOAuthToken>) result.getOAuthToken()).get();
       if (token != null) {
-        auth = new HTTPAuthOAuth(token.toString());
+        auth = HTTPAuthOAuth.create(token);
       }
     }
 

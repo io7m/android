@@ -19,6 +19,7 @@ import org.nypl.drm.core.AdobeUserID;
 import org.nypl.simplified.http.core.HTTPAuthBasic;
 import org.nypl.simplified.http.core.HTTPAuthOAuth;
 import org.nypl.simplified.http.core.HTTPAuthType;
+import org.nypl.simplified.http.core.HTTPOAuthToken;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntryBuilderType;
 import org.nypl.simplified.opds.core.OPDSAvailabilityHeld;
@@ -285,10 +286,10 @@ final class BooksControllerRevokeBookTask
     HTTPAuthType auth =
       new HTTPAuthBasic(barcode.toString(), pin.toString());
 
-    if (credentials.getAuthToken().isSome()) {
-      final AccountAuthToken token = ((Some<AccountAuthToken>) credentials.getAuthToken()).get();
+    if (credentials.getOAuthToken().isSome()) {
+      final HTTPOAuthToken token = ((Some<HTTPOAuthToken>) credentials.getOAuthToken()).get();
       if (token != null) {
-        auth = new HTTPAuthOAuth(token.toString());
+        auth = HTTPAuthOAuth.create(token);
       }
     }
 
