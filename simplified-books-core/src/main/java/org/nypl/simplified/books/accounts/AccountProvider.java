@@ -311,6 +311,12 @@ public abstract class AccountProvider {
   }
 
   /**
+   * @return The current value as a mutable builder
+   */
+
+  public abstract Builder toBuilder();
+
+  /**
    * @return A new account provider builder
    */
 
