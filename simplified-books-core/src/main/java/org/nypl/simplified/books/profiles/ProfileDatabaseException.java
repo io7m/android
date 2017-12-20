@@ -4,9 +4,19 @@ import com.io7m.jnull.NullCheck;
 
 import java.util.List;
 
+/**
+ * An exception that indicates that an operation on the profiles database failed.
+ */
+
 public final class ProfileDatabaseException extends Exception {
 
   private final List<Exception> causes;
+
+  /**
+   * Construct an exception.
+   * @param message The exception message
+   * @param causes The list of causes
+   */
 
   public ProfileDatabaseException(
       final String message,
@@ -14,6 +24,10 @@ public final class ProfileDatabaseException extends Exception {
     super(NullCheck.notNull(message, "Message"));
     this.causes = NullCheck.notNull(causes, "Causes");
   }
+
+  /**
+   * @return The list of exceptions raised that caused this exception
+   */
 
   public List<Exception> causes() {
     return this.causes;
