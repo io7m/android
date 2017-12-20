@@ -14,8 +14,9 @@ public final class ProfileDatabaseException extends Exception {
 
   /**
    * Construct an exception.
+   *
    * @param message The exception message
-   * @param causes The list of causes
+   * @param causes  The list of causes
    */
 
   public ProfileDatabaseException(

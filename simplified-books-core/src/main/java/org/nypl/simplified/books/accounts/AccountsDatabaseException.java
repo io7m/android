@@ -12,6 +12,13 @@ public final class AccountsDatabaseException extends Exception {
 
   private final List<Exception> causes;
 
+  /**
+   * Construct an exception.
+   *
+   * @param message The exception message
+   * @param causes  The list of causes
+   */
+
   public AccountsDatabaseException(
       final String message,
       final List<Exception> causes) {
