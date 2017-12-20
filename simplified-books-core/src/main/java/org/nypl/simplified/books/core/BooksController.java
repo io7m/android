@@ -66,28 +66,25 @@ public final class BooksController implements BooksType {
     final FeedLoaderType in_feeds,
     final HTTPType in_http,
     final DownloaderType in_downloader,
-    final OPDSJSONSerializerType in_json_serializer,
-    final OPDSJSONParserType in_json_parser,
     final OptionType<AdobeAdeptExecutorType> in_adobe_drm,
     final DocumentStoreType in_docs,
     final BookDatabaseType in_book_database,
     final AccountsDatabaseType in_accounts_database,
     final BooksControllerConfigurationType in_config,
     final URI in_loans_uri) {
+
     this.exec = NullCheck.notNull(in_exec);
     this.feed_loader = NullCheck.notNull(in_feeds);
     this.http = NullCheck.notNull(in_http);
     this.downloader = NullCheck.notNull(in_downloader);
-    NullCheck.notNull(in_json_serializer);
-    NullCheck.notNull(in_json_parser);
     this.adobe_drm = NullCheck.notNull(in_adobe_drm);
     this.docs = NullCheck.notNull(in_docs);
     this.config = NullCheck.notNull(in_config);
     this.book_database = NullCheck.notNull(in_book_database);
     this.accounts_database = NullCheck.notNull(in_accounts_database);
 
-    this.tasks = new ConcurrentHashMap<Integer, Future<?>>(32);
-    this.downloads = new ConcurrentHashMap<BookID, DownloadType>(32);
+    this.tasks = new ConcurrentHashMap<>(32);
+    this.downloads = new ConcurrentHashMap<>(32);
     this.books_status = BooksStatusCache.newStatusCache();
     this.task_id = new AtomicInteger(0);
     this.feed_parser = this.feed_loader.getOPDSFeedParser();
@@ -102,14 +99,13 @@ public final class BooksController implements BooksType {
    * @param in_feeds             An asynchronous feed loader
    * @param in_http              An HTTP interface
    * @param in_downloader        A downloader
-   * @param in_json_serializer   A JSON serializer
-   * @param in_json_parser       A JSON parser
    * @param in_adobe_drm         An Adobe DRM interface, if supported
    * @param in_docs              A document store
    * @param in_book_database     A book database
    * @param in_accounts_database The accounts database
    * @param in_config            Mutable configuration data
    * @param in_loans_url         loans url
+   *
    * @return A new books controller
    */
 
@@ -118,21 +114,18 @@ public final class BooksController implements BooksType {
     final FeedLoaderType in_feeds,
     final HTTPType in_http,
     final DownloaderType in_downloader,
-    final OPDSJSONSerializerType in_json_serializer,
-    final OPDSJSONParserType in_json_parser,
     final OptionType<AdobeAdeptExecutorType> in_adobe_drm,
     final DocumentStoreType in_docs,
     final BookDatabaseType in_book_database,
     final AccountsDatabaseType in_accounts_database,
     final BooksControllerConfigurationType in_config,
     final URI in_loans_url) {
+
     return new BooksController(
       in_exec,
       in_feeds,
       in_http,
       in_downloader,
-      in_json_serializer,
-      in_json_parser,
       in_adobe_drm,
       in_docs,
       in_book_database,
@@ -591,7 +584,7 @@ public final class BooksController implements BooksType {
 
   private synchronized void stopAllTasks() {
     final Map<Integer, Future<?>> t_old = this.tasks;
-    this.tasks = new ConcurrentHashMap<Integer, Future<?>>(32);
+    this.tasks = new ConcurrentHashMap<>(32);
 
     final Iterator<Future<?>> iter = t_old.values().iterator();
     while (iter.hasNext()) {

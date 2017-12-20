@@ -112,7 +112,8 @@ public abstract class BooksContract {
 
       final OPDSJSONSerializerType in_json_serializer =
           OPDSJSONSerializer.newSerializer();
-      final OPDSJSONParserType in_json_parser = OPDSJSONParser.newParser();
+      final OPDSJSONParserType in_json_parser =
+          OPDSJSONParser.newParser();
 
       final DownloaderType d = DownloaderHTTP.newDownloader(
           exec, DirectoryUtilities.directoryCreateTemporary(), in_http);
@@ -128,8 +129,6 @@ public abstract class BooksContract {
           BooksContract.newParser(database),
           in_http,
           d,
-          in_json_serializer,
-          in_json_parser,
           none,
           new EmptyDocumentStore(),
           database,
@@ -214,8 +213,6 @@ public abstract class BooksContract {
           BooksContract.newParser(database),
           in_http,
           d,
-          in_json_serializer,
-          in_json_parser,
           none,
           new EmptyDocumentStore(),
           database,
@@ -306,8 +303,6 @@ public abstract class BooksContract {
           BooksContract.newParser(database),
           in_http,
           d,
-          in_json_serializer,
-          in_json_parser,
           none,
           new EmptyDocumentStore(),
           database,
@@ -426,8 +421,6 @@ public abstract class BooksContract {
           BooksContract.newParser(database),
           in_http,
           d,
-          in_json_serializer,
-          in_json_parser,
           none,
           new EmptyDocumentStore(),
           database,
@@ -549,8 +542,6 @@ public abstract class BooksContract {
           BooksContract.newParser(database),
           in_http,
           d,
-          in_json_serializer,
-          in_json_parser,
           none,
           new EmptyDocumentStore(),
           database,
@@ -692,8 +683,6 @@ public abstract class BooksContract {
           BooksContract.newParser(database),
           in_http,
           d,
-          in_json_serializer,
-          in_json_parser,
           none,
           new EmptyDocumentStore(),
           database,

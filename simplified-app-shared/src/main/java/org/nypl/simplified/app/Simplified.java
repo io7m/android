@@ -470,15 +470,14 @@ public final class Simplified extends Application
         URI.create(catalog),
         URI.create(adobe));
 
-    final URI loans_url_component = books_config.getCurrentRootFeedURI().resolve(context.getResources().getString(R.string.feature_catalog_loans_uri_component));
+    final URI loans_url_component =
+        books_config.getCurrentRootFeedURI().resolve(context.getResources().getString(R.string.feature_catalog_loans_uri_component));
 
-    return  BooksController.newBooks(
+    return BooksController.newBooks(
       exec_books,
       feed_loader,
       http,
       downloader,
-      in_json_serializer,
-      in_json_parser,
       in_adobe_drm,
       Simplified.getDocumentStore(account, context.getResources()),
       books_database,
@@ -848,8 +847,6 @@ public final class Simplified extends Application
         this.feed_loader,
         this.http,
         this.downloader,
-        in_json_serializer,
-        in_json_parser,
         this.adobe_drm,
         this.documents,
         this.books_database,
