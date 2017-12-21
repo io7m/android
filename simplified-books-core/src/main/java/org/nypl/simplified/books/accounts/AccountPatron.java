@@ -1,4 +1,4 @@
-package org.nypl.simplified.books.core;
+package org.nypl.simplified.books.accounts;
 
 import com.google.auto.value.AutoValue;
 

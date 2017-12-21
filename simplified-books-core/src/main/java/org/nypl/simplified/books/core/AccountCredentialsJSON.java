@@ -17,6 +17,7 @@ import org.nypl.drm.core.AdobeVendorID;
 import org.nypl.simplified.books.accounts.AccountAuthenticationProvider;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
+import org.nypl.simplified.books.accounts.AccountPatron;
 import org.nypl.simplified.http.core.HTTPOAuthToken;
 import org.nypl.simplified.json.core.JSONParseException;
 import org.nypl.simplified.json.core.JSONParserUtilities;

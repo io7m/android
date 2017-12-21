@@ -30,7 +30,7 @@ import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.core.AccountCredentials;
 import org.nypl.simplified.books.core.AccountLoginListenerType;
 import org.nypl.simplified.books.accounts.AccountPIN;
-import org.nypl.simplified.books.core.AccountPatron;
+import org.nypl.simplified.books.accounts.AccountPatron;
 import org.nypl.simplified.books.core.BookID;
 import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.LogUtilities;
