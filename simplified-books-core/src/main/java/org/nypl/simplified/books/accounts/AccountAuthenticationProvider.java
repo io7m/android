@@ -2,8 +2,6 @@ package org.nypl.simplified.books.accounts;
 
 import com.google.auto.value.AutoValue;
 
-import java.io.Serializable;
-
 /**
  * A provider of an authentication mechanism.
  */

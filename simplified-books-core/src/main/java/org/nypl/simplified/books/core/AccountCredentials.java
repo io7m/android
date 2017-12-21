@@ -56,7 +56,6 @@ public final class AccountCredentials {
     this.adobe_token = Option.none();
     this.patron = Option.none();
     this.licensor = Option.none();
-
   }
 
   /**

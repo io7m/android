@@ -22,7 +22,8 @@ public abstract class AccountDescription {
    * @return An account description
    */
 
-  public static AccountDescription create(final URI provider) {
+  public static AccountDescription create(
+      final URI provider) {
     return new AutoValue_AccountDescription(provider);
   }
 

@@ -3,13 +3,13 @@ package org.nypl.simplified.books.accounts;
 import com.google.auto.value.AutoValue;
 
 /**
- * Information about an account patron.
+ * A token used by Adobe DRM to activate and deactivate devices.
  */
 
 @AutoValue
-public abstract class AccountPatron {
+public abstract class AccountAdobeDeviceToken {
 
-  AccountPatron() {
+  AccountAdobeDeviceToken() {
 
   }
 
@@ -19,13 +19,13 @@ public abstract class AccountPatron {
    * @param in_value The raw patron value
    */
 
-  public static AccountPatron create(
+  public static AccountAdobeDeviceToken create(
       final String in_value) {
-    return new AutoValue_AccountPatron(in_value);
+    return new AutoValue_AccountAdobeDeviceToken(in_value);
   }
 
   /**
-   * @return The raw patron value
+   * @return The raw token value
    */
 
   public abstract String value();
