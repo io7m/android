@@ -14,6 +14,7 @@ import com.io7m.junreachable.UnreachableCodeException;
 import org.nypl.drm.core.AdobeDeviceID;
 import org.nypl.drm.core.AdobeUserID;
 import org.nypl.drm.core.AdobeVendorID;
+import org.nypl.simplified.books.accounts.AccountAdobeDeviceToken;
 import org.nypl.simplified.books.accounts.AccountAuthenticationProvider;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
@@ -119,9 +120,9 @@ public final class AccountCredentialsJSON
         }
       });
     credentials.getAdobeToken().map_(
-      new ProcedureType<AccountAdobeToken>()
+      new ProcedureType<AccountAdobeDeviceToken>()
       {
-        @Override public void call(final AccountAdobeToken x)
+        @Override public void call(final AccountAdobeDeviceToken x)
         {
           jo.put("adobe_token", x.toString());
         }
@@ -223,13 +224,13 @@ public final class AccountCredentialsJSON
           return HTTPOAuthToken.create(x);
         }
       });
-    final OptionType<AccountAdobeToken> adobe_token =
+    final OptionType<AccountAdobeDeviceToken> adobe_token =
       JSONParserUtilities.getStringOptional(obj, "adobe_token").map(
-      new FunctionType<String, AccountAdobeToken>()
+      new FunctionType<String, AccountAdobeDeviceToken>()
       {
-        @Override public AccountAdobeToken call(final String x)
+        @Override public AccountAdobeDeviceToken call(final String x)
         {
-          return new AccountAdobeToken(x);
+          return AccountAdobeDeviceToken.create(x);
         }
       });
 
@@ -280,7 +281,7 @@ public final class AccountCredentialsJSON
 
       final OptionType<DRMLicensor> licensor = Option.some(new DRMLicensor(
         ((Some<AdobeVendorID>) vendor).get().toString(),
-        ((Some<AccountAdobeToken>) adobe_token).get().toString(),
+        ((Some<AccountAdobeDeviceToken>) adobe_token).get().toString(),
         licensor_url));
       creds.setDrmLicensor(licensor);
     }

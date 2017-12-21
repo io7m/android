@@ -8,6 +8,7 @@ import com.io7m.jnull.NullCheck;
 
 import org.nypl.drm.core.AdobeAdeptExecutorType;
 import org.nypl.drm.core.AdobeVendorID;
+import org.nypl.simplified.books.accounts.AccountAdobeDeviceToken;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.http.core.HTTPAuthBasic;
@@ -189,7 +190,7 @@ final class BooksControllerSyncTask implements Runnable {
         final AccountCredentials credentials = ((Some<AccountCredentials>) credentials_opt).get();
 
         credentials.setDrmLicensor(feed.getLicensor());
-        credentials.setAdobeToken(Option.some(new AccountAdobeToken(licensor.getClientToken())));
+        credentials.setAdobeToken(Option.some(AccountAdobeDeviceToken.create(licensor.getClientToken())));
         credentials.setAdobeVendor(Option.some(new AdobeVendorID(licensor.getVendor())));
 
         try {
