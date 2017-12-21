@@ -231,11 +231,16 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
 
             final BooksType books = app.getBooks();
 
-            final AccountBarcode barcode = AccountBarcode.create("");
-            final AccountPIN pin = AccountPIN.create("");
-            final HTTPOAuthToken auth_token = HTTPOAuthToken.create(access_token);
-            final AccountPatron patron = new AccountPatron(patron_info);
-            final AccountAdobeToken adobe_token = new AccountAdobeToken("");
+            final AccountBarcode barcode =
+                AccountBarcode.create("");
+            final AccountPIN pin =
+                AccountPIN.create("");
+            final HTTPOAuthToken auth_token =
+                HTTPOAuthToken.create(access_token);
+            final AccountPatron patron =
+                AccountPatron.create(patron_info);
+            final AccountAdobeToken adobe_token =
+                new AccountAdobeToken("");
             final AccountAuthenticationProvider auth_provider =
                 AccountAuthenticationProvider.create("Clever");
 

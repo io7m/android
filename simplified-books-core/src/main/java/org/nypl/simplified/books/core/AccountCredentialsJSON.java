@@ -210,7 +210,7 @@ public final class AccountCredentialsJSON
       {
         @Override public AccountPatron call(final String x)
         {
-          return new AccountPatron(x);
+          return AccountPatron.create(x);
         }
       });
     final OptionType<HTTPOAuthToken> auth_token =

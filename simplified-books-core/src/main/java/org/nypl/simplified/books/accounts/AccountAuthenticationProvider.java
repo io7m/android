@@ -9,10 +9,9 @@ import java.io.Serializable;
  */
 
 @AutoValue
-public abstract class AccountAuthenticationProvider implements Serializable
-{
-  AccountAuthenticationProvider()
-  {
+public abstract class AccountAuthenticationProvider {
+
+  AccountAuthenticationProvider() {
 
   }
 
@@ -22,9 +21,8 @@ public abstract class AccountAuthenticationProvider implements Serializable
    * @param in_value The raw provider name value
    */
 
-  public static  AccountAuthenticationProvider create(
-    final String in_value)
-  {
+  public static AccountAuthenticationProvider create(
+      final String in_value) {
     return new AutoValue_AccountAuthenticationProvider(in_value);
   }
 
@@ -34,8 +32,8 @@ public abstract class AccountAuthenticationProvider implements Serializable
 
   public abstract String value();
 
-  @Override public String toString()
-  {
+  @Override
+  public String toString() {
     return this.value();
   }
 
