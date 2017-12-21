@@ -21,6 +21,10 @@ import java.net.URI;
 @AutoValue
 public abstract class AccountProvider {
 
+  AccountProvider() {
+
+  }
+
   /**
    * @return The account provider URI
    */
@@ -143,6 +147,10 @@ public abstract class AccountProvider {
 
   @AutoValue.Builder
   public abstract static class Builder {
+
+    Builder() {
+
+    }
 
     /**
      * @see #id()

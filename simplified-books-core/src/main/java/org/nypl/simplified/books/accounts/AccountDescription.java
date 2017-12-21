@@ -11,6 +11,10 @@ import java.net.URI;
 @AutoValue
 public abstract class AccountDescription {
 
+  AccountDescription() {
+
+  }
+
   /**
    * Create an account description.
    *

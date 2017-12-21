@@ -14,6 +14,8 @@ import com.io7m.junreachable.UnreachableCodeException;
 import org.nypl.drm.core.AdobeDeviceID;
 import org.nypl.drm.core.AdobeUserID;
 import org.nypl.drm.core.AdobeVendorID;
+import org.nypl.simplified.books.accounts.AccountBarcode;
+import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.http.core.HTTPOAuthToken;
 import org.nypl.simplified.json.core.JSONParseException;
 import org.nypl.simplified.json.core.JSONParserUtilities;
@@ -186,9 +188,9 @@ public final class AccountCredentialsJSON
     NullCheck.notNull(node);
     final ObjectNode obj = JSONParserUtilities.checkObject(null, node);
     final AccountBarcode user =
-      new AccountBarcode(JSONParserUtilities.getString(obj, "username"));
+      AccountBarcode.create(JSONParserUtilities.getString(obj, "username"));
     final AccountPIN pass =
-      new AccountPIN(JSONParserUtilities.getString(obj, "password"));
+      AccountPIN.create(JSONParserUtilities.getString(obj, "password"));
     
     final OptionType<AccountAuthProvider> provider =
       JSONParserUtilities.getStringOptional(obj, "provider").map(

@@ -8,6 +8,8 @@ import com.io7m.jnull.NullCheck;
 
 import org.nypl.drm.core.AdobeAdeptExecutorType;
 import org.nypl.drm.core.AdobeVendorID;
+import org.nypl.simplified.books.accounts.AccountBarcode;
+import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.http.core.HTTPAuthBasic;
 import org.nypl.simplified.http.core.HTTPAuthOAuth;
 import org.nypl.simplified.http.core.HTTPAuthType;

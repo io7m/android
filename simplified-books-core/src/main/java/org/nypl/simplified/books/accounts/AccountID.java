@@ -9,6 +9,10 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 public abstract class AccountID implements Comparable<AccountID> {
 
+  AccountID() {
+
+  }
+
   /**
    * Construct a account identifier.
    *

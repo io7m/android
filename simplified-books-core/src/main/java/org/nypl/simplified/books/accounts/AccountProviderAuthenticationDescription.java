@@ -9,6 +9,10 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 public abstract class AccountProviderAuthenticationDescription {
 
+  AccountProviderAuthenticationDescription() {
+
+  }
+
   /**
    * @return The required length of passcodes, or {@code 0} if no specific length is required
    */
@@ -27,6 +31,10 @@ public abstract class AccountProviderAuthenticationDescription {
 
   @AutoValue.Builder
   public abstract static class Builder {
+
+    Builder() {
+
+    }
 
     /**
      * @param length The pass code length

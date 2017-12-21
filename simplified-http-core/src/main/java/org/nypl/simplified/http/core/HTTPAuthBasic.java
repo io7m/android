@@ -15,6 +15,11 @@ import java.nio.charset.Charset;
 
 @AutoValue
 public abstract class HTTPAuthBasic implements HTTPAuthType {
+
+  HTTPAuthBasic() {
+
+  }
+
   /**
    * Construct a basic auth value.
    *

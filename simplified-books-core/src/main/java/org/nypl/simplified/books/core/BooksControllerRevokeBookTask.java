@@ -16,6 +16,8 @@ import org.nypl.drm.core.AdobeAdeptLoan;
 import org.nypl.drm.core.AdobeAdeptLoanReturnListenerType;
 import org.nypl.drm.core.AdobeAdeptProcedureType;
 import org.nypl.drm.core.AdobeUserID;
+import org.nypl.simplified.books.accounts.AccountBarcode;
+import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.http.core.HTTPAuthBasic;
 import org.nypl.simplified.http.core.HTTPAuthOAuth;
 import org.nypl.simplified.http.core.HTTPAuthType;

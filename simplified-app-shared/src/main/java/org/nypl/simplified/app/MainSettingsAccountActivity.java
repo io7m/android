@@ -43,11 +43,11 @@ import com.tenmiles.helpstack.HSHelpStack;
 import com.tenmiles.helpstack.gears.HSDeskGear;
 
 import org.nypl.simplified.app.utilities.UIThread;
-import org.nypl.simplified.books.core.AccountBarcode;
+import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.core.AccountCredentials;
 import org.nypl.simplified.books.core.AccountGetCachedCredentialsListenerType;
 import org.nypl.simplified.books.core.AccountLogoutListenerType;
-import org.nypl.simplified.books.core.AccountPIN;
+import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.core.AccountSyncListenerType;
 import org.nypl.simplified.books.core.AccountsDatabaseType;
 import org.nypl.simplified.books.core.AuthenticationDocumentType;
@@ -800,8 +800,8 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
       new Runnable() {
         @Override
         public void run() {
-          final AccountBarcode barcode = new AccountBarcode("");
-          final AccountPIN pin = new AccountPIN("");
+          final AccountBarcode barcode = AccountBarcode.create("");
+          final AccountPIN pin = AccountPIN.create("");
 
           if (Simplified.getCurrentAccount().getId() == MainSettingsAccountActivity.this.account.getId())
           {

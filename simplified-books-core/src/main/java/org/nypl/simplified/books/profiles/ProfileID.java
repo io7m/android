@@ -9,6 +9,10 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 public abstract class ProfileID implements Comparable<ProfileID> {
 
+  ProfileID() {
+
+  }
+
   /**
    * Construct a profile identifier.
    *

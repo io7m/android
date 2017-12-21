@@ -32,10 +32,10 @@ import com.io7m.jnull.Nullable;
 import org.nypl.drm.core.AdobeVendorID;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.core.AccountAuthProvider;
-import org.nypl.simplified.books.core.AccountBarcode;
+import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.core.AccountCredentials;
 import org.nypl.simplified.books.core.AccountLoginListenerType;
-import org.nypl.simplified.books.core.AccountPIN;
+import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.core.AuthenticationDocumentType;
 import org.nypl.simplified.books.core.BookID;
 import org.nypl.simplified.books.core.BooksType;
@@ -144,8 +144,8 @@ public final class LoginDialog extends DialogFragment
 
     final Bundle b = new Bundle();
     b.putSerializable(LoginDialog.TEXT_ID, text);
-    b.putSerializable(LoginDialog.PIN_ID, pin);
-    b.putSerializable(LoginDialog.BARCODE_ID, barcode);
+    b.putSerializable(LoginDialog.PIN_ID, pin.value());
+    b.putSerializable(LoginDialog.BARCODE_ID, barcode.value());
     b.putSerializable(LoginDialog.PIN_ALLOWS_LETTERS, account.pinAllowsLetters());
     b.putSerializable(LoginDialog.PIN_LENGTH, account.getPinLength());
 
@@ -175,8 +175,8 @@ public final class LoginDialog extends DialogFragment
 
     final Bundle b = new Bundle();
     b.putSerializable(LoginDialog.TEXT_ID, text);
-    b.putSerializable(LoginDialog.PIN_ID, pin);
-    b.putSerializable(LoginDialog.BARCODE_ID, barcode);
+    b.putSerializable(LoginDialog.PIN_ID, pin.value());
+    b.putSerializable(LoginDialog.BARCODE_ID, barcode.value());
     b.putSerializable(LoginDialog.ACCOUNT_ID, account.getPathComponent());
     b.putSerializable(LoginDialog.PIN_ALLOWS_LETTERS, account.pinAllowsLetters());
     b.putSerializable(LoginDialog.PIN_LENGTH, account.getPinLength());
@@ -338,9 +338,9 @@ public final class LoginDialog extends DialogFragment
     final LayoutInflater inflater = NullCheck.notNull(inflater_mn);
     final Bundle b = this.getArguments();
     final AccountPIN initial_pin =
-      NullCheck.notNull((AccountPIN) b.getSerializable(LoginDialog.PIN_ID));
-    final AccountBarcode initial_bar = NullCheck.notNull(
-      (AccountBarcode) b.getSerializable(LoginDialog.BARCODE_ID));
+        AccountPIN.create(b.getString(LoginDialog.PIN_ID));
+    final AccountBarcode initial_bar =
+        AccountBarcode.create(b.getString(LoginDialog.BARCODE_ID));
     final String initial_txt =
       NullCheck.notNull(b.getString(LoginDialog.TEXT_ID));
 
@@ -428,9 +428,9 @@ public final class LoginDialog extends DialogFragment
           final Editable pin_edit_text = in_pin_edit.getText();
 
           final AccountBarcode barcode =
-            new AccountBarcode(NullCheck.notNull(barcode_edit_text.toString()));
+              AccountBarcode.create(NullCheck.notNull(barcode_edit_text.toString()));
           final AccountPIN pin =
-            new AccountPIN(NullCheck.notNull(pin_edit_text.toString()));
+              AccountPIN.create(NullCheck.notNull(pin_edit_text.toString()));
           final AccountAuthProvider provider =
             new AccountAuthProvider(rr.getString(R.string.feature_default_auth_provider_name));
 

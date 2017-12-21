@@ -19,6 +19,8 @@ import org.nypl.drm.core.AdobeAdeptProcedureType;
 import org.nypl.drm.core.AdobeUserID;
 import org.nypl.drm.core.DRMUnsupportedException;
 import org.nypl.simplified.assertions.Assertions;
+import org.nypl.simplified.books.accounts.AccountBarcode;
+import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.downloader.core.DownloadListenerType;
 import org.nypl.simplified.downloader.core.DownloadType;
 import org.nypl.simplified.downloader.core.DownloaderType;

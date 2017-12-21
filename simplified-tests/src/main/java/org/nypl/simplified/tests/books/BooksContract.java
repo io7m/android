@@ -11,12 +11,12 @@ import org.junit.Test;
 import org.nypl.drm.core.AdobeAdeptExecutorType;
 import org.nypl.drm.core.AdobeVendorID;
 import org.nypl.simplified.books.core.AccountAuthProvider;
-import org.nypl.simplified.books.core.AccountBarcode;
+import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.core.AccountCredentials;
 import org.nypl.simplified.books.core.AccountDataLoadListenerType;
 import org.nypl.simplified.books.core.AccountLoginListenerType;
 import org.nypl.simplified.books.core.AccountLogoutListenerType;
-import org.nypl.simplified.books.core.AccountPIN;
+import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.core.AccountSyncListenerType;
 import org.nypl.simplified.books.core.AccountsDatabase;
 import org.nypl.simplified.books.core.AccountsDatabaseType;
@@ -278,8 +278,8 @@ public abstract class BooksContract {
       final BooksControllerConfiguration books_config =
           new BooksControllerConfiguration();
 
-      final AccountBarcode barcode = new AccountBarcode("barcode");
-      final AccountPIN pin = new AccountPIN("pin");
+      final AccountBarcode barcode = AccountBarcode.create("barcode");
+      final AccountPIN pin = AccountPIN.create("pin");
       final OptionType<AdobeVendorID> no_vendor = Option.none();
       final AccountCredentials creds =
           new AccountCredentials(no_vendor, barcode, pin, Option.some(new AccountAuthProvider("Library")));
@@ -395,8 +395,8 @@ public abstract class BooksContract {
       final BooksControllerConfiguration books_config =
           new BooksControllerConfiguration();
 
-      final AccountBarcode barcode = new AccountBarcode("barcode");
-      final AccountPIN pin = new AccountPIN("pin");
+      final AccountBarcode barcode = AccountBarcode.create("barcode");
+      final AccountPIN pin = AccountPIN.create("pin");
       final OptionType<AdobeVendorID> no_vendor = Option.none();
       final AccountCredentials creds =
           new AccountCredentials(no_vendor, barcode, pin, Option.some(new AccountAuthProvider("Library")));
@@ -516,8 +516,8 @@ public abstract class BooksContract {
       final BooksControllerConfiguration books_config =
           new BooksControllerConfiguration();
 
-      final AccountBarcode barcode = new AccountBarcode("barcode");
-      final AccountPIN pin = new AccountPIN("pin");
+      final AccountBarcode barcode = AccountBarcode.create("barcode");
+      final AccountPIN pin = AccountPIN.create("pin");
       final OptionType<AdobeVendorID> no_vendor = Option.none();
       final AccountCredentials creds =
           new AccountCredentials(no_vendor, barcode, pin, Option.some(new AccountAuthProvider("Library")));
@@ -657,8 +657,8 @@ public abstract class BooksContract {
       final BooksControllerConfiguration books_config =
           new BooksControllerConfiguration();
 
-      final AccountBarcode barcode = new AccountBarcode("barcode");
-      final AccountPIN pin = new AccountPIN("pin");
+      final AccountBarcode barcode = AccountBarcode.create("barcode");
+      final AccountPIN pin = AccountPIN.create("pin");
       final OptionType<AdobeVendorID> no_vendor = Option.none();
       final AccountCredentials creds =
           new AccountCredentials(no_vendor, barcode, pin, Option.some(new AccountAuthProvider("Library")));

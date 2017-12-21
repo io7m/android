@@ -2,7 +2,6 @@ package org.nypl.simplified.http.core;
 
 import com.google.auto.value.AutoValue;
 import com.io7m.jnull.NullCheck;
-import com.io7m.jnull.Nullable;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -14,6 +13,10 @@ import java.net.HttpURLConnection;
 @AutoValue
 public abstract class HTTPAuthOAuth implements HTTPAuthType
 {
+  HTTPAuthOAuth() {
+
+  }
+
   /**
    * Construct an OAuth value.
    *

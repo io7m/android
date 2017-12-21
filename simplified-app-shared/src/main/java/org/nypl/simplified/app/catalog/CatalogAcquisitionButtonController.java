@@ -17,10 +17,10 @@ import org.nypl.simplified.app.LoginDialog;
 import org.nypl.simplified.app.LoginListenerType;
 import org.nypl.simplified.app.R;
 import org.nypl.simplified.app.Simplified;
-import org.nypl.simplified.books.core.AccountBarcode;
+import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.core.AccountCredentials;
 import org.nypl.simplified.books.core.AccountGetCachedCredentialsListenerType;
-import org.nypl.simplified.books.core.AccountPIN;
+import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.core.BookID;
 import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.FeedEntryOPDS;
@@ -117,8 +117,8 @@ public final class CatalogAcquisitionButtonController
 
     } else {
 
-      final AccountBarcode barcode = new AccountBarcode("");
-      final AccountPIN pin = new AccountPIN("");
+      final AccountBarcode barcode = AccountBarcode.create("");
+      final AccountPIN pin = AccountPIN.create("");
 
       final LoginDialog df =
         LoginDialog.newDialog("Login required", barcode, pin);

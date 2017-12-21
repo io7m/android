@@ -13,9 +13,9 @@ import com.io7m.jnull.NullCheck;
 
 import org.nypl.simplified.app.catalog.MainCatalogActivity;
 import org.nypl.simplified.app.utilities.UIThread;
-import org.nypl.simplified.books.core.AccountBarcode;
+import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.core.AccountCredentials;
-import org.nypl.simplified.books.core.AccountPIN;
+import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.slf4j.Logger;
@@ -137,8 +137,8 @@ public final class LoginActivity extends Activity {
       new Runnable() {
         @Override
         public void run() {
-          final AccountBarcode barcode = new AccountBarcode("");
-          final AccountPIN pin = new AccountPIN("");
+          final AccountBarcode barcode = AccountBarcode.create("");
+          final AccountPIN pin = AccountPIN.create("");
 
           final LoginDialog df =
             LoginDialog.newDialog("Login required", barcode, pin);

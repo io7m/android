@@ -7,6 +7,8 @@ import com.io7m.jfunctional.Some;
 import com.io7m.jnull.NullCheck;
 
 import org.nypl.drm.core.AdobeDeviceID;
+import org.nypl.simplified.books.accounts.AccountBarcode;
+import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.http.core.HTTP;
 import org.nypl.simplified.http.core.HTTPAuthBasic;
 import org.nypl.simplified.http.core.HTTPAuthType;

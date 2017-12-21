@@ -9,6 +9,10 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 public abstract class ProfileDescription implements ProfilePreferencesReadableType {
 
+  ProfileDescription() {
+
+  }
+
   /**
    * Create a new profile description.
    *

@@ -33,10 +33,10 @@ import com.io7m.jnull.Nullable;
 import org.nypl.drm.core.AdobeVendorID;
 import org.nypl.simplified.app.catalog.MainCatalogActivity;
 import org.nypl.simplified.books.core.AccountAuthProvider;
-import org.nypl.simplified.books.core.AccountBarcode;
+import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.core.AccountCredentials;
 import org.nypl.simplified.books.core.AccountLoginListenerType;
-import org.nypl.simplified.books.core.AccountPIN;
+import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.core.BookID;
 import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.cardcreator.fragments.AddressFragment;
@@ -772,8 +772,8 @@ public class CardCreatorActivity extends FragmentActivity implements
       new AdobeVendorID(rr.getString(org.nypl.simplified.app.R.string.feature_adobe_vendor_id)));
     final BooksType books = app.getBooks();
 
-    final AccountBarcode barcode = new AccountBarcode(this.prefs.getString(this.getResources().getString(R.string.USERNAME_DATA_KEY)));
-    final AccountPIN pin = new AccountPIN(this.prefs.getString(this.getResources().getString(R.string.PIN_DATA_KEY)));
+    final AccountBarcode barcode = AccountBarcode.create(this.prefs.getString(this.getResources().getString(R.string.USERNAME_DATA_KEY)));
+    final AccountPIN pin = AccountPIN.create(this.prefs.getString(this.getResources().getString(R.string.PIN_DATA_KEY)));
     final AccountAuthProvider auth_provider = new AccountAuthProvider(rr.getString(org.nypl.simplified.app.R.string.feature_default_auth_provider_name));
 
     final AccountCredentials creds =
