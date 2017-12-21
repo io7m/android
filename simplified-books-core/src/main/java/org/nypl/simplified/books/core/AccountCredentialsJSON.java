@@ -14,7 +14,7 @@ import com.io7m.junreachable.UnreachableCodeException;
 import org.nypl.drm.core.AdobeDeviceID;
 import org.nypl.drm.core.AdobeUserID;
 import org.nypl.drm.core.AdobeVendorID;
-import org.nypl.simplified.books.accounts.AccountAdobeDeviceToken;
+import org.nypl.simplified.books.accounts.AccountAuthenticationAdobeClientToken;
 import org.nypl.simplified.books.accounts.AccountAuthenticationProvider;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
@@ -120,9 +120,9 @@ public final class AccountCredentialsJSON
         }
       });
     credentials.getAdobeToken().map_(
-      new ProcedureType<AccountAdobeDeviceToken>()
+      new ProcedureType<AccountAuthenticationAdobeClientToken>()
       {
-        @Override public void call(final AccountAdobeDeviceToken x)
+        @Override public void call(final AccountAuthenticationAdobeClientToken x)
         {
           jo.put("adobe_token", x.toString());
         }
@@ -224,13 +224,13 @@ public final class AccountCredentialsJSON
           return HTTPOAuthToken.create(x);
         }
       });
-    final OptionType<AccountAdobeDeviceToken> adobe_token =
+    final OptionType<AccountAuthenticationAdobeClientToken> adobe_token =
       JSONParserUtilities.getStringOptional(obj, "adobe_token").map(
-      new FunctionType<String, AccountAdobeDeviceToken>()
+      new FunctionType<String, AccountAuthenticationAdobeClientToken>()
       {
-        @Override public AccountAdobeDeviceToken call(final String x)
+        @Override public AccountAuthenticationAdobeClientToken call(final String x)
         {
-          return AccountAdobeDeviceToken.create(x);
+          return AccountAuthenticationAdobeClientToken.create(x);
         }
       });
 
@@ -281,7 +281,7 @@ public final class AccountCredentialsJSON
 
       final OptionType<DRMLicensor> licensor = Option.some(new DRMLicensor(
         ((Some<AdobeVendorID>) vendor).get().toString(),
-        ((Some<AccountAdobeDeviceToken>) adobe_token).get().toString(),
+        ((Some<AccountAuthenticationAdobeClientToken>) adobe_token).get().toString(),
         licensor_url));
       creds.setDrmLicensor(licensor);
     }

@@ -14,7 +14,7 @@ import org.nypl.drm.core.AdobeAdeptProcedureType;
 import org.nypl.drm.core.AdobeDeviceID;
 import org.nypl.drm.core.AdobeUserID;
 import org.nypl.drm.core.AdobeVendorID;
-import org.nypl.simplified.books.accounts.AccountAdobeDeviceToken;
+import org.nypl.simplified.books.accounts.AccountAuthenticationAdobeClientToken;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -52,7 +52,7 @@ public class BooksControllerDeviceDeActivationTask implements Runnable,
         (Some<AdobeAdeptExecutorType>) this.adobe_drm;
       final AdobeAdeptExecutorType adobe_exec = some.get();
 
-      final OptionType<AccountAdobeDeviceToken> adobe_token = this.credentials.getAdobeToken();
+      final OptionType<AccountAuthenticationAdobeClientToken> adobe_token = this.credentials.getAdobeToken();
       final OptionType<AdobeVendorID> vendor_opt = this.credentials.getAdobeVendor();
       final OptionType<AdobeUserID> user_id = this.credentials.getAdobeUserID();
 
@@ -75,16 +75,15 @@ public class BooksControllerDeviceDeActivationTask implements Runnable,
                   
                   if (BooksControllerDeviceDeActivationTask.this.credentials.getAdobeUserID().isSome()) {
 
-                    final String token = ((Some<AccountAdobeDeviceToken>) adobe_token).get().toString().replace("\n", "");
-                    final String username = token.substring(0, token.lastIndexOf("|"));
-                    final String password = token.substring(token.lastIndexOf("|") + 1);
+                    final AccountAuthenticationAdobeClientToken token =
+                        ((Some<AccountAuthenticationAdobeClientToken>) adobe_token).get();
 
                     c.deactivateDevice(
                       BooksControllerDeviceDeActivationTask.this,
                       ((Some<AdobeVendorID>) vendor_opt).get(),
                       ((Some<AdobeUserID>) user_id).get(),
-                      username,
-                      password);
+                      token.tokenUserName(),
+                      token.tokenPassword());
 
                   } else {
                     BooksControllerDeviceDeActivationTask.this.onDeactivationSucceeded();

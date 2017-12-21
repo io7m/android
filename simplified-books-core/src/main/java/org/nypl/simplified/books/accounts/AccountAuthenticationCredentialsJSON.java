@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.io7m.jfunctional.FunctionType;
+import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.PartialFunctionType;
 import com.io7m.jfunctional.ProcedureType;
 import com.io7m.jnull.NullCheck;
@@ -21,9 +22,7 @@ import org.nypl.simplified.opds.core.DRMLicensor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -82,35 +81,28 @@ public final class AccountAuthenticationCredentialsJSON {
     credentials.adobeCredentials().map_(
         new ProcedureType<AccountAuthenticationAdobeCredentials>() {
           @Override
-          public void call(AccountAuthenticationAdobeCredentials x) {
-            final ObjectNode adobe_jo = jom.createObjectNode();
-            adobe_jo.put("user_id", x.userID().getValue());
-            adobe_jo.put("device_id", x.deviceID().getValue());
-            adobe_jo.put("vendor_id", x.vendorID().getValue());
-            x.deviceToken().map_(new ProcedureType<AccountAdobeDeviceToken>() {
-              @Override
-              public void call(AccountAdobeDeviceToken x) {
-                adobe_jo.put("device_token", x.value());
-              }
-            });
-            jo.set("adobe_credentials", adobe_jo);
+          public void call(AccountAuthenticationAdobeCredentials creds) {
+            final ObjectNode adobe_pre_jo = jom.createObjectNode();
+
+            AccountAuthenticationAdobePreActivationCredentials pre = creds.preActivationCredentials();
+            adobe_pre_jo.put("client_token", pre.clientToken().tokenRaw());
+            adobe_pre_jo.put("device_manager_uri", pre.deviceManagerURI().toString());
+            adobe_pre_jo.put("vendor_id", pre.vendorID().getValue());
+
+            pre.postActivationCredentials().map_(
+                new ProcedureType<AccountAuthenticationAdobePostActivationCredentials>() {
+                  @Override
+                  public void call(AccountAuthenticationAdobePostActivationCredentials post_creds) {
+                    final ObjectNode adobe_post_jo = jom.createObjectNode();
+                    adobe_post_jo.put("device_id", post_creds.deviceID().getValue());
+                    adobe_post_jo.put("user_id", post_creds.userID().getValue());
+                    adobe_pre_jo.set("activation", adobe_post_jo);
+                  }
+                });
+
+            jo.set("adobe_credentials", adobe_pre_jo);
           }
         });
-
-    final ArrayNode jo_drm = jom.createArrayNode();
-    for (final DRMLicensor d : credentials.drmLicensors()) {
-      final ObjectNode d_node = jom.createObjectNode();
-      d_node.put("vendor", d.getVendor());
-      d_node.put("token", d.getClientToken());
-      d.getDeviceManager().map_(new ProcedureType<String>() {
-        @Override
-        public void call(String x) {
-          d_node.put("device_manager_url", x);
-        }
-      });
-      jo_drm.add(d_node);
-    }
-    jo.set("drm_licensors", jo_drm);
 
     credentials.authenticationProvider().map_(new ProcedureType<AccountAuthenticationProvider>() {
       @Override
@@ -199,40 +191,32 @@ public final class AccountAuthenticationCredentialsJSON {
         JSONParserUtilities.getObjectOptional(obj, "adobe_credentials")
             .mapPartial(new PartialFunctionType<ObjectNode, AccountAuthenticationAdobeCredentials, JSONParseException>() {
               @Override
-              public AccountAuthenticationAdobeCredentials call(ObjectNode x)
+              public AccountAuthenticationAdobeCredentials call(ObjectNode jo_creds)
                   throws JSONParseException {
 
-                final AccountAuthenticationAdobeCredentials.Builder adobe_builder =
-                    AccountAuthenticationAdobeCredentials.builder(
-                        new AdobeVendorID(JSONParserUtilities.getString(x, "vendor_id")),
-                        new AdobeUserID(JSONParserUtilities.getString(x, "user_id")),
-                        new AdobeDeviceID(JSONParserUtilities.getString(x, "device_id")));
-
-                adobe_builder.setDeviceToken(
-                    JSONParserUtilities.getStringOptional(x, "device_token")
-                        .map(new FunctionType<String, AccountAdobeDeviceToken>() {
+                final OptionType<AccountAuthenticationAdobePostActivationCredentials> creds_post =
+                    JSONParserUtilities.getObjectOptional(jo_creds, "activation")
+                        .mapPartial(new PartialFunctionType<ObjectNode, AccountAuthenticationAdobePostActivationCredentials, JSONParseException>() {
                           @Override
-                          public AccountAdobeDeviceToken call(String x) {
-                            return AccountAdobeDeviceToken.create(x);
+                          public AccountAuthenticationAdobePostActivationCredentials call(ObjectNode act)
+                              throws JSONParseException {
+                            return AccountAuthenticationAdobePostActivationCredentials.create(
+                                new AdobeDeviceID(JSONParserUtilities.getString(act, "device_id")),
+                                new AdobeUserID(JSONParserUtilities.getString(act, "user_id")));
                           }
-                        }));
+                        });
 
-                return adobe_builder.build();
+                final AccountAuthenticationAdobePreActivationCredentials creds_pre =
+                    AccountAuthenticationAdobePreActivationCredentials.create(
+                        new AdobeVendorID(JSONParserUtilities.getString(jo_creds, "vendor_id")),
+                        AccountAuthenticationAdobeClientToken.create(JSONParserUtilities.getString(jo_creds, "client_token")),
+                        JSONParserUtilities.getURI(jo_creds, "device_manager_uri"),
+                        creds_post);
+
+                return AccountAuthenticationAdobeCredentials.create(creds_pre);
               }
             }));
 
-    Set<DRMLicensor> licensors = new HashSet<>();
-    ArrayNode la = JSONParserUtilities.getArray(obj, "drm_licensors");
-    for (int index = 0; index < la.size(); ++index) {
-      ObjectNode la_obj = JSONParserUtilities.checkObject(null, la.get(index));
-      DRMLicensor licensor = new DRMLicensor(
-          JSONParserUtilities.getString(la_obj, "vendor"),
-          JSONParserUtilities.getString(la_obj, "client_token"),
-          JSONParserUtilities.getStringOptional(la_obj, "device_manager_url"));
-      licensors.add(licensor);
-    }
-
-    builder.setDrmLicensors(licensors);
     return builder.build();
   }
 }

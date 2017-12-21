@@ -35,7 +35,6 @@ public abstract class AccountAuthenticationCredentials {
         .setPin(pin)
         .setBarcode(barcode)
         .setOAuthToken(Option.<HTTPOAuthToken>none())
-        .setDrmLicensors(Collections.<DRMLicensor>emptySet())
         .setAuthenticationProvider(Option.<AccountAuthenticationProvider>none())
         .setPatron(Option.<AccountPatron>none())
         .setAdobeCredentials(Option.<AccountAuthenticationAdobeCredentials>none());
@@ -64,12 +63,6 @@ public abstract class AccountAuthenticationCredentials {
    */
 
   public abstract OptionType<AccountAuthenticationAdobeCredentials> adobeCredentials();
-
-  /**
-   * @return The DRM licensors
-   */
-
-  public abstract Set<DRMLicensor> drmLicensors();
 
   /**
    * @return The authentication provider, if any
@@ -137,15 +130,6 @@ public abstract class AccountAuthenticationCredentials {
         OptionType<AccountAuthenticationAdobeCredentials> credentials);
 
     /**
-     * @param licensors The licensors
-     * @return The current builder
-     * @see #drmLicensors()
-     */
-
-    public abstract Builder setDrmLicensors(
-        Set<DRMLicensor> licensors);
-
-    /**
      * @param provider The provider
      * @return The current builder
      * @see #authenticationProvider()
@@ -164,26 +148,9 @@ public abstract class AccountAuthenticationCredentials {
         OptionType<AccountPatron> patron);
 
     /**
-     * @return The current DRM licensors
-     */
-
-    abstract Set<DRMLicensor> drmLicensors();
-
-    /**
-     * Create the actual credentials after validation.
-     *
-     * @return The constructed credentials
-     */
-
-    abstract AccountAuthenticationCredentials buildActual();
-
-    /**
      * @return A constructed set of credentials
      */
 
-    public AccountAuthenticationCredentials build() {
-      setDrmLicensors(Collections.unmodifiableSet(drmLicensors()));
-      return buildActual();
-    }
+    public abstract AccountAuthenticationCredentials build() ;
   }
 }
