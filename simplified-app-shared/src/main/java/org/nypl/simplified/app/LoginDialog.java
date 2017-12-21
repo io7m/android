@@ -31,7 +31,7 @@ import com.io7m.jnull.Nullable;
 
 import org.nypl.drm.core.AdobeVendorID;
 import org.nypl.simplified.app.utilities.UIThread;
-import org.nypl.simplified.books.core.AccountAuthProvider;
+import org.nypl.simplified.books.accounts.AccountAuthenticationProvider;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.core.AccountCredentials;
 import org.nypl.simplified.books.core.AccountLoginListenerType;
@@ -431,8 +431,8 @@ public final class LoginDialog extends DialogFragment
               AccountBarcode.create(NullCheck.notNull(barcode_edit_text.toString()));
           final AccountPIN pin =
               AccountPIN.create(NullCheck.notNull(pin_edit_text.toString()));
-          final AccountAuthProvider provider =
-            new AccountAuthProvider(rr.getString(R.string.feature_default_auth_provider_name));
+          final AccountAuthenticationProvider provider =
+              AccountAuthenticationProvider.create(rr.getString(R.string.feature_default_auth_provider_name));
 
           final AccountCredentials creds =
             new AccountCredentials(adobe_vendor, barcode, pin,  Option.some(provider));

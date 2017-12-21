@@ -32,7 +32,7 @@ import com.io7m.jnull.Nullable;
 
 import org.nypl.drm.core.AdobeVendorID;
 import org.nypl.simplified.app.catalog.MainCatalogActivity;
-import org.nypl.simplified.books.core.AccountAuthProvider;
+import org.nypl.simplified.books.accounts.AccountAuthenticationProvider;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.core.AccountCredentials;
 import org.nypl.simplified.books.core.AccountLoginListenerType;
@@ -774,7 +774,8 @@ public class CardCreatorActivity extends FragmentActivity implements
 
     final AccountBarcode barcode = AccountBarcode.create(this.prefs.getString(this.getResources().getString(R.string.USERNAME_DATA_KEY)));
     final AccountPIN pin = AccountPIN.create(this.prefs.getString(this.getResources().getString(R.string.PIN_DATA_KEY)));
-    final AccountAuthProvider auth_provider = new AccountAuthProvider(rr.getString(org.nypl.simplified.app.R.string.feature_default_auth_provider_name));
+    final AccountAuthenticationProvider auth_provider =
+        AccountAuthenticationProvider.create(rr.getString(org.nypl.simplified.app.R.string.feature_default_auth_provider_name));
 
     final AccountCredentials creds =
       new AccountCredentials(adobe_vendor, barcode, pin, Option.some(auth_provider));

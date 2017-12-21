@@ -10,7 +10,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.nypl.drm.core.AdobeAdeptExecutorType;
 import org.nypl.drm.core.AdobeVendorID;
-import org.nypl.simplified.books.core.AccountAuthProvider;
+import org.nypl.simplified.books.accounts.AccountAuthenticationProvider;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.core.AccountCredentials;
 import org.nypl.simplified.books.core.AccountDataLoadListenerType;
@@ -282,7 +282,7 @@ public abstract class BooksContract {
       final AccountPIN pin = AccountPIN.create("pin");
       final OptionType<AdobeVendorID> no_vendor = Option.none();
       final AccountCredentials creds =
-          new AccountCredentials(no_vendor, barcode, pin, Option.some(new AccountAuthProvider("Library")));
+          new AccountCredentials(no_vendor, barcode, pin, Option.some(AccountAuthenticationProvider.create("Library")));
 
       final HTTPType in_http = new AuthenticatedHTTP(barcode, pin);
       final OPDSJSONSerializerType in_json_serializer =
@@ -399,7 +399,7 @@ public abstract class BooksContract {
       final AccountPIN pin = AccountPIN.create("pin");
       final OptionType<AdobeVendorID> no_vendor = Option.none();
       final AccountCredentials creds =
-          new AccountCredentials(no_vendor, barcode, pin, Option.some(new AccountAuthProvider("Library")));
+          new AccountCredentials(no_vendor, barcode, pin, Option.some(AccountAuthenticationProvider.create("Library")));
 
       final HTTPType in_http = new AuthenticatedHTTP(barcode, pin);
 
@@ -520,7 +520,7 @@ public abstract class BooksContract {
       final AccountPIN pin = AccountPIN.create("pin");
       final OptionType<AdobeVendorID> no_vendor = Option.none();
       final AccountCredentials creds =
-          new AccountCredentials(no_vendor, barcode, pin, Option.some(new AccountAuthProvider("Library")));
+          new AccountCredentials(no_vendor, barcode, pin, Option.some(AccountAuthenticationProvider.create("Library")));
 
       final HTTPType in_http = new AuthenticatedHTTP(barcode, pin);
 
@@ -661,7 +661,7 @@ public abstract class BooksContract {
       final AccountPIN pin = AccountPIN.create("pin");
       final OptionType<AdobeVendorID> no_vendor = Option.none();
       final AccountCredentials creds =
-          new AccountCredentials(no_vendor, barcode, pin, Option.some(new AccountAuthProvider("Library")));
+          new AccountCredentials(no_vendor, barcode, pin, Option.some(AccountAuthenticationProvider.create("Library")));
 
       final HTTPType in_http = new AuthenticatedHTTP(barcode, pin);
 

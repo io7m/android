@@ -7,6 +7,7 @@ import com.io7m.jnull.NullCheck;
 import org.nypl.drm.core.AdobeDeviceID;
 import org.nypl.drm.core.AdobeUserID;
 import org.nypl.drm.core.AdobeVendorID;
+import org.nypl.simplified.books.accounts.AccountAuthenticationProvider;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.http.core.HTTPOAuthToken;
@@ -21,7 +22,7 @@ public final class AccountCredentials {
   private final OptionType<AccountPatron> patron;
   private AccountBarcode barcode;
   private AccountPIN pin;
-  private OptionType<AccountAuthProvider> provider;
+  private OptionType<AccountAuthenticationProvider> provider;
   private OptionType<HTTPOAuthToken> oauth_token;
   private OptionType<AccountAdobeToken> adobe_token;
   private OptionType<AdobeUserID> user_id;
@@ -43,7 +44,7 @@ public final class AccountCredentials {
       final OptionType<AdobeVendorID> in_adobe_vendor,
       final AccountBarcode in_barcode,
       final AccountPIN in_pin,
-      final OptionType<AccountAuthProvider> in_provider) {
+      final OptionType<AccountAuthenticationProvider> in_provider) {
     this.adobe_vendor = NullCheck.notNull(in_adobe_vendor);
     this.barcode = NullCheck.notNull(in_barcode);
     this.pin = NullCheck.notNull(in_pin);
@@ -75,7 +76,7 @@ public final class AccountCredentials {
       final OptionType<AdobeVendorID> in_adobe_vendor,
       final AccountBarcode in_barcode,
       final AccountPIN in_pin,
-      final OptionType<AccountAuthProvider> in_provider,
+      final OptionType<AccountAuthenticationProvider> in_provider,
       final OptionType<HTTPOAuthToken> in_auth_token,
       final OptionType<AccountAdobeToken> in_adobe_token,
       final OptionType<AccountPatron> in_patron) {
@@ -246,7 +247,7 @@ public final class AccountCredentials {
    * @return The authentication provider
    */
 
-  public OptionType<AccountAuthProvider> getProvider() {
+  public OptionType<AccountAuthenticationProvider> getProvider() {
     return this.provider;
   }
 

@@ -14,6 +14,7 @@ import com.io7m.junreachable.UnreachableCodeException;
 import org.nypl.drm.core.AdobeDeviceID;
 import org.nypl.drm.core.AdobeUserID;
 import org.nypl.drm.core.AdobeVendorID;
+import org.nypl.simplified.books.accounts.AccountAuthenticationProvider;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.http.core.HTTPOAuthToken;
@@ -76,9 +77,9 @@ public final class AccountCredentialsJSON
     jo.put("password", credentials.getPin().toString());
 
     credentials.getProvider().map_(
-      new ProcedureType<AccountAuthProvider>()
+      new ProcedureType<AccountAuthenticationProvider>()
       {
-        @Override public void call(final AccountAuthProvider x)
+        @Override public void call(final AccountAuthenticationProvider x)
         {
           jo.put("provider", x.toString());
         }
@@ -192,13 +193,13 @@ public final class AccountCredentialsJSON
     final AccountPIN pass =
       AccountPIN.create(JSONParserUtilities.getString(obj, "password"));
     
-    final OptionType<AccountAuthProvider> provider =
+    final OptionType<AccountAuthenticationProvider> provider =
       JSONParserUtilities.getStringOptional(obj, "provider").map(
-        new FunctionType<String, AccountAuthProvider>()
+        new FunctionType<String, AccountAuthenticationProvider>()
         {
-          @Override public AccountAuthProvider call(final String x)
+          @Override public AccountAuthenticationProvider call(final String x)
           {
-            return new AccountAuthProvider(x);
+            return AccountAuthenticationProvider.create(x);
           }
         });
 
