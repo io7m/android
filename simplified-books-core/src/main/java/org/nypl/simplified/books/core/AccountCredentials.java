@@ -7,6 +7,7 @@ import com.io7m.jnull.NullCheck;
 import org.nypl.drm.core.AdobeDeviceID;
 import org.nypl.drm.core.AdobeUserID;
 import org.nypl.drm.core.AdobeVendorID;
+import org.nypl.simplified.books.accounts.AccountAdobeDeviceToken;
 import org.nypl.simplified.books.accounts.AccountAuthenticationProvider;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
@@ -25,7 +26,7 @@ public final class AccountCredentials {
   private AccountPIN pin;
   private OptionType<AccountAuthenticationProvider> provider;
   private OptionType<HTTPOAuthToken> oauth_token;
-  private OptionType<AccountAdobeToken> adobe_token;
+  private OptionType<AccountAdobeDeviceToken> adobe_token;
   private OptionType<AdobeUserID> user_id;
   private OptionType<AdobeDeviceID> device_id;
   private OptionType<DRMLicensor> licensor;
@@ -78,7 +79,7 @@ public final class AccountCredentials {
       final AccountPIN in_pin,
       final OptionType<AccountAuthenticationProvider> in_provider,
       final OptionType<HTTPOAuthToken> in_auth_token,
-      final OptionType<AccountAdobeToken> in_adobe_token,
+      final OptionType<AccountAdobeDeviceToken> in_adobe_token,
       final OptionType<AccountPatron> in_patron) {
     this.adobe_vendor = NullCheck.notNull(in_adobe_vendor);
     this.barcode = NullCheck.notNull(in_barcode);
@@ -188,14 +189,14 @@ public final class AccountCredentials {
    * @return The adobe token
    */
 
-  public OptionType<AccountAdobeToken> getAdobeToken() {
+  public OptionType<AccountAdobeDeviceToken> getAdobeToken() {
     return this.adobe_token;
   }
 
   /**
    * @param in_adobe_token token for registration and deregistration
    */
-  public void setAdobeToken(final OptionType<AccountAdobeToken> in_adobe_token) {
+  public void setAdobeToken(final OptionType<AccountAdobeDeviceToken> in_adobe_token) {
     this.adobe_token = in_adobe_token;
   }
 

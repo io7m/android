@@ -24,7 +24,7 @@ import org.nypl.drm.core.AdobeDeviceID;
 import org.nypl.drm.core.AdobeUserID;
 import org.nypl.drm.core.AdobeVendorID;
 import org.nypl.simplified.app.utilities.UIThread;
-import org.nypl.simplified.books.core.AccountAdobeToken;
+import org.nypl.simplified.books.accounts.AccountAdobeDeviceToken;
 import org.nypl.simplified.books.accounts.AccountAuthenticationProvider;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.core.AccountCredentials;
@@ -239,8 +239,8 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
                 HTTPOAuthToken.create(access_token);
             final AccountPatron patron =
                 AccountPatron.create(patron_info);
-            final AccountAdobeToken adobe_token =
-                new AccountAdobeToken("");
+            final AccountAdobeDeviceToken adobe_token =
+                AccountAdobeDeviceToken.create("");
             final AccountAuthenticationProvider auth_provider =
                 AccountAuthenticationProvider.create("Clever");
 
