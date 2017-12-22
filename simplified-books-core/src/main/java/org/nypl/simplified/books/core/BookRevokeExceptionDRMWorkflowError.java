@@ -5,7 +5,7 @@ package org.nypl.simplified.books.core;
  * when executing its workflow.
  */
 
-public final class BookRevokeExceptionDRMWorkflowError extends BookBorrowException
+public final class BookRevokeExceptionDRMWorkflowError extends BookRevokeException
 {
   /**
    * Construct an exception.

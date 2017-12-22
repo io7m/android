@@ -4,7 +4,7 @@ package org.nypl.simplified.books.core;
  * An exception indicating that book revoking failed because revoking is still in progress.
  */
 
-public final class BookRevokeExceptionNotReady extends BookBorrowException
+public final class BookRevokeExceptionNotReady extends BookRevokeException
 {
   /**
    * Construct an exception.
