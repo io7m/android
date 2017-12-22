@@ -6,6 +6,7 @@ import com.io7m.jfunctional.Some;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 
+import org.nypl.simplified.books.accounts.AccountAuthenticatedHTTP;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
@@ -136,16 +137,8 @@ final class BooksControllerFulFillTask implements Runnable {
 
       final AccountAuthenticationCredentials credentials =
           ((Some<AccountAuthenticationCredentials>) credentials_opt).get();
-      final AccountBarcode barcode = credentials.barcode();
-      final AccountPIN pin = credentials.pin();
-
-      HTTPAuthType auth = HTTPAuthBasic.create(barcode.toString(), pin.toString());
-      if (credentials.oAuthToken().isSome()) {
-        final HTTPOAuthToken token = ((Some<HTTPOAuthToken>) credentials.oAuthToken()).get();
-        if (token != null) {
-          auth = HTTPAuthOAuth.create(token);
-        }
-      }
+      final HTTPAuthType auth =
+          AccountAuthenticatedHTTP.createAuthenticatedHTTP(credentials);
 
       final HTTPResultType<InputStream> r =
           this.http.get(Option.some(auth), this.loans_uri, 0L);
