@@ -18,6 +18,8 @@ package org.nypl.simplified.books.core;
 
 import com.io7m.jfunctional.OptionType;
 
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
+
 /**
  * <p>The readable interface supported by the accounts database.</p>
  */
@@ -28,5 +30,5 @@ public interface AccountsDatabaseReadableType
    * @return The current account credentials, if any exist
    */
 
-  OptionType<AccountCredentials> accountGetCredentials();
+  OptionType<AccountAuthenticationCredentials> accountGetCredentials();
 }

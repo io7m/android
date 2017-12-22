@@ -32,11 +32,11 @@ import com.io7m.jnull.Nullable;
 
 import org.nypl.drm.core.AdobeVendorID;
 import org.nypl.simplified.app.catalog.MainCatalogActivity;
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountAuthenticationProvider;
 import org.nypl.simplified.books.accounts.AccountBarcode;
-import org.nypl.simplified.books.core.AccountCredentials;
-import org.nypl.simplified.books.core.AccountLoginListenerType;
 import org.nypl.simplified.books.accounts.AccountPIN;
+import org.nypl.simplified.books.core.AccountLoginListenerType;
 import org.nypl.simplified.books.core.BookID;
 import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.cardcreator.fragments.AddressFragment;
@@ -768,8 +768,6 @@ public class CardCreatorActivity extends FragmentActivity implements
 
 
     final Resources rr = NullCheck.notNull(CardCreatorActivity.this.getResources());
-    final OptionType<AdobeVendorID> adobe_vendor = Option.some(
-      new AdobeVendorID(rr.getString(org.nypl.simplified.app.R.string.feature_adobe_vendor_id)));
     final BooksType books = app.getBooks();
 
     final AccountBarcode barcode = AccountBarcode.create(this.prefs.getString(this.getResources().getString(R.string.USERNAME_DATA_KEY)));
@@ -777,8 +775,18 @@ public class CardCreatorActivity extends FragmentActivity implements
     final AccountAuthenticationProvider auth_provider =
         AccountAuthenticationProvider.create(rr.getString(org.nypl.simplified.app.R.string.feature_default_auth_provider_name));
 
-    final AccountCredentials creds =
-      new AccountCredentials(adobe_vendor, barcode, pin, Option.some(auth_provider));
+    /*
+     * XXX: The previous version of this code passed in the vendor ID taken from
+     *      the Android resources (org.nypl.simplified.app.R.string.feature_adobe_vendor_id),
+     *      but it seems that this information is now provided as DRM licensor information in
+     *      OPDS feeds. Is this correct?
+     */
+
+    final AccountAuthenticationCredentials creds =
+      AccountAuthenticationCredentials.builder(pin, barcode)
+        .setAuthenticationProvider(auth_provider)
+        .build();
+
     books.accountLogin(creds, CardCreatorActivity.this);
 
     this.showProgress(false);
@@ -829,7 +837,7 @@ public class CardCreatorActivity extends FragmentActivity implements
   }
 
   @Override
-  public void onAccountLoginSuccess(final AccountCredentials credentials) {
+  public void onAccountLoginSuccess(final AccountAuthenticationCredentials credentials) {
     // Nothing
   }
 

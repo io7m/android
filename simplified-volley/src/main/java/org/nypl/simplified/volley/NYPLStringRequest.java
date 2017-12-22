@@ -8,8 +8,8 @@ import com.io7m.jnull.Nullable;
 
 import net.iharder.Base64;
 
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountBarcode;
-import org.nypl.simplified.books.core.AccountCredentials;
 import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.http.core.HTTPOAuthToken;
 
@@ -25,7 +25,7 @@ import java.util.Map;
 public class NYPLStringRequest extends StringRequest {
 
   private @Nullable
-  AccountCredentials credentials;
+  AccountAuthenticationCredentials credentials;
   private @Nullable String username;
   private @Nullable String password;
   private @Nullable String content_type;
@@ -41,7 +41,7 @@ public class NYPLStringRequest extends StringRequest {
    */
   public NYPLStringRequest(final int method,
                            final String url,
-                           final AccountCredentials in_credentials,
+                           final AccountAuthenticationCredentials in_credentials,
                            final Response.Listener<String> listener,
                            final Response.ErrorListener error_listener) {
     super(method, url, listener, error_listener);
@@ -58,7 +58,7 @@ public class NYPLStringRequest extends StringRequest {
    */
   public NYPLStringRequest(final int method,
                            final String url,
-                           final AccountCredentials in_credentials,
+                           final AccountAuthenticationCredentials in_credentials,
                            final String in_content_type,
                            final String in_body,
                            final Response.Listener<String> listener,
@@ -79,7 +79,7 @@ public class NYPLStringRequest extends StringRequest {
    */
   public NYPLStringRequest(final int method,
                            final String url,
-                           final AccountCredentials in_credentials,
+                           final AccountAuthenticationCredentials in_credentials,
                            final String in_content_type,
                            final Response.Listener<String> listener,
                            final Response.ErrorListener error_listener) {
@@ -95,7 +95,7 @@ public class NYPLStringRequest extends StringRequest {
    * @param error_listener error listener
    */
   public NYPLStringRequest(final String url,
-                           final AccountCredentials in_credentials,
+                           final AccountAuthenticationCredentials in_credentials,
                            final Response.Listener<String> listener,
                            final Response.ErrorListener error_listener) {
     super(url, listener, error_listener);
@@ -134,17 +134,15 @@ public class NYPLStringRequest extends StringRequest {
 
     if (this.credentials != null) {
 
-      if (this.credentials.getOAuthToken().isSome()) {
+      if (this.credentials.oAuthToken().isSome()) {
 
-        final HTTPOAuthToken token = ((Some<HTTPOAuthToken>) this.credentials.getOAuthToken()).get();
+        final HTTPOAuthToken token = ((Some<HTTPOAuthToken>) this.credentials.oAuthToken()).get();
         params.put("Authorization", "Bearer " + token.value());
 
       } else {
-
-        final AccountBarcode barcode = this.credentials.getBarcode();
-        final AccountPIN pin = this.credentials.getPin();
-
-        final String text = barcode.toString() + ":" + pin.toString();
+        final AccountBarcode barcode = this.credentials.barcode();
+        final AccountPIN pin = this.credentials.pin();
+        final String text = barcode.value() + ":" + pin.value();
         final String encoded =
           Base64.encodeBytes(text.getBytes(Charset.forName("US-ASCII")));
 

@@ -1,6 +1,7 @@
 package org.nypl.simplified.books.core;
 
 import com.io7m.jfunctional.None;
+import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.OptionVisitorType;
 import com.io7m.jfunctional.Some;
@@ -8,8 +9,9 @@ import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 import com.io7m.junreachable.UnreachableCodeException;
 
+import org.nypl.drm.core.AdobeAdeptDeactivationReceiverType;
 import org.nypl.drm.core.AdobeAdeptExecutorType;
-import org.nypl.drm.core.AdobeUserID;
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.downloader.core.DownloadType;
 import org.nypl.simplified.downloader.core.DownloaderType;
 import org.nypl.simplified.http.core.HTTPType;
@@ -42,7 +44,6 @@ public final class BooksController implements BooksType {
     LOG = NullCheck.notNull(LoggerFactory.getLogger(BooksController.class));
   }
 
-  private BooksStatusCacheType books_status;
   private final DownloaderType downloader;
   private final ConcurrentHashMap<BookID, DownloadType> downloads;
   private final ExecutorService exec;
@@ -56,20 +57,21 @@ public final class BooksController implements BooksType {
   private final BookDatabaseType book_database;
   private final AtomicBoolean syncing;
   private final AccountsDatabaseType accounts_database;
-  private Map<Integer, Future<?>> tasks;
   private final URI loans_uri;
+  private BooksStatusCacheType books_status;
+  private Map<Integer, Future<?>> tasks;
 
   private BooksController(
-    final ExecutorService in_exec,
-    final FeedLoaderType in_feeds,
-    final HTTPType in_http,
-    final DownloaderType in_downloader,
-    final OptionType<AdobeAdeptExecutorType> in_adobe_drm,
-    final DocumentStoreType in_docs,
-    final BookDatabaseType in_book_database,
-    final AccountsDatabaseType in_accounts_database,
-    final BooksControllerConfigurationType in_config,
-    final URI in_loans_uri) {
+      final ExecutorService in_exec,
+      final FeedLoaderType in_feeds,
+      final HTTPType in_http,
+      final DownloaderType in_downloader,
+      final OptionType<AdobeAdeptExecutorType> in_adobe_drm,
+      final DocumentStoreType in_docs,
+      final BookDatabaseType in_book_database,
+      final AccountsDatabaseType in_accounts_database,
+      final BooksControllerConfigurationType in_config,
+      final URI in_loans_uri) {
 
     this.exec = NullCheck.notNull(in_exec);
     this.feed_loader = NullCheck.notNull(in_feeds);
@@ -103,63 +105,62 @@ public final class BooksController implements BooksType {
    * @param in_accounts_database The accounts database
    * @param in_config            Mutable configuration data
    * @param in_loans_url         loans url
-   *
    * @return A new books controller
    */
 
   public static BooksType newBooks(
-    final ExecutorService in_exec,
-    final FeedLoaderType in_feeds,
-    final HTTPType in_http,
-    final DownloaderType in_downloader,
-    final OptionType<AdobeAdeptExecutorType> in_adobe_drm,
-    final DocumentStoreType in_docs,
-    final BookDatabaseType in_book_database,
-    final AccountsDatabaseType in_accounts_database,
-    final BooksControllerConfigurationType in_config,
-    final URI in_loans_url) {
+      final ExecutorService in_exec,
+      final FeedLoaderType in_feeds,
+      final HTTPType in_http,
+      final DownloaderType in_downloader,
+      final OptionType<AdobeAdeptExecutorType> in_adobe_drm,
+      final DocumentStoreType in_docs,
+      final BookDatabaseType in_book_database,
+      final AccountsDatabaseType in_accounts_database,
+      final BooksControllerConfigurationType in_config,
+      final URI in_loans_url) {
 
     return new BooksController(
-      in_exec,
-      in_feeds,
-      in_http,
-      in_downloader,
-      in_adobe_drm,
-      in_docs,
-      in_book_database,
-      in_accounts_database,
-      in_config,
-      in_loans_url);
+        in_exec,
+        in_feeds,
+        in_http,
+        in_downloader,
+        in_adobe_drm,
+        in_docs,
+        in_book_database,
+        in_accounts_database,
+        in_config,
+        in_loans_url);
   }
 
   @Override
   public void accountGetCachedLoginDetails(
-    final AccountGetCachedCredentialsListenerType listener) {
-    final OptionType<AccountCredentials> p =
-      this.accounts_database.accountGetCredentials();
+      final AccountGetCachedCredentialsListenerType listener) {
+    final OptionType<AccountAuthenticationCredentials> p =
+        this.accounts_database.accountGetCredentials();
 
     p.accept(
-      new OptionVisitorType<AccountCredentials, Unit>() {
-        @Override
-        public Unit none(final None<AccountCredentials> n) {
-          try {
-            listener.onAccountIsNotLoggedIn();
-          } catch (final Throwable x) {
-            BooksController.LOG.error("listener raised exception: ", x);
+        new OptionVisitorType<AccountAuthenticationCredentials, Unit>() {
+          @Override
+          public Unit none(final None<AccountAuthenticationCredentials> n) {
+            try {
+              listener.onAccountIsNotLoggedIn();
+            } catch (final Throwable x) {
+              BooksController.LOG.error("listener raised exception: ", x);
+            }
+            return Unit.unit();
           }
-          return Unit.unit();
-        }
 
-        @Override
-        public Unit some(final Some<AccountCredentials> s) {
-          try {
-            listener.onAccountIsLoggedIn(s.get());
-          } catch (final Throwable x) {
-            BooksController.LOG.error("listener raised exception: ", x);
+          @Override
+          public Unit some(final Some<AccountAuthenticationCredentials> s) {
+            try {
+              listener.onAccountIsLoggedIn(s.get());
+            } catch (final Throwable x) {
+              BooksController.LOG.error("listener raised exception: ", x);
+            }
+            return Unit.unit();
           }
-          return Unit.unit();
-        }
-      });
+        });
   }
 
   @Override
@@ -170,15 +171,16 @@ public final class BooksController implements BooksType {
   @Override
   public boolean accountIsDeviceActive() {
     if (this.adobe_drm.isSome()) {
-      final OptionType<AccountCredentials> credentials_opt = this.accounts_database.accountGetCredentials();
-      if (credentials_opt.isSome()) {
-        final Some<AccountCredentials> credentials_some = (Some<AccountCredentials>) credentials_opt;
+      final OptionType<AccountAuthenticationCredentials> credentials_opt =
+          this.accounts_database.accountGetCredentials();
 
-        final OptionType<AdobeUserID> adobe_user_id = credentials_some.get().getAdobeUserID();
-
-        return adobe_user_id.isSome();
-
+      if (credentials_opt.isNone()) {
+        return false;
       }
+
+      final Some<AccountAuthenticationCredentials> credentials_some =
+          (Some<AccountAuthenticationCredentials>) credentials_opt;
+      return credentials_some.get().hasActivatedAdobeDevice();
     }
     return false;
   }
@@ -194,22 +196,22 @@ public final class BooksController implements BooksType {
 
   @Override
   public void accountLoadBooks(
-    final AccountDataLoadListenerType listener,
-    final boolean needs_auch) {
+      final AccountDataLoadListenerType listener,
+      final boolean needs_auch) {
     NullCheck.notNull(listener);
     this.submitRunnable(
-      new BooksControllerDataLoadTask(
-        this.book_database,
-        this.books_status,
-        this.accounts_database,
-        listener,
-        needs_auch));
+        new BooksControllerDataLoadTask(
+            this.book_database,
+            this.books_status,
+            this.accounts_database,
+            listener,
+            needs_auch));
   }
 
   @Override
   public void accountLogin(
-    final AccountCredentials account,
-    final AccountLoginListenerType listener) {
+      final AccountAuthenticationCredentials account,
+      final AccountLoginListenerType listener) {
     NullCheck.notNull(account);
     NullCheck.notNull(listener);
 
@@ -226,26 +228,23 @@ public final class BooksController implements BooksType {
     };
 
     this.submitRunnable(
-      new BooksControllerLoginTask(
-        this,
-        this.book_database,
-        this.accounts_database,
-        this.http,
-        this.config,
-        this.adobe_drm,
-        this.feed_parser,
-        account,
-        listener,
-        this.syncing,
-        device_listener));
+        new BooksControllerLoginTask(
+            this,
+            this.book_database,
+            this.accounts_database,
+            this.http,
+            this.config,
+            account,
+            listener,
+            device_listener));
   }
 
   @Override
   public void accountLogout(
-    final AccountCredentials account,
-    final AccountLogoutListenerType listener,
-    final AccountSyncListenerType sync_listener,
-    final DeviceActivationListenerType device_listener) {
+      final AccountAuthenticationCredentials account,
+      final AccountLogoutListenerType listener,
+      final AccountSyncListenerType sync_listener,
+      final DeviceActivationListenerType device_listener) {
     NullCheck.notNull(listener);
 
     synchronized (this) {
@@ -253,32 +252,32 @@ public final class BooksController implements BooksType {
       this.stopAllTasks();
       this.books_status.booksStatusClearAll();
       this.submitRunnable(
-        new BooksControllerLogoutTask(
-          this.book_database,
-          this.accounts_database,
-          this.adobe_drm,
-          listener,
-            account));
+          new BooksControllerLogoutTask(
+              this.book_database,
+              this.accounts_database,
+              this.adobe_drm,
+              listener,
+              account));
     }
   }
 
   @Override
   public void accountSync(
-    final AccountSyncListenerType listener,
-    final DeviceActivationListenerType device_listener) {
+      final AccountSyncListenerType listener,
+      final DeviceActivationListenerType device_listener) {
     NullCheck.notNull(listener);
     this.submitRunnable(
-      new BooksControllerSyncTask(
-        this,
-        this.book_database,
-        this.accounts_database,
-          this.http,
-        this.feed_parser,
-        listener,
-        this.syncing,
-        this.loans_uri,
-        this.adobe_drm,
-        device_listener));
+        new BooksControllerSyncTask(
+            this,
+            this.book_database,
+            this.accounts_database,
+            this.http,
+            this.feed_parser,
+            listener,
+            this.syncing,
+            this.loans_uri,
+            this.adobe_drm,
+            device_listener));
   }
 
 
@@ -290,44 +289,41 @@ public final class BooksController implements BooksType {
                                                   final OptionType<DRMLicensor> licensor,
                                                   final DeviceActivationListenerType listener) {
 
-    final OptionType<AccountCredentials> credentials_opt = this.accounts_database.accountGetCredentials();
+    final OptionType<AccountAuthenticationCredentials> credentials_opt = this.accounts_database.accountGetCredentials();
     if (credentials_opt.isSome()) {
-      final Some<AccountCredentials> credentials_some = (Some<AccountCredentials>) credentials_opt;
+      final Some<AccountAuthenticationCredentials> credentials_some = (Some<AccountAuthenticationCredentials>) credentials_opt;
       final BooksControllerDeviceActivationTask activation_task = new BooksControllerDeviceActivationTask(
-        this.adobe_drm,
-        credentials_some.get(),
-        this.accounts_database,
+          this.adobe_drm,
+          credentials_some.get(),
+          this.accounts_database,
           listener);
       this.submitRunnable(activation_task);
 
 
       //fulfill book which were already downloaded when device was active.
       this.submitRunnable(
-        new BooksControllerFulFillTask(
-          this,
-          this.accounts_database,
-          this.http,
-          this.feed_parser,
-          this.syncing,
-          this.loans_uri,
-          in_book_id));
-
-
+          new BooksControllerFulFillTask(
+              this,
+              this.accounts_database,
+              this.http,
+              this.feed_parser,
+              this.syncing,
+              this.loans_uri,
+              Option.some(in_book_id)));
     }
-
   }
 
 
   @Override
   public void accountActivateDevice(final DeviceActivationListenerType device_listener) {
 
-    final OptionType<AccountCredentials> credentials_opt = this.accounts_database.accountGetCredentials();
+    final OptionType<AccountAuthenticationCredentials> credentials_opt = this.accounts_database.accountGetCredentials();
     if (credentials_opt.isSome()) {
-      final Some<AccountCredentials> credentials_some = (Some<AccountCredentials>) credentials_opt;
+      final Some<AccountAuthenticationCredentials> credentials_some = (Some<AccountAuthenticationCredentials>) credentials_opt;
       final BooksControllerDeviceActivationTask activation_task = new BooksControllerDeviceActivationTask(
-        this.adobe_drm,
-        credentials_some.get(),
-        this.accounts_database,
+          this.adobe_drm,
+          credentials_some.get(),
+          this.accounts_database,
           device_listener);
       this.submitRunnable(activation_task);
 
@@ -338,29 +334,30 @@ public final class BooksController implements BooksType {
   @Override
   public void fulfillExistingBooks() {
 
-      //fulfill book which were already downloaded when device was active.
-      this.submitRunnable(
+    //fulfill book which were already downloaded when device was active.
+    this.submitRunnable(
         new BooksControllerFulFillTask(
-          this,
-          this.accounts_database,
-          this.http,
-          this.feed_parser,
-          this.syncing,
-          this.loans_uri));
+            this,
+            this.accounts_database,
+            this.http,
+            this.feed_parser,
+            this.syncing,
+            this.loans_uri,
+            Option.<BookID>none()));
 
   }
 
   @Override
   public void accountActivateDeviceAndFulfillBooks(
-    final OptionType<DRMLicensor> licensor,
-    final DeviceActivationListenerType device_listener) {
-    final OptionType<AccountCredentials> credentials_opt = this.accounts_database.accountGetCredentials();
+      final OptionType<DRMLicensor> licensor,
+      final DeviceActivationListenerType device_listener) {
+    final OptionType<AccountAuthenticationCredentials> credentials_opt = this.accounts_database.accountGetCredentials();
     if (credentials_opt.isSome()) {
-      final Some<AccountCredentials> credentials_some = (Some<AccountCredentials>) credentials_opt;
+      final Some<AccountAuthenticationCredentials> credentials_some = (Some<AccountAuthenticationCredentials>) credentials_opt;
       final BooksControllerDeviceActivationTask activation_task = new BooksControllerDeviceActivationTask(
-        this.adobe_drm,
-        credentials_some.get(),
-        this.accounts_database,
+          this.adobe_drm,
+          credentials_some.get(),
+          this.accounts_database,
           device_listener);
       this.submitRunnable(activation_task);
 
@@ -372,16 +369,22 @@ public final class BooksController implements BooksType {
 
   @Override
   public void accountDeActivateDevice() {
-    final OptionType<AccountCredentials> credentials_opt = this.accounts_database.accountGetCredentials();
-    if (credentials_opt.isSome()) {
-      final Some<AccountCredentials> credentials_some = (Some<AccountCredentials>) credentials_opt;
-      final BooksControllerDeviceDeActivationTask deactivation_task = new BooksControllerDeviceDeActivationTask(
+    this.submitRunnable(new BooksControllerDeviceDeactivationTask(
         this.adobe_drm,
-        credentials_some.get(),
-        this.accounts_database
-      );
-      this.submitRunnable(deactivation_task);
-    }
+        this.accounts_database,
+        new AdobeAdeptDeactivationReceiverType() {
+
+          @Override
+          public void onDeactivationError(String s) {
+            LOG.error("onDeactivationError: {}", s);
+          }
+
+          @Override
+          public void onDeactivationSucceeded() {
+            LOG.debug("onDeactivationSucceeded");
+          }
+        }
+    ));
   }
 
   @Override
@@ -401,10 +404,10 @@ public final class BooksController implements BooksType {
 
   @Override
   public void bookBorrow(
-    final BookID id,
-    final OPDSAcquisition acq,
-    final OPDSAcquisitionFeedEntry eo,
-    final boolean needs_auth) {
+      final BookID id,
+      final OPDSAcquisition acq,
+      final OPDSAcquisitionFeedEntry eo,
+      final boolean needs_auth) {
     NullCheck.notNull(id);
     NullCheck.notNull(acq);
     NullCheck.notNull(eo);
@@ -413,58 +416,58 @@ public final class BooksController implements BooksType {
 
     this.books_status.booksStatusUpdate(new BookStatusRequestingLoan(id));
     this.submitRunnable(
-      new BooksControllerBorrowTask(
-        this.book_database,
-        this.accounts_database,
-        this.books_status,
-        this.downloader,
-        this.http,
-        this.downloads,
-        id,
-        acq,
-        eo,
-        this.feed_loader,
-        this.adobe_drm,
-        needs_auth
+        new BooksControllerBorrowTask(
+            this.book_database,
+            this.accounts_database,
+            this.books_status,
+            this.downloader,
+            this.http,
+            this.downloads,
+            id,
+            acq,
+            eo,
+            this.feed_loader,
+            this.adobe_drm,
+            needs_auth
         ));
   }
 
   @Override
   public void bookDeleteData(
-    final BookID id,
-    final boolean needs_auth) {
+      final BookID id,
+      final boolean needs_auth) {
     NullCheck.notNull(id);
 
     BooksController.LOG.debug("delete: {}", id);
     this.submitRunnable(
-      new BooksControllerDeleteBookDataTask(
-        this.books_status, this.book_database, id, needs_auth));
+        new BooksControllerDeleteBookDataTask(
+            this.books_status, this.book_database, id, needs_auth));
   }
 
   @Override
   public void bookDownloadAcknowledge(
-    final BookID id) {
+      final BookID id) {
     BooksController.LOG.debug("acknowledging download of book {}", id);
 
     final OptionType<BookStatusType> status_opt =
-      this.books_status.booksStatusGet(id);
+        this.books_status.booksStatusGet(id);
     if (status_opt.isSome()) {
       final Some<BookStatusType> status_some =
-        (Some<BookStatusType>) status_opt;
+          (Some<BookStatusType>) status_opt;
       final BookStatusType status = status_some.get();
       BooksController.LOG.debug(
-        "status of book {} is currently {}", id, status);
+          "status of book {} is currently {}", id, status);
 
       if (status instanceof BookStatusDownloadFailed) {
         final OptionType<BookDatabaseEntrySnapshot> snap_opt =
-          this.book_database.databaseGetEntrySnapshot(id);
+            this.book_database.databaseGetEntrySnapshot(id);
         if (snap_opt.isSome()) {
           final Some<BookDatabaseEntrySnapshot> snap_some =
-            (Some<BookDatabaseEntrySnapshot>) snap_opt;
+              (Some<BookDatabaseEntrySnapshot>) snap_opt;
           final BookDatabaseEntrySnapshot snap = snap_some.get();
           this.books_status.booksStatusUpdate(
-            BookStatus.fromSnapshot(
-              id, snap));
+              BookStatus.fromSnapshot(
+                  id, snap));
         } else {
 
           /**
@@ -482,7 +485,7 @@ public final class BooksController implements BooksType {
 
   @Override
   public void bookDownloadCancel(
-    final BookID id) {
+      final BookID id) {
     BooksController.LOG.debug("download cancel {}", id);
 
     final DownloadType d = this.downloads.get(id);
@@ -495,16 +498,16 @@ public final class BooksController implements BooksType {
 
   @Override
   public void booksGetFeed(
-    final URI in_uri,
-    final String in_id,
-    final Calendar in_updated,
-    final String in_title,
-    final FeedFacetPseudo.FacetType in_facet_active,
-    final String in_facet_group,
-    final FeedFacetPseudoTitleProviderType in_facet_titles,
-    final OptionType<String> in_search,
-    final BooksFeedSelection in_selection,
-    final BookFeedListenerType in_listener) {
+      final URI in_uri,
+      final String in_id,
+      final Calendar in_updated,
+      final String in_title,
+      final FeedFacetPseudo.FacetType in_facet_active,
+      final String in_facet_group,
+      final FeedFacetPseudoTitleProviderType in_facet_titles,
+      final OptionType<String> in_search,
+      final BooksFeedSelection in_selection,
+      final BookFeedListenerType in_listener) {
     NullCheck.notNull(in_uri);
     NullCheck.notNull(in_id);
     NullCheck.notNull(in_updated);
@@ -517,32 +520,32 @@ public final class BooksController implements BooksType {
     NullCheck.notNull(in_listener);
 
     this.submitRunnable(
-      new BooksControllerFeedTask(
-        this.book_database,
-        in_uri,
-        in_id,
-        in_updated,
-        in_title,
-        in_facet_active,
-        in_facet_group,
-        in_facet_titles,
-        in_search,
-        in_selection,
-        in_listener));
+        new BooksControllerFeedTask(
+            this.book_database,
+            in_uri,
+            in_id,
+            in_updated,
+            in_title,
+            in_facet_active,
+            in_facet_group,
+            in_facet_titles,
+            in_search,
+            in_selection,
+            in_listener));
   }
 
   @Override
   public void bookReport(
-    final FeedEntryOPDS feed_entry,
-    final String report_type) {
+      final FeedEntryOPDS feed_entry,
+      final String report_type) {
     NullCheck.notNull(feed_entry);
     NullCheck.notNull(report_type);
     this.submitRunnable(
-      new BooksControllerReportTask(
-        report_type,
-        feed_entry,
-        this.http,
-        this.accounts_database));
+        new BooksControllerReportTask(
+            report_type,
+            feed_entry,
+            this.http,
+            this.accounts_database));
   }
 
   @Override
@@ -551,21 +554,21 @@ public final class BooksController implements BooksType {
 
     this.books_status.booksStatusUpdate(new BookStatusRequestingRevoke(id));
     this.submitRunnable(
-      new BooksControllerRevokeBookTask(
-        this.book_database,
-        this.accounts_database,
-        this.books_status,
-        this.feed_loader,
-        id,
-        this.adobe_drm));
+        new BooksControllerRevokeBookTask(
+            this.book_database,
+            this.accounts_database,
+            this.books_status,
+            this.feed_loader,
+            id,
+            this.adobe_drm));
   }
 
   @Override
   public void bookGetLatestStatusFromDisk(final BookID id) {
     NullCheck.notNull(id);
     this.submitRunnable(
-      new BooksControllerGetLatestStatusTask(
-        this.book_database, this.books_status, id));
+        new BooksControllerGetLatestStatusTask(
+            this.book_database, this.books_status, id));
   }
 
   @Override
@@ -590,7 +593,7 @@ public final class BooksController implements BooksType {
   }
 
   protected synchronized void submitRunnable(
-    final Runnable r) {
+      final Runnable r) {
     final int id = this.task_id.incrementAndGet();
     final Runnable rb = new Runnable() {
       @Override

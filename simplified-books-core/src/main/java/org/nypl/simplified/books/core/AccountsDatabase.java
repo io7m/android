@@ -21,6 +21,9 @@ import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.PartialFunctionType;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
+
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentialsJSON;
 import org.nypl.simplified.files.DirectoryUtilities;
 import org.nypl.simplified.files.FileLocking;
 import org.nypl.simplified.files.FileUtilities;
@@ -48,7 +51,7 @@ public final class AccountsDatabase implements AccountsDatabaseType
   private final File                                file_accounts;
   private final File                                file_accounts_tmp;
   private final File                                file_lock;
-  private final AtomicReference<AccountCredentials> cached;
+  private final AtomicReference<AccountAuthenticationCredentials> cached;
 
   private AccountsDatabase(final File in_directory)
   {
@@ -57,11 +60,11 @@ public final class AccountsDatabase implements AccountsDatabaseType
     this.file_accounts = new File(in_directory, "account.json");
     this.file_accounts_tmp = new File(in_directory, "account.json.tmp");
 
-    this.cached = new AtomicReference<AccountCredentials>();
+    this.cached = new AtomicReference<AccountAuthenticationCredentials>();
     if (this.file_accounts.exists()) {
       try {
         final String text = FileUtilities.fileReadUTF8(this.file_accounts);
-        this.cached.set(AccountCredentialsJSON.deserializeFromText(text));
+        this.cached.set(AccountAuthenticationCredentialsJSON.deserializeFromText(text));
       } catch (final IOException e) {
         AccountsDatabase.LOG.error("could not load account: ", e);
       }
@@ -81,7 +84,7 @@ public final class AccountsDatabase implements AccountsDatabaseType
     return new AccountsDatabase(directory);
   }
 
-  @Override public void accountSetCredentials(final AccountCredentials c)
+  @Override public void accountSetCredentials(final AccountAuthenticationCredentials c)
     throws IOException
   {
     FileLocking.withFileThreadLocked(
@@ -97,11 +100,11 @@ public final class AccountsDatabase implements AccountsDatabaseType
       });
   }
 
-  private void accountSetCredentialsLocked(final AccountCredentials c)
+  private void accountSetCredentialsLocked(final AccountAuthenticationCredentials c)
     throws IOException
   {
     DirectoryUtilities.directoryCreate(this.directory);
-    final String text = AccountCredentialsJSON.serializeToText(c);
+    final String text = AccountAuthenticationCredentialsJSON.serializeToText(c);
     FileUtilities.fileWriteUTF8Atomically(
       this.file_accounts, this.file_accounts_tmp, text);
     this.cached.set(c);
@@ -131,7 +134,7 @@ public final class AccountsDatabase implements AccountsDatabaseType
     this.cached.set(null);
   }
 
-  @Override public OptionType<AccountCredentials> accountGetCredentials()
+  @Override public OptionType<AccountAuthenticationCredentials> accountGetCredentials()
   {
     return Option.of(this.cached.get());
   }

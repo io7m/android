@@ -2,12 +2,14 @@ package org.nypl.simplified.books.core;
 
 import com.io7m.jfunctional.OptionType;
 
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
+
 /**
  * The type of listeners for account login operations.
  */
 
-public interface AccountLoginListenerType extends AccountSyncListenerType
-{
+public interface AccountLoginListenerType extends AccountSyncListenerType {
+
   /**
    * Logging in failed due to rejected credentials.
    */
@@ -30,8 +32,8 @@ public interface AccountLoginListenerType extends AccountSyncListenerType
    */
 
   void onAccountLoginFailureLocalError(
-    final OptionType<Throwable> error,
-    final String message);
+      final OptionType<Throwable> error,
+      final String message);
 
   /**
    * Logging in succeeded.
@@ -40,7 +42,7 @@ public interface AccountLoginListenerType extends AccountSyncListenerType
    */
 
   void onAccountLoginSuccess(
-    AccountCredentials credentials);
+      AccountAuthenticationCredentials credentials);
 
   /**
    * Logging in failed due to a failure with device activation.

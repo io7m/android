@@ -1,14 +1,15 @@
 package org.nypl.simplified.app;
 
 import com.io7m.jfunctional.OptionType;
-import org.nypl.simplified.books.core.AccountCredentials;
+
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 
 /**
  * A listener that receives the results of login attempts.
  */
 
-public interface LoginListenerType
-{
+public interface LoginListenerType {
+
   /**
    * The user cancelled the login.
    */
@@ -23,8 +24,8 @@ public interface LoginListenerType
    */
 
   void onLoginFailure(
-    OptionType<Throwable> error,
-    String message);
+      OptionType<Throwable> error,
+      String message);
 
   /**
    * The user successfully logged in.
@@ -33,5 +34,5 @@ public interface LoginListenerType
    */
 
   void onLoginSuccess(
-    AccountCredentials creds);
+      AccountAuthenticationCredentials creds);
 }

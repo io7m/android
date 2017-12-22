@@ -5,6 +5,8 @@ import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.Pair;
 import com.io7m.jfunctional.ProcedureType;
 import com.io7m.jnull.NullCheck;
+
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +41,7 @@ final class BooksControllerDataLoadTask implements Runnable
 
   @Override public void run()
   {
-    final OptionType<AccountCredentials> credentials_opt =
+    final OptionType<AccountAuthenticationCredentials> credentials_opt =
       this.accounts.accountGetCredentials();
 
     if (credentials_opt.isSome() || !this.needs_auch) {
@@ -52,9 +54,7 @@ final class BooksControllerDataLoadTask implements Runnable
           {
             final BookID id = p.getLeft();
             final BookDatabaseEntrySnapshot snap = p.getRight();
-            BooksControllerDataLoadTask.this.listener
-              .onAccountDataBookLoadSucceeded(
-                id, snap);
+            listener.onAccountDataBookLoadSucceeded(id, snap);
           }
         },
         new ProcedureType<Pair<BookID, Throwable>>()
@@ -64,9 +64,7 @@ final class BooksControllerDataLoadTask implements Runnable
             final Throwable e = p.getRight();
             final OptionType<Throwable> ex = Option.some(e);
             final BookID id = p.getLeft();
-            BooksControllerDataLoadTask.this.listener
-              .onAccountDataBookLoadFailed(
-                id, ex, e.getMessage());
+            listener.onAccountDataBookLoadFailed(id, ex, e.getMessage());
           }
         });
 
@@ -74,8 +72,7 @@ final class BooksControllerDataLoadTask implements Runnable
       try {
         this.listener.onAccountUnavailable();
       } catch (final Throwable x) {
-        BooksControllerDataLoadTask.LOG.error(
-          "listener raised exception: ", x);
+        LOG.error("listener raised exception: ", x);
       }
     }
 

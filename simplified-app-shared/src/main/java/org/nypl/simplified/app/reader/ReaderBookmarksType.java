@@ -2,7 +2,8 @@ package org.nypl.simplified.app.reader;
 
 import com.android.volley.RequestQueue;
 import com.io7m.jfunctional.OptionType;
-import org.nypl.simplified.books.core.AccountCredentials;
+
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.core.BookID;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 
@@ -37,14 +38,14 @@ public interface ReaderBookmarksType
     BookID id,
     ReaderBookLocation bookmark,
     OPDSAcquisitionFeedEntry entry,
-    AccountCredentials credentials,
+    AccountAuthenticationCredentials credentials,
     RequestQueue queue);
-
 
   /**
    * @param id       The ID of the book
    * @param bookmark The bookmark
    */
+
   void setBookmark(
     BookID id,
     ReaderBookLocation bookmark);

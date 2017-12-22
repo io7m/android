@@ -19,7 +19,7 @@ import com.tenmiles.helpstack.gears.HSDeskGear;
 
 import org.nypl.simplified.app.testing.AlternateFeedURIsActivity;
 import org.nypl.simplified.app.testing.OnMultipleClickListener;
-import org.nypl.simplified.books.core.AccountCredentials;
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.core.BooksControllerConfigurationType;
 import org.nypl.simplified.books.core.DocumentStoreType;
 import org.nypl.simplified.books.core.LogUtilities;
@@ -235,9 +235,8 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
   }
 
   @Override
-  public void onLoginSuccess(final AccountCredentials creds) {
-    final Intent account =
-      new Intent(this.getActivity(), MainSettingsAccountActivity.class);
+  public void onLoginSuccess(final AccountAuthenticationCredentials creds) {
+    final Intent account = new Intent(this.getActivity(), MainSettingsAccountActivity.class);
     MainSettingsFragment.this.startActivity(account);
   }
 }

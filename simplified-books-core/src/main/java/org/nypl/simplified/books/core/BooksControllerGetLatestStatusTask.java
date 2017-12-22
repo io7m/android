@@ -44,8 +44,7 @@ final class BooksControllerGetLatestStatusTask implements Runnable
         BookStatus.fromSnapshot(
           this.book_id, snap));
     } catch (final IOException e) {
-      BooksControllerGetLatestStatusTask.LOG.error(
-        "[{}]: unable to fetch status: ", this.book_id.getShortID(), e);
+      LOG.error("[{}]: unable to fetch status: ", this.book_id.getShortID(), e);
     }
   }
 }

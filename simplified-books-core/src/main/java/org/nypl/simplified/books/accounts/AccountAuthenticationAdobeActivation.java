@@ -7,9 +7,9 @@ import com.google.auto.value.AutoValue;
  */
 
 @AutoValue
-public abstract class AccountAdobeDeviceToken {
+public abstract class AccountAuthenticationAdobeActivation {
 
-  AccountAdobeDeviceToken() {
+  AccountAuthenticationAdobeActivation() {
 
   }
 
@@ -19,9 +19,9 @@ public abstract class AccountAdobeDeviceToken {
    * @param in_value The raw patron value
    */
 
-  public static AccountAdobeDeviceToken create(
+  public static AccountAuthenticationAdobeActivation create(
       final String in_value) {
-    return new AutoValue_AccountAdobeDeviceToken(in_value);
+    return new AutoValue_AccountAuthenticationAdobeActivation(in_value);
   }
 
   /**
@@ -29,10 +29,5 @@ public abstract class AccountAdobeDeviceToken {
    */
 
   public abstract String value();
-
-  @Override
-  public String toString() {
-    return this.value();
-  }
 
 }

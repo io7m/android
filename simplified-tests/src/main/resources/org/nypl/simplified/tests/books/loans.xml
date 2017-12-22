@@ -23,11 +23,16 @@
     <dcterms:language>en</dcterms:language>
     <dcterms:publisher>Project Gutenberg</dcterms:publisher>
     <published>2014-04-01T00:00:00Z</published>
-    <link href="http://example.com/Loaned-Indefinite"
-          rel="http://opds-spec.org/acquisition/borrow">
+
+    <link
+        href="https://example.com/borrow"
+        rel="http://opds-spec.org/acquisition">
+      <opds:indirectAcquisition type="application/vnd.adobe.adept+xml">
+        <opds:indirectAcquisition type="application/epub+zip"/>
+      </opds:indirectAcquisition>
       <opds:availability
-        status="available"
-        since="2000-01-01T00:00:00Z"/>
+          status="available"
+          since="2000-01-01T00:00:00Z"/>
       <opds:holds total="0"/>
       <opds:copies available="1" total="1"/>
     </link>
@@ -45,11 +50,16 @@
     <dcterms:language>en</dcterms:language>
     <dcterms:publisher>Project Gutenberg</dcterms:publisher>
     <published>2014-04-01T00:00:00Z</published>
-    <link href="http://example.com/Loaned-Indefinite"
-          rel="http://opds-spec.org/acquisition/borrow">
+
+    <link
+        href="https://example.com/borrow"
+        rel="http://opds-spec.org/acquisition">
+      <opds:indirectAcquisition type="application/vnd.adobe.adept+xml">
+        <opds:indirectAcquisition type="application/epub+zip"/>
+      </opds:indirectAcquisition>
       <opds:availability
-        status="available"
-        since="2000-01-01T00:00:00Z"/>
+          status="available"
+          since="2000-01-01T00:00:00Z"/>
       <opds:holds total="0"/>
       <opds:copies available="1" total="1"/>
     </link>
@@ -67,14 +77,20 @@
     <dcterms:language>en</dcterms:language>
     <dcterms:publisher>Project Gutenberg</dcterms:publisher>
     <published>2014-04-01T00:00:00Z</published>
-    <link href="http://example.com/Loaned-Indefinite"
-          rel="http://opds-spec.org/acquisition/borrow">
+
+    <link
+        href="https://example.com/borrow"
+        rel="http://opds-spec.org/acquisition">
+      <opds:indirectAcquisition type="application/vnd.adobe.adept+xml">
+        <opds:indirectAcquisition type="application/epub+zip"/>
+      </opds:indirectAcquisition>
       <opds:availability
-        status="available"
-        since="2000-01-01T00:00:00Z"/>
+          status="available"
+          since="2000-01-01T00:00:00Z"/>
       <opds:holds total="0"/>
       <opds:copies available="1" total="1"/>
     </link>
+
   </entry>
   <entry>
     <id>http://circulation.alpha.librarysimplified.org/works/?urn=urn%3Alibrarysimplified.org%2Fterms%2Fid%2FGutenberg%2520ID%2F38084</id>
@@ -91,11 +107,16 @@
     <dcterms:language>en</dcterms:language>
     <dcterms:publisher>Project Gutenberg</dcterms:publisher>
     <published>2014-04-01T00:00:00Z</published>
-    <link href="http://example.com/Loaned-Indefinite"
-          rel="http://opds-spec.org/acquisition/borrow">
+
+    <link
+        href="https://example.com/borrow"
+        rel="http://opds-spec.org/acquisition">
+      <opds:indirectAcquisition type="application/vnd.adobe.adept+xml">
+        <opds:indirectAcquisition type="application/epub+zip"/>
+      </opds:indirectAcquisition>
       <opds:availability
-        status="available"
-        since="2000-01-01T00:00:00Z"/>
+          status="available"
+          since="2000-01-01T00:00:00Z"/>
       <opds:holds total="0"/>
       <opds:copies available="1" total="1"/>
     </link>

@@ -16,6 +16,8 @@
 
 package org.nypl.simplified.books.core;
 
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
+
 import java.io.IOException;
 
 /**
@@ -32,7 +34,7 @@ public interface AccountsDatabaseType extends AccountsDatabaseReadableType
    * @throws IOException On I/O errors
    */
 
-  void accountSetCredentials(AccountCredentials c)
+  void accountSetCredentials(AccountAuthenticationCredentials c)
     throws IOException;
 
   /**

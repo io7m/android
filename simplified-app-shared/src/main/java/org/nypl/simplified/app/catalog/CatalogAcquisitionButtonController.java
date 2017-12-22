@@ -17,10 +17,10 @@ import org.nypl.simplified.app.LoginDialog;
 import org.nypl.simplified.app.LoginListenerType;
 import org.nypl.simplified.app.R;
 import org.nypl.simplified.app.Simplified;
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountBarcode;
-import org.nypl.simplified.books.core.AccountCredentials;
-import org.nypl.simplified.books.core.AccountGetCachedCredentialsListenerType;
 import org.nypl.simplified.books.accounts.AccountPIN;
+import org.nypl.simplified.books.core.AccountGetCachedCredentialsListenerType;
 import org.nypl.simplified.books.core.BookID;
 import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.FeedEntryOPDS;
@@ -88,7 +88,7 @@ public final class CatalogAcquisitionButtonController
           }
 
           @Override public void onAccountIsLoggedIn(
-            final AccountCredentials creds)
+            final AccountAuthenticationCredentials creds)
           {
             CatalogAcquisitionButtonController.this.onLoginSuccess(creds);
           }
@@ -142,7 +142,7 @@ public final class CatalogAcquisitionButtonController
   }
 
   @Override public void onLoginSuccess(
-    final AccountCredentials creds)
+    final AccountAuthenticationCredentials creds)
   {
     CatalogAcquisitionButtonController.LOG.debug("login succeeded");
     this.getBook();

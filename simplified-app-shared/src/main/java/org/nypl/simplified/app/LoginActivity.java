@@ -13,8 +13,8 @@ import com.io7m.jnull.NullCheck;
 
 import org.nypl.simplified.app.catalog.MainCatalogActivity;
 import org.nypl.simplified.app.utilities.UIThread;
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountBarcode;
-import org.nypl.simplified.books.core.AccountCredentials;
 import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.LogUtilities;
@@ -124,7 +124,7 @@ public final class LoginActivity extends Activity {
 
       @Override
       public void onLoginSuccess(
-        final AccountCredentials creds) {
+        final AccountAuthenticationCredentials creds) {
         LoginActivity.LOG.trace(
           "feed auth: login supplied new credentials");
         LoginActivity.this.openCatalog();
