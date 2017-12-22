@@ -162,13 +162,6 @@ public abstract class BooksContract {
             }
 
             @Override
-            public void onAccountDataLoadFailedImmediately(
-                final Throwable error) {
-              System.out.println("testBooksLoadFileNotDirectory: load failed");
-              load_ok.set(false);
-            }
-
-            @Override
             public void onAccountUnavailable() {
               System.out.println(
                   "testBooksLoadFileNotDirectory: account unavailable");
@@ -242,13 +235,6 @@ public abstract class BooksContract {
                 final BookID book,
                 final BookDatabaseEntrySnapshot snap) {
               System.out.println("testBooksLoadNotLoggedIn: load succeeded");
-              load_ok.set(false);
-            }
-
-            @Override
-            public void onAccountDataLoadFailedImmediately(
-                final Throwable error) {
-              System.out.println("testBooksLoadNotLoggedIn: load failed");
               load_ok.set(false);
             }
 
@@ -594,12 +580,6 @@ public abstract class BooksContract {
               } finally {
                 load_latch.countDown();
               }
-            }
-
-            @Override
-            public void onAccountDataLoadFailedImmediately(
-                final Throwable error) {
-              load_ok.set(false);
             }
 
             @Override
