@@ -9,7 +9,6 @@ import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 import com.io7m.junreachable.UnreachableCodeException;
 
-import org.nypl.drm.core.AdobeAdeptDeactivationReceiverType;
 import org.nypl.drm.core.AdobeAdeptExecutorType;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.downloader.core.DownloadType;
@@ -315,23 +314,6 @@ public final class BooksController implements BooksType {
 
 
   @Override
-  public void accountActivateDevice(final DeviceActivationListenerType device_listener) {
-
-    final OptionType<AccountAuthenticationCredentials> credentials_opt = this.accounts_database.accountGetCredentials();
-    if (credentials_opt.isSome()) {
-      final Some<AccountAuthenticationCredentials> credentials_some = (Some<AccountAuthenticationCredentials>) credentials_opt;
-      final BooksControllerDeviceActivationTask activation_task = new BooksControllerDeviceActivationTask(
-          this.adobe_drm,
-          credentials_some.get(),
-          this.accounts_database,
-          device_listener);
-      this.submitRunnable(activation_task);
-
-    }
-
-  }
-
-  @Override
   public void fulfillExistingBooks() {
 
     //fulfill book which were already downloaded when device was active.
@@ -345,46 +327,6 @@ public final class BooksController implements BooksType {
             this.loans_uri,
             Option.<BookID>none()));
 
-  }
-
-  @Override
-  public void accountActivateDeviceAndFulfillBooks(
-      final OptionType<DRMLicensor> licensor,
-      final DeviceActivationListenerType device_listener) {
-    final OptionType<AccountAuthenticationCredentials> credentials_opt = this.accounts_database.accountGetCredentials();
-    if (credentials_opt.isSome()) {
-      final Some<AccountAuthenticationCredentials> credentials_some = (Some<AccountAuthenticationCredentials>) credentials_opt;
-      final BooksControllerDeviceActivationTask activation_task = new BooksControllerDeviceActivationTask(
-          this.adobe_drm,
-          credentials_some.get(),
-          this.accounts_database,
-          device_listener);
-      this.submitRunnable(activation_task);
-
-      //fulfill book which were already downloaded when device was active.
-      this.fulfillExistingBooks();
-
-    }
-  }
-
-  @Override
-  public void accountDeActivateDevice() {
-    this.submitRunnable(new BooksControllerDeviceDeactivationTask(
-        this.adobe_drm,
-        this.accounts_database,
-        new AdobeAdeptDeactivationReceiverType() {
-
-          @Override
-          public void onDeactivationError(String s) {
-            LOG.error("onDeactivationError: {}", s);
-          }
-
-          @Override
-          public void onDeactivationSucceeded() {
-            LOG.debug("onDeactivationSucceeded");
-          }
-        }
-    ));
   }
 
   @Override

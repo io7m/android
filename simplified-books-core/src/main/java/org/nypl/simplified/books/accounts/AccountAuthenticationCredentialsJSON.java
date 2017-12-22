@@ -2,7 +2,6 @@ package org.nypl.simplified.books.accounts;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.io7m.jfunctional.FunctionType;
 import com.io7m.jfunctional.OptionType;
@@ -18,12 +17,9 @@ import org.nypl.simplified.http.core.HTTPOAuthToken;
 import org.nypl.simplified.json.core.JSONParseException;
 import org.nypl.simplified.json.core.JSONParserUtilities;
 import org.nypl.simplified.json.core.JSONSerializerUtilities;
-import org.nypl.simplified.opds.core.DRMLicensor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Functions for serializing/deserializing account credentials.

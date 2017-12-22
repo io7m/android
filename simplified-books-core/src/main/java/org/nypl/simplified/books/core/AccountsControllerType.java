@@ -75,36 +75,10 @@ public interface AccountsControllerType {
       DeviceActivationListenerType device_listener);
 
   /**
-   * Activate the device with the currently logged in account (if you are logged in).
-   *
-   * @param licensor        drm licener
-   * @param device_listener device activation listener
-   */
-
-  void accountActivateDeviceAndFulfillBooks(
-      OptionType<DRMLicensor> licensor,
-      DeviceActivationListenerType device_listener);
-
-  /**
-   * Activate the device with the currently logged in account (if you are logged in).
-   *
-   * @param device_listener device activation listener
-   */
-
-  void accountActivateDevice(
-      DeviceActivationListenerType device_listener);
-
-  /**
    * fulfill all existing books which were download before
    */
 
   void fulfillExistingBooks();
-
-  /**
-   * Deactivate the device with the currently logged in account (if you are logged in).
-   */
-
-  void accountDeActivateDevice();
 
   /**
    * determine is device is active with the currently logged account.

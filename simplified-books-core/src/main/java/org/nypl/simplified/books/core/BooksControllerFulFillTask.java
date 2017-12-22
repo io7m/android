@@ -8,12 +8,7 @@ import com.io7m.jnull.NullCheck;
 
 import org.nypl.simplified.books.accounts.AccountAuthenticatedHTTP;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
-import org.nypl.simplified.books.accounts.AccountBarcode;
-import org.nypl.simplified.books.accounts.AccountPIN;
-import org.nypl.simplified.http.core.HTTPAuthBasic;
-import org.nypl.simplified.http.core.HTTPAuthOAuth;
 import org.nypl.simplified.http.core.HTTPAuthType;
-import org.nypl.simplified.http.core.HTTPOAuthToken;
 import org.nypl.simplified.http.core.HTTPResultError;
 import org.nypl.simplified.http.core.HTTPResultException;
 import org.nypl.simplified.http.core.HTTPResultMatcherType;

@@ -1,10 +1,6 @@
 package org.nypl.simplified.books.accounts;
 
 import com.google.auto.value.AutoValue;
-import com.io7m.jnull.NullCheck;
-import com.io7m.jnull.Nullable;
-
-import java.io.Serializable;
 
 /**
  * The type of account PINs.

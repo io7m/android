@@ -21,7 +21,6 @@ import org.nypl.simplified.http.core.HTTPAuthType;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
 /**

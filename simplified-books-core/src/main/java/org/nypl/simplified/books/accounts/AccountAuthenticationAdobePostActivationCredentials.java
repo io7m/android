@@ -4,9 +4,6 @@ import com.google.auto.value.AutoValue;
 
 import org.nypl.drm.core.AdobeDeviceID;
 import org.nypl.drm.core.AdobeUserID;
-import org.nypl.drm.core.AdobeVendorID;
-
-import java.net.URI;
 
 /**
  * <p>The set of Adobe credentials that are known after device activation.</p>
