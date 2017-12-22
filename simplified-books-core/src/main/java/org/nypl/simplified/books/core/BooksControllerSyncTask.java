@@ -8,7 +8,12 @@ import com.io7m.jnull.NullCheck;
 
 import org.nypl.drm.core.AdobeAdeptExecutorType;
 import org.nypl.drm.core.AdobeVendorID;
+import org.nypl.simplified.assertions.Assertions;
+import org.nypl.simplified.books.accounts.AccountAuthenticatedHTTP;
 import org.nypl.simplified.books.accounts.AccountAuthenticationAdobeClientToken;
+import org.nypl.simplified.books.accounts.AccountAuthenticationAdobePostActivationCredentials;
+import org.nypl.simplified.books.accounts.AccountAuthenticationAdobePreActivationCredentials;
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.http.core.HTTPAuthBasic;
@@ -68,6 +73,7 @@ final class BooksControllerSyncTask implements Runnable {
       final URI in_loans_uri,
       final OptionType<AdobeAdeptExecutorType> in_adobe_drm,
       final DeviceActivationListenerType in_device_activation_listener) {
+
     this.books_controller = NullCheck.notNull(in_books);
     this.books_database = NullCheck.notNull(in_books_database);
     this.accounts_database = NullCheck.notNull(in_accounts_database);
@@ -78,31 +84,32 @@ final class BooksControllerSyncTask implements Runnable {
     this.loans_uri = NullCheck.notNull(in_loans_uri);
     this.adobe_drm = NullCheck.notNull(in_adobe_drm);
     this.device_activation_listener = NullCheck.notNull(in_device_activation_listener);
-
   }
 
   @Override
   public void run() {
     if (this.running.compareAndSet(false, true)) {
       try {
-        BooksControllerSyncTask.LOG.debug("running");
+        LOG.debug("running");
         this.sync();
         this.listener.onAccountSyncSuccess();
       } catch (final Throwable x) {
+        LOG.error("sync failed: ", x);
         this.listener.onAccountSyncFailure(
             Option.some(x), NullCheck.notNull(x.getMessage()));
       } finally {
         this.running.set(false);
-        BooksControllerSyncTask.LOG.debug("completed");
+        LOG.debug("completed");
       }
     } else {
-      BooksControllerSyncTask.LOG.debug("sync already in progress, exiting");
+      LOG.debug("sync already in progress, exiting");
     }
   }
 
   private void sync()
       throws Exception {
-    final OptionType<AccountCredentials> credentials_opt =
+
+    final OptionType<AccountAuthenticationCredentials> credentials_opt =
         this.accounts_database.accountGetCredentials();
 
     if (credentials_opt.isNone()) {
@@ -110,18 +117,10 @@ final class BooksControllerSyncTask implements Runnable {
       return;
     }
 
-    final AccountCredentials credentials = ((Some<AccountCredentials>) credentials_opt).get();
-    final AccountBarcode barcode = credentials.getBarcode();
-    final AccountPIN pin = credentials.getPin();
-    final AccountSyncListenerType in_listener = this.listener;
+    final AccountAuthenticationCredentials credentials =
+        ((Some<AccountAuthenticationCredentials>) credentials_opt).get();
 
-    HTTPAuthType auth = HTTPAuthBasic.create(barcode.toString(), pin.toString());
-    if (credentials.getOAuthToken().isSome()) {
-      final HTTPOAuthToken token = ((Some<HTTPOAuthToken>) credentials.getOAuthToken()).get();
-      if (token != null) {
-        auth = HTTPAuthOAuth.create(token);
-      }
-    }
+    final HTTPAuthType auth = AccountAuthenticatedHTTP.createAuthenticatedHTTP(credentials);
 
     final HTTPResultType<InputStream> r =
         this.http.get(Option.some(auth), this.loans_uri, 0L);
@@ -132,13 +131,13 @@ final class BooksControllerSyncTask implements Runnable {
           public Unit onHTTPError(
               final HTTPResultError<InputStream> e)
               throws Exception {
-            final String m = NullCheck.notNull(
-                String.format(
-                    "%s: %d: %s", BooksControllerSyncTask.this.loans_uri, e.getStatus(), e.getMessage()));
+
+            final String m =
+                String.format("%s: %d: %s", loans_uri, e.getStatus(), e.getMessage());
 
             switch (e.getStatus()) {
               case HttpURLConnection.HTTP_UNAUTHORIZED: {
-                in_listener.onAccountSyncAuthenticationFailure("Invalid PIN");
+                listener.onAccountSyncAuthenticationFailure("Invalid PIN");
                 BooksControllerSyncTask.this.accounts_database.accountRemoveCredentials();
                 return Unit.unit();
               }
@@ -160,7 +159,7 @@ final class BooksControllerSyncTask implements Runnable {
               final HTTPResultOKType<InputStream> e)
               throws Exception {
             try {
-              BooksControllerSyncTask.this.syncFeedEntries(e);
+              syncFeedEntries(e);
               return Unit.unit();
             } finally {
               e.close();
@@ -172,6 +171,9 @@ final class BooksControllerSyncTask implements Runnable {
   private void syncFeedEntries(
       final HTTPResultOKType<InputStream> r_feed)
       throws Exception {
+
+    LOG.debug("syncFeedEntries");
+
     final BooksStatusCacheType books_status =
         this.books_controller.bookGetStatusCache();
 
@@ -181,37 +183,54 @@ final class BooksControllerSyncTask implements Runnable {
     if (feed.getLicensor().isSome()) {
       final DRMLicensor licensor = ((Some<DRMLicensor>) feed.getLicensor()).get();
 
-      final OptionType<AccountCredentials> credentials_opt =
+      final OptionType<AccountAuthenticationCredentials> credentials_opt =
           this.accounts_database.accountGetCredentials();
-
 
       if (credentials_opt.isSome()) {
 
-        final AccountCredentials credentials = ((Some<AccountCredentials>) credentials_opt).get();
+        final AccountAuthenticationCredentials credentials =
+            ((Some<AccountAuthenticationCredentials>) credentials_opt).get();
 
-        credentials.setDrmLicensor(feed.getLicensor());
-        credentials.setAdobeToken(Option.some(AccountAuthenticationAdobeClientToken.create(licensor.getClientToken())));
-        credentials.setAdobeVendor(Option.some(new AdobeVendorID(licensor.getVendor())));
+        /*
+         * XXX: This is another undocumented assumption that seems to have been introduced: The
+         *      device manager URI in feeds is marked as optional, but much of the code seems to
+         *      assume that it will always be present. I've added a precondition check here to
+         *      make it extremely obvious when this assumption has been broken.
+         */
+
+        Assertions.checkPrecondition(
+            licensor.getDeviceManager().isSome(),
+            "Feed licensor information must contain a device manager URI");
+
+        final URI device_manager_uri =
+            URI.create(((Some<String>) licensor.getDeviceManager()).get());
+
+        final AccountAuthenticationCredentials creds_new =
+            credentials.toBuilder().setAdobeCredentials(
+                AccountAuthenticationAdobePreActivationCredentials.create(
+                    new AdobeVendorID(licensor.getVendor()),
+                    AccountAuthenticationAdobeClientToken.create(licensor.getClientToken()),
+                    device_manager_uri,
+                    Option.<AccountAuthenticationAdobePostActivationCredentials>none())).build();
 
         try {
-          this.accounts_database.accountSetCredentials(credentials);
+          this.accounts_database.accountSetCredentials(creds_new);
         } catch (final IOException e) {
-          BooksControllerSyncTask.LOG.error("could not save credentials: ", e);
+          LOG.error("could not save credentials: ", e);
         }
 
-
-        final BooksControllerDeviceActivationTask activation_task = new BooksControllerDeviceActivationTask(
-            this.adobe_drm,
-            credentials,
-            this.accounts_database,
-            this.device_activation_listener
-        );
+        final BooksControllerDeviceActivationTask activation_task =
+            new BooksControllerDeviceActivationTask(
+                this.adobe_drm,
+                creds_new,
+                this.accounts_database,
+                this.device_activation_listener
+            );
         activation_task.run();
-
       }
     }
 
-    /**
+    /*
      * Obtain the set of books that are on disk already. If any
      * of these books are not in the received feed, then they have
      * expired and should be deleted.
@@ -219,7 +238,7 @@ final class BooksControllerSyncTask implements Runnable {
 
     final Set<BookID> existing = this.books_database.databaseGetBooks();
 
-    /**
+    /*
      * Handle each book in the received feed.
      */
 
@@ -237,12 +256,11 @@ final class BooksControllerSyncTask implements Runnable {
 
         this.listener.onAccountSyncBook(book_id);
       } catch (final Throwable x) {
-        BooksControllerSyncTask.LOG.error(
-            "[{}]: unable to save entry: {}: ", book_id.getShortID(), x);
+        LOG.error("[{}]: unable to save entry: {}: ", book_id.getShortID(), x);
       }
     }
 
-    /**
+    /*
      * Now delete any book that previously existed, but is not in the
      * received set. Queue any revoked books for completion and then
      * deletion.
@@ -265,12 +283,11 @@ final class BooksControllerSyncTask implements Runnable {
           this.listener.onAccountSyncBookDeleted(existing_id);
         }
       } catch (final Throwable x) {
-        BooksControllerSyncTask.LOG.error(
-            "[{}]: unable to delete entry: ", existing_id.getShortID(), x);
+        LOG.error("[{}]: unable to delete entry: ", existing_id.getShortID(), x);
       }
     }
 
-    /**
+    /*
      * Try to finish the revocation of any books that require it.
      */
 

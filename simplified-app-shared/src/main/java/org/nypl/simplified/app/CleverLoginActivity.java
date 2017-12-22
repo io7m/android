@@ -20,17 +20,15 @@ import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 
-import org.nypl.drm.core.AdobeDeviceID;
-import org.nypl.drm.core.AdobeUserID;
 import org.nypl.drm.core.AdobeVendorID;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.accounts.AccountAuthenticationAdobeClientToken;
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountAuthenticationProvider;
 import org.nypl.simplified.books.accounts.AccountBarcode;
-import org.nypl.simplified.books.core.AccountCredentials;
-import org.nypl.simplified.books.core.AccountLoginListenerType;
 import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.accounts.AccountPatron;
+import org.nypl.simplified.books.core.AccountLoginListenerType;
 import org.nypl.simplified.books.core.BookID;
 import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.LogUtilities;
@@ -73,7 +71,7 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
 
   @Override
   public boolean onOptionsItemSelected(
-    final @Nullable MenuItem item_mn) {
+      final @Nullable MenuItem item_mn) {
     final MenuItem item = NullCheck.notNull(item_mn);
     switch (item.getItemId()) {
 
@@ -89,13 +87,13 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
   }
 
 
-  @Override protected SimplifiedPart navigationDrawerGetPart()
-  {
+  @Override
+  protected SimplifiedPart navigationDrawerGetPart() {
     return SimplifiedPart.PART_ACCOUNT;
   }
 
-  @Override protected boolean navigationDrawerShouldShowIndicator()
-  {
+  @Override
+  protected boolean navigationDrawerShouldShowIndicator() {
     return false;
   }
 
@@ -109,9 +107,9 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
     final String title = "Login with Clever";
     final Resources rr = NullCheck.notNull(this.getResources());
 
-    final String uri =  NullCheck.notNull(
-      rr.getString(
-        R.string.feature_auth_provider_clever_uri));
+    final String uri = NullCheck.notNull(
+        rr.getString(
+            R.string.feature_auth_provider_clever_uri));
 
 
     setTitle(title);
@@ -120,7 +118,7 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
 
 
     this.web_view =
-      NullCheck.notNull((WebView) this.findViewById(R.id.web_view));
+        NullCheck.notNull((WebView) this.findViewById(R.id.web_view));
 
 
     this.web_view.getSettings().setJavaScriptEnabled(true);
@@ -188,27 +186,27 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
                   final HTTPProblemReport r = HTTPProblemReport.fromString(error);
 
                   UIThread.runOnUIThread(
-                    new Runnable() {
-                      @Override
-                      public void run() {
-                        final AlertDialog.Builder b = new AlertDialog.Builder(CleverLoginActivity.this);
-                        b.setNeutralButton("Try Again", null);
-                        b.setMessage(r.getProblemDetail());
-                        b.setTitle(r.getProblemTitle());
-                        b.setCancelable(true);
+                      new Runnable() {
+                        @Override
+                        public void run() {
+                          final AlertDialog.Builder b = new AlertDialog.Builder(CleverLoginActivity.this);
+                          b.setNeutralButton("Try Again", null);
+                          b.setMessage(r.getProblemDetail());
+                          b.setTitle(r.getProblemTitle());
+                          b.setCancelable(true);
 
-                        final AlertDialog a = b.create();
-                        a.setOnDismissListener(
-                          new DialogInterface.OnDismissListener() {
-                            @Override
-                            public void onDismiss(
-                              final @Nullable DialogInterface d) {
+                          final AlertDialog a = b.create();
+                          a.setOnDismissListener(
+                              new DialogInterface.OnDismissListener() {
+                                @Override
+                                public void onDismiss(
+                                    final @Nullable DialogInterface d) {
 
-                            }
-                          });
-                        a.show();
-                      }
-                    });
+                                }
+                              });
+                          a.show();
+                        }
+                      });
 
 
                 } catch (UnsupportedEncodingException e) {
@@ -222,12 +220,7 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
 
           if (error == null) {
             final SimplifiedCatalogAppServicesType app =
-              Simplified.getCatalogAppServices();
-
-
-            final Resources rr = NullCheck.notNull(CleverLoginActivity.this.getResources());
-            final OptionType<AdobeVendorID> adobe_vendor = Option.some(
-              new AdobeVendorID(rr.getString(R.string.feature_adobe_vendor_id)));
+                Simplified.getCatalogAppServices();
 
             final BooksType books = app.getBooks();
 
@@ -239,17 +232,31 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
                 HTTPOAuthToken.create(access_token);
             final AccountPatron patron =
                 AccountPatron.create(patron_info);
-            final AccountAuthenticationAdobeClientToken adobe_token =
-                AccountAuthenticationAdobeClientToken.create("");
             final AccountAuthenticationProvider auth_provider =
                 AccountAuthenticationProvider.create("Clever");
 
-            final AccountCredentials creds =
-              new AccountCredentials(adobe_vendor, barcode, pin,  Option.some(auth_provider), Option.some(auth_token), Option.some(adobe_token), Option.some(patron));
-            creds.setAdobeDeviceID(Option.<AdobeDeviceID>none());
-            creds.setAdobeUserID(Option.<AdobeUserID>none());
-            books.accountLogin(creds, CleverLoginActivity.this);
+                /*
+                 * XXX: The previous version of this code passed in the vendor ID taken from
+                 *      the Android resources (org.nypl.simplified.app.R.string.feature_adobe_vendor_id),
+                 *      but it seems that this information is now provided as DRM licensor information in
+                 *      OPDS feeds. Is this correct?
+                 *
+                 *      Additionally, the previous version of the code passed in a very clearly
+                 *      invalid and hardcoded empty Adobe client token. The only thing this can
+                 *      have achieved is to cause any code that inspected to the token to crash
+                 *      (because previous versions of the token type were mindlessly making substring()
+                 *      calls on the contained string). Client tokens are now delivered in OPDS
+                 *      feeds along with the vendor information. Is this correct?
+                 */
 
+            final AccountAuthenticationCredentials creds =
+                AccountAuthenticationCredentials.builder(pin, barcode)
+                    .setAuthenticationProvider(auth_provider)
+                    .setOAuthToken(auth_token)
+                    .setPatron(patron)
+                    .build();
+
+            books.accountLogin(creds, CleverLoginActivity.this);
 
           } else {
             //error display problem.
@@ -281,9 +288,7 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
       bar.setDisplayHomeAsUpEnabled(false);
       bar.setHomeButtonEnabled(true);
       bar.setIcon(R.drawable.ic_arrow_back);
-    }
-    else
-    {
+    } else {
       bar.setHomeAsUpIndicator(R.drawable.ic_arrow_back);
       bar.setDisplayHomeAsUpEnabled(true);
       bar.setHomeButtonEnabled(false);
@@ -301,7 +306,7 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
    */
 
   public void setLoginListener(
-    final LoginListenerType in_listener) {
+      final LoginListenerType in_listener) {
     this.listener = NullCheck.notNull(in_listener);
   }
 
@@ -317,8 +322,8 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
 
   @Override
   public void onAccountSyncFailure(
-    final OptionType<Throwable> error,
-    final String message) {
+      final OptionType<Throwable> error,
+      final String message) {
     LogUtilities.errorWithOptionalException(CleverLoginActivity.LOG, message, error);
   }
 
@@ -339,34 +344,34 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
     final Resources rr = NullCheck.notNull(this.getResources());
     final OptionType<Throwable> none = Option.none();
     this.onAccountLoginFailure(
-      none, rr.getString(R.string.settings_login_failed_credentials));
+        none, rr.getString(R.string.settings_login_failed_credentials));
   }
 
   @Override
   public void onAccountLoginFailureServerError(final int code) {
     CleverLoginActivity.LOG.error(
-      "onAccountLoginFailureServerError: {}", code);
+        "onAccountLoginFailureServerError: {}", code);
 
     final Resources rr = NullCheck.notNull(this.getResources());
     final OptionType<Throwable> none = Option.none();
     this.onAccountLoginFailure(
-      none, rr.getString(R.string.settings_login_failed_server));
+        none, rr.getString(R.string.settings_login_failed_server));
   }
 
   @Override
   public void onAccountLoginFailureLocalError(
-    final OptionType<Throwable> error,
-    final String message) {
+      final OptionType<Throwable> error,
+      final String message) {
     CleverLoginActivity.LOG.error("onAccountLoginFailureLocalError: {}", message);
 
     final Resources rr = NullCheck.notNull(this.getResources());
     this.onAccountLoginFailure(
-      error, rr.getString(R.string.settings_login_failed_server));
+        error, rr.getString(R.string.settings_login_failed_server));
   }
 
   @Override
   public void onAccountLoginSuccess(
-    final AccountCredentials creds) {
+      final AccountAuthenticationCredentials creds) {
     CleverLoginActivity.LOG.debug("login succeeded");
 
 
@@ -389,20 +394,20 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
   @Override
   public void onAccountLoginFailureDeviceActivationError(final String message) {
     CleverLoginActivity.LOG.error(
-      "onAccountLoginFailureDeviceActivationError: {}", message);
+        "onAccountLoginFailureDeviceActivationError: {}", message);
 
     final OptionType<Throwable> none = Option.none();
     this.onAccountLoginFailure(
-      none, CleverLoginActivity.getDeviceActivationErrorMessage(
-        this.getResources(), message));
+        none, CleverLoginActivity.getDeviceActivationErrorMessage(
+            this.getResources(), message));
   }
 
   private void onAccountLoginFailure(
-    final OptionType<Throwable> error,
-    final String message) {
+      final OptionType<Throwable> error,
+      final String message) {
     final String s = NullCheck.notNull(
-      String.format(
-        "login failed: %s", message));
+        String.format(
+            "login failed: %s", message));
 
     LogUtilities.errorWithOptionalException(CleverLoginActivity.LOG, s, error);
 
@@ -418,13 +423,13 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
   }
 
   /**
-   * @param rr resources
+   * @param rr      resources
    * @param message error message
    * @return string
    */
   public static String getDeviceActivationErrorMessage(
-    final Resources rr,
-    final String message) {
+      final Resources rr,
+      final String message) {
     /**
      * This is absolutely not the way to do this. The nypl-drm-adobe
      * interfaces should be expanded to return values of an enum type. For now,
@@ -436,7 +441,7 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
       return rr.getString(R.string.settings_login_failed_adobe_device_limit);
     } else if (message.startsWith("E_ADEPT_REQUEST_EXPIRED")) {
       return rr.getString(
-        R.string.settings_login_failed_adobe_device_bad_clock);
+          R.string.settings_login_failed_adobe_device_bad_clock);
     } else {
       return rr.getString(R.string.settings_login_failed_device);
     }

@@ -10,13 +10,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.nypl.drm.core.AdobeAdeptExecutorType;
 import org.nypl.drm.core.AdobeVendorID;
-import org.nypl.simplified.books.accounts.AccountAuthenticationProvider;
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountBarcode;
-import org.nypl.simplified.books.core.AccountCredentials;
+import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.core.AccountDataLoadListenerType;
 import org.nypl.simplified.books.core.AccountLoginListenerType;
 import org.nypl.simplified.books.core.AccountLogoutListenerType;
-import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.core.AccountSyncListenerType;
 import org.nypl.simplified.books.core.AccountsDatabase;
 import org.nypl.simplified.books.core.AccountsDatabaseType;
@@ -280,9 +279,10 @@ public abstract class BooksContract {
 
       final AccountBarcode barcode = AccountBarcode.create("barcode");
       final AccountPIN pin = AccountPIN.create("pin");
-      final OptionType<AdobeVendorID> no_vendor = Option.none();
-      final AccountCredentials creds =
-          new AccountCredentials(no_vendor, barcode, pin, Option.some(AccountAuthenticationProvider.create("Library")));
+
+      final AccountAuthenticationCredentials creds =
+          AccountAuthenticationCredentials.builder(pin, barcode)
+              .build();
 
       final HTTPType in_http = new AuthenticatedHTTP(barcode, pin);
       final OPDSJSONSerializerType in_json_serializer =
@@ -360,7 +360,7 @@ public abstract class BooksContract {
 
         @Override
         public void onAccountLoginSuccess(
-            final AccountCredentials credentials) {
+            final AccountAuthenticationCredentials credentials) {
           try {
             System.out.println("testBooksLoginAcceptedFirst: logged in");
             succeeded.set(true);
@@ -397,9 +397,9 @@ public abstract class BooksContract {
 
       final AccountBarcode barcode = AccountBarcode.create("barcode");
       final AccountPIN pin = AccountPIN.create("pin");
-      final OptionType<AdobeVendorID> no_vendor = Option.none();
-      final AccountCredentials creds =
-          new AccountCredentials(no_vendor, barcode, pin, Option.some(AccountAuthenticationProvider.create("Library")));
+      final AccountAuthenticationCredentials creds =
+          AccountAuthenticationCredentials.builder(pin, barcode)
+              .build();
 
       final HTTPType in_http = new AuthenticatedHTTP(barcode, pin);
 
@@ -486,7 +486,7 @@ public abstract class BooksContract {
 
             @Override
             public void onAccountLoginSuccess(
-                final AccountCredentials credentials) {
+                final AccountAuthenticationCredentials credentials) {
               throw new UnreachableCodeException();
             }
 
@@ -519,8 +519,9 @@ public abstract class BooksContract {
       final AccountBarcode barcode = AccountBarcode.create("barcode");
       final AccountPIN pin = AccountPIN.create("pin");
       final OptionType<AdobeVendorID> no_vendor = Option.none();
-      final AccountCredentials creds =
-          new AccountCredentials(no_vendor, barcode, pin, Option.some(AccountAuthenticationProvider.create("Library")));
+      final AccountAuthenticationCredentials creds =
+          AccountAuthenticationCredentials.builder(pin, barcode)
+              .build();
 
       final HTTPType in_http = new AuthenticatedHTTP(barcode, pin);
 
@@ -562,7 +563,7 @@ public abstract class BooksContract {
       login_sync_latch.await(10L, TimeUnit.SECONDS);
 
       Assert.assertTrue("Sync must succeed", synced_ok.get());
-      Assert.assertEquals("Must have synced correct number of books", 2, synced_book_count.get());
+      Assert.assertEquals("Must have synced correct number of books", 4, synced_book_count.get());
 
       final AtomicInteger load_book_count = new AtomicInteger();
       final CountDownLatch load_latch = new CountDownLatch(2);
@@ -659,9 +660,9 @@ public abstract class BooksContract {
 
       final AccountBarcode barcode = AccountBarcode.create("barcode");
       final AccountPIN pin = AccountPIN.create("pin");
-      final OptionType<AdobeVendorID> no_vendor = Option.none();
-      final AccountCredentials creds =
-          new AccountCredentials(no_vendor, barcode, pin, Option.some(AccountAuthenticationProvider.create("Library")));
+      final AccountAuthenticationCredentials creds =
+          AccountAuthenticationCredentials.builder(pin, barcode)
+              .build();
 
       final HTTPType in_http = new AuthenticatedHTTP(barcode, pin);
 
@@ -704,7 +705,7 @@ public abstract class BooksContract {
       login_sync_latch.await(10L, TimeUnit.SECONDS);
 
       Assert.assertTrue("Sync must succeed", synced_ok.get());
-      Assert.assertEquals("Must have synced the correct number of books", 2, synced_book_count.get());
+      Assert.assertEquals("Must have synced the correct number of books", 4, synced_book_count.get());
 
       /*
        * Assert status of each book.
@@ -714,21 +715,41 @@ public abstract class BooksContract {
 
       {
         final OptionType<BookStatusType> opt = status_cache.booksStatusGet(
-            BookID.exactString("2925d691731c018650422a6d8463cd1fb880e2a8d0d8741a9652e6fb5a56783f"));
+            BookID.exactString("561c5ecf0d3020e18ff66e17db27ca232898d409e1d7b0a0432dbea848a1abfe"));
         Assert.assertTrue("Book must have status", opt.isSome());
         final BookStatusType o = ((Some<BookStatusType>) opt).get();
         Assert.assertTrue(
-            "Book 2925d691731c018650422a6d8463cd1fb880e2a8d0d8741a9652e6fb5a56783f is loaned",
+            "Book 561c5ecf0d3020e18ff66e17db27ca232898d409e1d7b0a0432dbea848a1abfe is loaned",
             o instanceof BookStatusLoaned);
       }
 
       {
         final OptionType<BookStatusType> opt = status_cache.booksStatusGet(
-            BookID.exactString("31d2a6c5a6aa3065e25a7373167d734d72e72cdd843d1474d807dce2bf6de834"));
+            BookID.exactString("28a0d7122f93e0e052e9e50b35531d01d55056d8fbd3c853e307a0455888150e"));
         Assert.assertTrue("Book must have status", opt.isSome());
         final BookStatusType o = ((Some<BookStatusType>) opt).get();
         Assert.assertTrue(
-            "Book 31d2a6c5a6aa3065e25a7373167d734d72e72cdd843d1474d807dce2bf6de834 is loaned",
+            "Book 28a0d7122f93e0e052e9e50b35531d01d55056d8fbd3c853e307a0455888150e is loaned",
+            o instanceof BookStatusLoaned);
+      }
+
+      {
+        final OptionType<BookStatusType> opt = status_cache.booksStatusGet(
+            BookID.exactString("8e697815fb146a0ffd0bb3776b8197cea1bd6cb75a95a34053bf2b65e0b7e7e7"));
+        Assert.assertTrue("Book must have status", opt.isSome());
+        final BookStatusType o = ((Some<BookStatusType>) opt).get();
+        Assert.assertTrue(
+            "Book 8e697815fb146a0ffd0bb3776b8197cea1bd6cb75a95a34053bf2b65e0b7e7e7 is loaned",
+            o instanceof BookStatusLoaned);
+      }
+
+      {
+        final OptionType<BookStatusType> opt = status_cache.booksStatusGet(
+            BookID.exactString("284a2dc4e2852f1a69665aa28949e8659cf9d7d53ca11c7bf096403261368ade"));
+        Assert.assertTrue("Book must have status", opt.isSome());
+        final BookStatusType o = ((Some<BookStatusType>) opt).get();
+        Assert.assertTrue(
+            "Book 284a2dc4e2852f1a69665aa28949e8659cf9d7d53ca11c7bf096403261368ade is loaned",
             o instanceof BookStatusLoaned);
       }
 
@@ -909,7 +930,7 @@ public abstract class BooksContract {
 
     @Override
     public void onAccountLoginSuccess(
-        final AccountCredentials credentials) {
+        final AccountAuthenticationCredentials credentials) {
       try {
         LOG.debug("onAccountLoginSuccess: {}", credentials);
       } finally {
@@ -1007,12 +1028,14 @@ public abstract class BooksContract {
 
     private HTTPResultType<InputStream> getLoans(
         final OptionType<HTTPAuthType> auth_opt) {
+
       if (auth_opt.isNone()) {
         return this.unauthorized();
       }
 
       final Some<HTTPAuthType> some = (Some<HTTPAuthType>) auth_opt;
       final HTTPAuthType auth = some.get();
+
       try {
         return auth.matchAuthType(
             new HTTPAuthMatcherType<HTTPResultType<InputStream>, IOException>() {
@@ -1037,7 +1060,7 @@ public abstract class BooksContract {
 
                 final URL resource_url =
                     BooksContract.class.getResource(
-                        "/org/nypl/simplified/tests/opds/loans.xml");
+                        "/org/nypl/simplified/tests/books/loans.xml");
 
                 LOG.debug("onAuthBasic: serving {}", resource_url);
 

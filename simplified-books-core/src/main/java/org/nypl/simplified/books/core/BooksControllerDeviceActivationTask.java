@@ -1,11 +1,8 @@
 package org.nypl.simplified.books.core;
 
-import com.io7m.jfunctional.None;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
-import com.io7m.jfunctional.OptionVisitorType;
 import com.io7m.jfunctional.Some;
-import com.io7m.jfunctional.Unit;
 
 import org.nypl.drm.core.AdobeAdeptActivationReceiverType;
 import org.nypl.drm.core.AdobeAdeptConnectorType;
@@ -15,19 +12,26 @@ import org.nypl.drm.core.AdobeDeviceID;
 import org.nypl.drm.core.AdobeUserID;
 import org.nypl.drm.core.AdobeVendorID;
 import org.nypl.simplified.books.accounts.AccountAuthenticationAdobeClientToken;
+import org.nypl.simplified.books.accounts.AccountAuthenticationAdobePostActivationCredentials;
+import org.nypl.simplified.books.accounts.AccountAuthenticationAdobePreActivationCredentials;
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
+import org.nypl.simplified.http.core.HTTP;
+import org.nypl.simplified.http.core.HTTPAuthBasic;
+import org.nypl.simplified.http.core.HTTPAuthType;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Runnable that JUST activates the device with Adobe (used on startup, and as part of logging in)
  */
 
-public class BooksControllerDeviceActivationTask implements Runnable,
-  AdobeAdeptActivationReceiverType {
+public class BooksControllerDeviceActivationTask implements Runnable {
 
   private final OptionType<AdobeAdeptExecutorType> adobe_drm;
-  private final AccountCredentials credentials;
+  private final AccountAuthenticationCredentials credentials;
   private final AccountsDatabaseType accounts_database;
   private final DeviceActivationListenerType device_activation_listener;
 
@@ -39,9 +43,10 @@ public class BooksControllerDeviceActivationTask implements Runnable,
 
   BooksControllerDeviceActivationTask(
       final OptionType<AdobeAdeptExecutorType> in_adobe_drm,
-      final AccountCredentials in_credentials,
+      final AccountAuthenticationCredentials in_credentials,
       final AccountsDatabaseType in_accounts_database,
       final DeviceActivationListenerType in_device_activation_listener) {
+
     this.adobe_drm = in_adobe_drm;
     this.credentials = in_credentials;
     this.accounts_database = in_accounts_database;
@@ -50,100 +55,130 @@ public class BooksControllerDeviceActivationTask implements Runnable,
 
   @Override
   public void run() {
-    if (this.adobe_drm.isSome()) {
-      final Some<AdobeAdeptExecutorType> some =
-        (Some<AdobeAdeptExecutorType>) this.adobe_drm;
-      final AdobeAdeptExecutorType adobe_exec = some.get();
 
-      final OptionType<AccountAuthenticationAdobeClientToken> adobe_token = this.credentials.getAdobeToken();
-      final OptionType<AdobeVendorID> vendor_opt = this.credentials.getAdobeVendor();
+    if (this.adobe_drm.isNone()) {
+      LOG.debug("no adobe drm, aborting!");
+      return;
+    }
 
-      vendor_opt.accept(
-        new OptionVisitorType<AdobeVendorID, Unit>() {
+    final Some<AdobeAdeptExecutorType> some = (Some<AdobeAdeptExecutorType>) this.adobe_drm;
+    final AdobeAdeptExecutorType adobe_exec = some.get();
+
+    if (this.credentials.adobeCredentials().isNone()) {
+      LOG.debug("aborting activation: no adobe credentials");
+      return;
+    }
+
+    final AccountAuthenticationAdobePreActivationCredentials adobe_creds_pre =
+        ((Some<AccountAuthenticationAdobePreActivationCredentials>) this.credentials.adobeCredentials()).get();
+
+    final AccountAuthenticationAdobeClientToken adobe_token = adobe_creds_pre.clientToken();
+
+    /*
+     * An activation listener that records the post-activation credentials to the database in the
+     * case of a successful activation.
+     */
+
+    final AdobeAdeptActivationReceiverType activation_listener =
+        new AdobeAdeptActivationReceiverType() {
+
           @Override
-          public Unit none(final None<AdobeVendorID> n) {
-            BooksControllerDeviceActivationTask.this.onActivationError(
-              "No Adobe vendor ID provided");
-            return Unit.unit();
+          public void onActivationsCount(int count) {
+
+        /*
+         * Device activation succeeded.
+         */
+
+            LOG.debug("Activation  count: {}", count);
           }
 
           @Override
-          public Unit some(final Some<AdobeVendorID> s) {
-            adobe_exec.execute(
-              new AdobeAdeptProcedureType() {
-                @Override
-                public void executeWith(final AdobeAdeptConnectorType c) {
-//                  c.discardDeviceActivations();
+          public void onActivation(
+              final int index,
+              final AdobeVendorID authority,
+              final AdobeDeviceID device_id,
+              final String user_name,
+              final AdobeUserID user_id,
+              final String expires) {
 
-                  final AccountAuthenticationAdobeClientToken token =
-                      ((Some<AccountAuthenticationAdobeClientToken>) adobe_token).get();
+            LOG.debug("Activation [{}]: authority: {}", index, authority);
+            LOG.debug("Activation [{}]: device_id: {}", index, device_id);
+            LOG.debug("Activation [{}]: user_name: {}", index, user_name);
+            LOG.debug("Activation [{}]: user_id: {}", index, user_id);
+            LOG.debug("Activation [{}]: expires: {}", index, expires);
 
-                  c.activateDevice(
-                    BooksControllerDeviceActivationTask.this,
-                    ((Some<AdobeVendorID>) vendor_opt).get(),
-                    token.tokenUserName(),
-                    token.tokenPassword());
+            /*
+             * Device activation succeeded. Record the post activation credentials to the database.
+             */
 
-                  new DeviceManagerPostTask(BooksControllerDeviceActivationTask.this.credentials).run();
+            final AccountAuthenticationAdobePostActivationCredentials new_post_creds =
+                AccountAuthenticationAdobePostActivationCredentials.create(device_id, user_id);
 
-                }
-              });
-            return Unit.unit();
+            final AccountAuthenticationCredentials new_creds =
+                credentials.toBuilder()
+                    .setAdobeCredentials(adobe_creds_pre.withPostActivationCredentials(new_post_creds))
+                    .build();
+
+            try {
+              accounts_database.accountSetCredentials(new_creds);
+            } catch (final IOException e) {
+              LOG.error("could not save credentials: ", e);
+            }
+
+            contactDeviceManager(adobe_creds_pre, new_post_creds);
+            device_activation_listener.onDeviceActivationSuccess();
+          }
+
+          @Override
+          public void onActivationError(
+              final String error) {
+            LOG.debug("Failed to activate device: {}", error);
+            device_activation_listener.onDeviceActivationFailure(error);
+          }
+        };
+
+    /*
+     * Execute the device activation.
+     */
+
+    adobe_exec.execute(
+        new AdobeAdeptProcedureType() {
+          @Override
+          public void executeWith(final AdobeAdeptConnectorType c) {
+            c.activateDevice(
+                activation_listener,
+                adobe_creds_pre.vendorID(),
+                adobe_token.tokenUserName(),
+                adobe_token.tokenPassword());
           }
         });
-    }
   }
 
-  @Override
-  public void onActivation(
-    final int index,
-    final AdobeVendorID authority,
-    final AdobeDeviceID device_id,
-    final String user_name,
-    final AdobeUserID user_id,
-    final String expires) {
-    BooksControllerDeviceActivationTask.LOG.debug(
-      "Activation [{}]: authority: {}", Integer.valueOf(index), authority);
-    BooksControllerDeviceActivationTask.LOG.debug(
-      "Activation [{}]: device_id: {}", Integer.valueOf(index), device_id);
-    BooksControllerDeviceActivationTask.LOG.debug(
-      "Activation [{}]: user_name: {}", Integer.valueOf(index), user_name);
-    BooksControllerDeviceActivationTask.LOG.debug(
-      "Activation [{}]: user_id: {}", Integer.valueOf(index), user_id);
-    BooksControllerDeviceActivationTask.LOG.debug(
-      "Activation [{}]: expires: {}", Integer.valueOf(index), expires);
+  /**
+   * Call the remove device manager and tell it about the new activation.
+   */
 
-    BooksControllerDeviceActivationTask.this.credentials.setAdobeUserID(Option.some(user_id));
-    BooksControllerDeviceActivationTask.this.credentials.setAdobeDeviceID(Option.some(device_id));
+  private void contactDeviceManager(
+      final AccountAuthenticationAdobePreActivationCredentials adobe_creds_pre,
+      final AccountAuthenticationAdobePostActivationCredentials adobe_creds_post)
+  {
+    LOG.debug("contactDeviceManager: {}", adobe_creds_pre.deviceManagerURI());
 
-    this.device_activation_listener.onDeviceActivationSuccess();
-
-    try {
-      this.accounts_database.accountSetCredentials(this.credentials);
-    } catch (final IOException e) {
-      BooksControllerDeviceActivationTask.LOG.error("could not save credentials: ", e);
-    }
-
-  }
-
-  @Override
-  public void onActivationsCount(final int count) {
-    /**
-     * Device activation succeeded.
+    /*
+     * XXX: Does the device manager only support Basic authentication? The previous maintainer
+     *      did not do the usual copy/paste of the code that creates HTTP auth instances, so I've
+     *      stuck to only using Basic auth here.
      */
-    BooksControllerDeviceActivationTask.LOG.debug(
-      "Activation  count: {}", count);
 
-  }
+    final OptionType<HTTPAuthType> http_auth =
+        Option.some((HTTPAuthType) HTTPAuthBasic.create(
+            credentials.barcode().value(),
+            credentials.pin().value()));
 
-  @Override
-  public void onActivationError(final String error) {
-    BooksControllerDeviceActivationTask.LOG.debug("Failed to activate device: {}", error);
-    this.device_activation_listener.onDeviceActivationFailure(error);
-//    try {
-//      this.accounts_database.accountRemoveCredentials();
-//    } catch (IOException exception) {
-//      BooksControllerDeviceActivationTask.LOG.debug("Failed to clear account credentials");
-//    }
+    HTTP.newHTTP().post(
+        http_auth,
+        adobe_creds_pre.deviceManagerURI(),
+        adobe_creds_post.deviceID().getValue().getBytes(StandardCharsets.US_ASCII),
+        "vnd.librarysimplified/drm-device-id-list");
   }
 }

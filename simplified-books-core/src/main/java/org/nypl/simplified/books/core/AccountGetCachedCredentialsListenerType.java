@@ -1,11 +1,13 @@
 package org.nypl.simplified.books.core;
 
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
+
 /**
  * The type of listeners for receiving cached credentials.
  */
 
-public interface AccountGetCachedCredentialsListenerType
-{
+public interface AccountGetCachedCredentialsListenerType {
+
   /**
    * The account is not logged in.
    */
@@ -19,5 +21,5 @@ public interface AccountGetCachedCredentialsListenerType
    */
 
   void onAccountIsLoggedIn(
-    AccountCredentials credentials);
+      AccountAuthenticationCredentials credentials);
 }

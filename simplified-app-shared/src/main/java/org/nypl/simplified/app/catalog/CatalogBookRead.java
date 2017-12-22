@@ -12,7 +12,7 @@ import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.app.SimplifiedCatalogAppServicesType;
 import org.nypl.simplified.app.reader.ReaderActivity;
 import org.nypl.simplified.app.utilities.ErrorDialogUtilities;
-import org.nypl.simplified.books.core.AccountCredentials;
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.core.AccountGetCachedCredentialsListenerType;
 import org.nypl.simplified.books.core.BookDatabaseEntrySnapshot;
 import org.nypl.simplified.books.core.BookDatabaseReadableType;
@@ -80,7 +80,7 @@ public final class CatalogBookRead implements OnClickListener
         }
 
         @Override public void onAccountIsLoggedIn(
-          final AccountCredentials creds) {
+          final AccountAuthenticationCredentials creds) {
 
           CirculationAnalytics.postEvent(creds, CatalogBookRead.this.activity, CatalogBookRead.this.entry, "open_book");
 

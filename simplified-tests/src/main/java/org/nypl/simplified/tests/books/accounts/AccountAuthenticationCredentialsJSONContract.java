@@ -10,7 +10,6 @@ import org.nypl.drm.core.AdobeDeviceID;
 import org.nypl.drm.core.AdobeUserID;
 import org.nypl.drm.core.AdobeVendorID;
 import org.nypl.simplified.books.accounts.AccountAuthenticationAdobeClientToken;
-import org.nypl.simplified.books.accounts.AccountAuthenticationAdobeCredentials;
 import org.nypl.simplified.books.accounts.AccountAuthenticationAdobePostActivationCredentials;
 import org.nypl.simplified.books.accounts.AccountAuthenticationAdobePreActivationCredentials;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
@@ -76,13 +75,12 @@ public abstract class AccountAuthenticationCredentialsJSONContract {
   public final void testRoundTrip2()
       throws Exception {
 
-    AccountAuthenticationAdobeCredentials adobe =
-        AccountAuthenticationAdobeCredentials.create(
-            AccountAuthenticationAdobePreActivationCredentials.create(
-                new AdobeVendorID("vendor"),
-                AccountAuthenticationAdobeClientToken.create("NYNYPL|156|5e0cdf28-e3a2-11e7-ab18-0e26ed4612aa|LEcBeSV"),
-                URI.create("http://example.com"),
-                Option.<AccountAuthenticationAdobePostActivationCredentials>none()));
+    AccountAuthenticationAdobePreActivationCredentials adobe =
+        AccountAuthenticationAdobePreActivationCredentials.create(
+            new AdobeVendorID("vendor"),
+            AccountAuthenticationAdobeClientToken.create("NYNYPL|156|5e0cdf28-e3a2-11e7-ab18-0e26ed4612aa|LEcBeSV"),
+            URI.create("http://example.com"),
+            Option.<AccountAuthenticationAdobePostActivationCredentials>none());
 
     final AccountAuthenticationCredentials creds0 =
         AccountAuthenticationCredentials.builder(
@@ -109,13 +107,12 @@ public abstract class AccountAuthenticationCredentialsJSONContract {
             new AdobeDeviceID("device"),
             new AdobeUserID("user"));
 
-    AccountAuthenticationAdobeCredentials adobe =
-        AccountAuthenticationAdobeCredentials.create(
-            AccountAuthenticationAdobePreActivationCredentials.create(
-                new AdobeVendorID("vendor"),
-                AccountAuthenticationAdobeClientToken.create("NYNYPL|156|5e0cdf28-e3a2-11e7-ab18-0e26ed4612aa|LEcBeSV"),
-                URI.create("http://example.com"),
-                Option.some(adobe_post)));
+    AccountAuthenticationAdobePreActivationCredentials adobe =
+        AccountAuthenticationAdobePreActivationCredentials.create(
+            new AdobeVendorID("vendor"),
+            AccountAuthenticationAdobeClientToken.create("NYNYPL|156|5e0cdf28-e3a2-11e7-ab18-0e26ed4612aa|LEcBeSV"),
+            URI.create("http://example.com"),
+            Option.some(adobe_post));
 
     final AccountAuthenticationCredentials creds0 =
         AccountAuthenticationCredentials.builder(

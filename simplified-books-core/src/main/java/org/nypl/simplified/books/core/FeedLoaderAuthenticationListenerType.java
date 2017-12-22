@@ -2,6 +2,8 @@ package org.nypl.simplified.books.core;
 
 import com.io7m.jfunctional.OptionType;
 
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
+
 /**
  * The type of listeners that will receive authentication data when loading
  * feeds.
@@ -16,7 +18,7 @@ public interface FeedLoaderAuthenticationListenerType
    */
 
   void onAuthenticationProvided(
-    AccountCredentials credentials);
+      AccountAuthenticationCredentials credentials);
 
   /**
    * No authentication data was provided.

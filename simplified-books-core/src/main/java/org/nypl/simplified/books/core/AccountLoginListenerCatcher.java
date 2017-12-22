@@ -2,6 +2,8 @@ package org.nypl.simplified.books.core;
 
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;
+
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.slf4j.Logger;
 
 /**
@@ -52,7 +54,7 @@ final class AccountLoginListenerCatcher implements AccountLoginListenerType
   }
 
   @Override public void onAccountLoginSuccess(
-    final AccountCredentials credentials)
+    final AccountAuthenticationCredentials credentials)
   {
     try {
       this.delegate.onAccountLoginSuccess(credentials);

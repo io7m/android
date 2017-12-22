@@ -25,7 +25,7 @@ import org.nypl.simplified.app.SimplifiedCatalogAppServicesType;
 import org.nypl.simplified.app.catalog.annotation.Annotation;
 import org.nypl.simplified.app.catalog.annotation.Selector;
 import org.nypl.simplified.app.catalog.annotation.Target;
-import org.nypl.simplified.books.core.AccountCredentials;
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.core.BookID;
 import org.nypl.simplified.books.core.BooksControllerConfigurationType;
 import org.nypl.simplified.books.core.BooksType;
@@ -109,8 +109,9 @@ public final class ReaderBookmarks implements ReaderBookmarksType
     final BookID id,
     final ReaderBookLocation bookmark,
     final OPDSAcquisitionFeedEntry entry,
-    final AccountCredentials credentials,
+    final AccountAuthenticationCredentials credentials,
     final RequestQueue queue) {
+
     NullCheck.notNull(id);
     NullCheck.notNull(bookmark);
     NullCheck.notNull(entry);
@@ -134,7 +135,10 @@ public final class ReaderBookmarks implements ReaderBookmarksType
               annotation.setTarget(new Target(entry.getID(), new Selector("oa:FragmentSelector", bookmark.toJSON().toString())));
               final JsonObject body = new JsonObject();
               body.addProperty("http://librarysimplified.org/terms/time", new Instant().toString());
-              body.addProperty("http://librarysimplified.org/terms/device", ((Some<AdobeDeviceID>) credentials.getAdobeDeviceID()).get().getValue());
+
+              // XXX: This is absolutely guaranteed to be broken for devices without DRM
+              //      I've temporarily disabled it until something less stupid can be written
+              // body.addProperty("http://librarysimplified.org/terms/device", ((Some<AdobeDeviceID>) credentials.getAdobeDeviceID()).get().getValue());
               annotation.setBody(body);
 
               final Gson gson = new GsonBuilder()

@@ -9,7 +9,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
 import com.io7m.jfunctional.Some;
 
-import org.nypl.simplified.books.core.AccountCredentials;
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.core.FeedEntryOPDS;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.volley.NYPLStringRequest;
@@ -34,7 +34,7 @@ public final class CirculationAnalytics {
   /**
    *
    */
-  public static void postEvent(AccountCredentials creds, Context context, FeedEntryOPDS entry, String event)
+  public static void postEvent(AccountAuthenticationCredentials creds, Context context, FeedEntryOPDS entry, String event)
   {
 
     final RequestQueue queue = Volley.newRequestQueue(context);

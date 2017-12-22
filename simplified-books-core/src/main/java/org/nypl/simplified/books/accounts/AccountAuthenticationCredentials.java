@@ -1,14 +1,13 @@
 package org.nypl.simplified.books.accounts;
 
 import com.google.auto.value.AutoValue;
+import com.io7m.jfunctional.None;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
+import com.io7m.jfunctional.OptionVisitorType;
+import com.io7m.jfunctional.Some;
 
 import org.nypl.simplified.http.core.HTTPOAuthToken;
-import org.nypl.simplified.opds.core.DRMLicensor;
-
-import java.util.Collections;
-import java.util.Set;
 
 /**
  * <p>A set of account credentials.</p>
@@ -37,7 +36,7 @@ public abstract class AccountAuthenticationCredentials {
         .setOAuthToken(Option.<HTTPOAuthToken>none())
         .setAuthenticationProvider(Option.<AccountAuthenticationProvider>none())
         .setPatron(Option.<AccountPatron>none())
-        .setAdobeCredentials(Option.<AccountAuthenticationAdobeCredentials>none());
+        .setAdobeCredentials(Option.<AccountAuthenticationAdobePreActivationCredentials>none());
   }
 
   /**
@@ -62,7 +61,7 @@ public abstract class AccountAuthenticationCredentials {
    * @return The Adobe credentials, if any are present
    */
 
-  public abstract OptionType<AccountAuthenticationAdobeCredentials> adobeCredentials();
+  public abstract OptionType<AccountAuthenticationAdobePreActivationCredentials> adobeCredentials();
 
   /**
    * @return The authentication provider, if any
@@ -81,6 +80,36 @@ public abstract class AccountAuthenticationCredentials {
    */
 
   public abstract Builder toBuilder();
+
+  /**
+   * @return The Adobe post-activation credentials, if any are present
+   */
+
+  public final OptionType<AccountAuthenticationAdobePostActivationCredentials> adobePostActivationCredentials() {
+    return adobeCredentials().accept(
+        new OptionVisitorType<AccountAuthenticationAdobePreActivationCredentials,
+            OptionType<AccountAuthenticationAdobePostActivationCredentials>>() {
+          @Override
+          public OptionType<AccountAuthenticationAdobePostActivationCredentials>
+          none(final None<AccountAuthenticationAdobePreActivationCredentials> none) {
+            return Option.none();
+          }
+
+          @Override
+          public OptionType<AccountAuthenticationAdobePostActivationCredentials>
+          some(final Some<AccountAuthenticationAdobePreActivationCredentials> some) {
+            return some.get().postActivationCredentials();
+          }
+        });
+  }
+
+  /**
+   * @return {@code true} iff these credentials imply that a device has been activated via Adobe DRM
+   */
+
+  public final boolean hasActivatedAdobeDevice() {
+    return adobePostActivationCredentials().isSome();
+  }
 
   /**
    * A mutable builder for the type.
@@ -121,13 +150,34 @@ public abstract class AccountAuthenticationCredentials {
         OptionType<HTTPOAuthToken> token);
 
     /**
+     * @param token The token value
+     * @return The current builder
+     * @see #oAuthToken()
+     */
+
+    public Builder setOAuthToken(HTTPOAuthToken token) {
+      return setOAuthToken(Option.some(token));
+    }
+
+    /**
      * @param credentials The credentials
      * @return The current builder
      * @see #adobeCredentials()
      */
 
     public abstract Builder setAdobeCredentials(
-        OptionType<AccountAuthenticationAdobeCredentials> credentials);
+        OptionType<AccountAuthenticationAdobePreActivationCredentials> credentials);
+
+    /**
+     * @param credentials The credentials
+     * @return The current builder
+     * @see #adobeCredentials()
+     */
+
+    public final Builder setAdobeCredentials(
+        final AccountAuthenticationAdobePreActivationCredentials credentials) {
+      return setAdobeCredentials(Option.some(credentials));
+    }
 
     /**
      * @param provider The provider
@@ -139,6 +189,16 @@ public abstract class AccountAuthenticationCredentials {
         OptionType<AccountAuthenticationProvider> provider);
 
     /**
+     * @param provider The provider
+     * @return The current builder
+     * @see #authenticationProvider()
+     */
+
+    public final Builder setAuthenticationProvider(AccountAuthenticationProvider provider) {
+      return setAuthenticationProvider(Option.some(provider));
+    }
+
+    /**
      * @param patron The patron
      * @return The current builder
      * @see #patron()
@@ -148,9 +208,19 @@ public abstract class AccountAuthenticationCredentials {
         OptionType<AccountPatron> patron);
 
     /**
+     * @param patron The patron
+     * @return The current builder
+     * @see #patron()
+     */
+
+    public Builder setPatron(AccountPatron patron) {
+      return setPatron(Option.some(patron));
+    }
+
+    /**
      * @return A constructed set of credentials
      */
 
-    public abstract AccountAuthenticationCredentials build() ;
+    public abstract AccountAuthenticationCredentials build();
   }
 }

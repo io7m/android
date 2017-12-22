@@ -1,6 +1,7 @@
 package org.nypl.simplified.books.accounts;
 
 import com.google.auto.value.AutoValue;
+import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
 
 import org.nypl.drm.core.AdobeVendorID;
@@ -66,4 +67,30 @@ public abstract class AccountAuthenticationAdobePreActivationCredentials {
    */
 
   public abstract OptionType<AccountAuthenticationAdobePostActivationCredentials> postActivationCredentials();
+
+  /**
+   * @param credentials The extra post-activation credentials
+   * @return The current credentials plus the given post-activation credentials
+   */
+
+  public AccountAuthenticationAdobePreActivationCredentials withPostActivationCredentials(
+      final AccountAuthenticationAdobePostActivationCredentials credentials) {
+    return create(
+        this.vendorID(),
+        this.clientToken(),
+        this.deviceManagerURI(),
+        Option.some(credentials));
+  }
+
+  /**
+   * @return The current credentials without any existing post-activation credentials
+   */
+
+  public AccountAuthenticationAdobePreActivationCredentials withoutPostActivationCredentials() {
+    return create(
+        this.vendorID(),
+        this.clientToken(),
+        this.deviceManagerURI(),
+        Option.<AccountAuthenticationAdobePostActivationCredentials>none());
+  }
 }

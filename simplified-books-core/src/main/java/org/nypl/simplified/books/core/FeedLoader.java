@@ -12,6 +12,8 @@ import net.jodah.expiringmap.ExpiringMap.Builder;
 import net.jodah.expiringmap.ExpiringMap.ExpirationListener;
 import net.jodah.expiringmap.ExpiringMap.ExpirationPolicy;
 import org.nypl.drm.core.Assertions;
+import org.nypl.simplified.books.accounts.AccountAuthenticatedHTTP;
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.http.core.HTTPAuthBasic;
 import org.nypl.simplified.http.core.HTTPAuthOAuth;
 import org.nypl.simplified.http.core.HTTPAuthType;
@@ -435,7 +437,7 @@ public final class FeedLoader
     final FeedHTTPTransportException e)
     throws InterruptedException, FeedHTTPTransportException
   {
-    /**
+    /*
      * Call a blocking auth listener and wait for authentication data
      * to be provided.
      */
@@ -449,34 +451,23 @@ public final class FeedLoader
     auth_listener.waitForCompletion(5L, TimeUnit.MINUTES);
     FeedLoader.LOG.trace("finished waiting for completion");
 
-    /**
+    /*
      * If no authentication data was provided, the feed can't be loaded.
      */
 
-    final OptionType<AccountCredentials> result_opt = auth_listener.getResult();
+    final OptionType<AccountAuthenticationCredentials> result_opt = auth_listener.getResult();
     if (result_opt.isNone()) {
       throw e;
     }
 
-    /**
-     * Otherwise, record the provided credentials and try again.
+    /*
+     * Otherwise, try with the provided credentials.
      */
 
-    final Some<AccountCredentials> result_some =
-      (Some<AccountCredentials>) result_opt;
-    final AccountCredentials result = result_some.get();
-    final String user = result.getBarcode().toString();
-    final String pass = result.getPin().toString();
+    final Some<AccountAuthenticationCredentials> result_some =
+      (Some<AccountAuthenticationCredentials>) result_opt;
 
-    HTTPAuthType auth = HTTPAuthBasic.create(user, pass);
-    if (result.getOAuthToken().isSome()) {
-      final HTTPOAuthToken token = ((Some<HTTPOAuthToken>) result.getOAuthToken()).get();
-      if (token != null) {
-        auth = HTTPAuthOAuth.create(token);
-      }
-    }
-
-    return auth;
+    return AccountAuthenticatedHTTP.createAuthenticatedHTTP(result_some.get());
   }
 
   private static final class ProtectedListener implements FeedLoaderListenerType
@@ -573,20 +564,20 @@ public final class FeedLoader
     implements FeedLoaderAuthenticationListenerType
   {
     private final CountDownLatch                                  latch;
-    private final AtomicReference<OptionType<AccountCredentials>> result;
+    private final AtomicReference<OptionType<AccountAuthenticationCredentials>> result;
 
     BlockingAuthenticationListener()
     {
       this.latch = new CountDownLatch(1);
-      final OptionType<AccountCredentials> none = Option.none();
-      this.result = new AtomicReference<OptionType<AccountCredentials>>(none);
+      final OptionType<AccountAuthenticationCredentials> none = Option.none();
+      this.result = new AtomicReference<OptionType<AccountAuthenticationCredentials>>(none);
     }
 
     /**
      * @return The result, if the listener has completed
      */
 
-    public OptionType<AccountCredentials> getResult()
+    public OptionType<AccountAuthenticationCredentials> getResult()
     {
       return this.result.get();
     }
@@ -621,7 +612,7 @@ public final class FeedLoader
     }
 
     @Override public void onAuthenticationProvided(
-      final AccountCredentials credentials)
+      final AccountAuthenticationCredentials credentials)
     {
       this.result.set(Option.some(credentials));
       this.completeNow();

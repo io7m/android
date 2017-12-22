@@ -43,11 +43,11 @@ import com.tenmiles.helpstack.HSHelpStack;
 import com.tenmiles.helpstack.gears.HSDeskGear;
 
 import org.nypl.simplified.app.utilities.UIThread;
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountBarcode;
-import org.nypl.simplified.books.core.AccountCredentials;
+import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.core.AccountGetCachedCredentialsListenerType;
 import org.nypl.simplified.books.core.AccountLogoutListenerType;
-import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.core.AccountSyncListenerType;
 import org.nypl.simplified.books.core.AccountsDatabaseType;
 import org.nypl.simplified.books.core.AuthenticationDocumentType;
@@ -107,7 +107,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
 
   @Override
   public void onAccountIsLoggedIn(
-    final AccountCredentials creds) {
+    final AccountAuthenticationCredentials creds) {
     MainSettingsAccountActivity.LOG.debug("account is logged in: {}", creds);
 
     final SimplifiedCatalogAppServicesType app =
@@ -179,10 +179,10 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
             in_account_icon.setImageResource(R.drawable.account_logo_wcfl);
           }
 
-          in_barcode_text.setText(creds.getBarcode().toString());
-          in_barcode_text.setContentDescription(creds.getBarcode().toString().replaceAll(".(?=.)", "$0,"));
-          in_pin_text.setText(creds.getPin().toString());
-          in_pin_text.setContentDescription(creds.getPin().toString().replaceAll(".(?=.)", "$0,"));
+          in_barcode_text.setText(creds.barcode().toString());
+          in_barcode_text.setContentDescription(creds.barcode().toString().replaceAll(".(?=.)", "$0,"));
+          in_pin_text.setText(creds.pin().toString());
+          in_pin_text.setContentDescription(creds.pin().toString().replaceAll(".(?=.)", "$0,"));
 
           in_login.setText(rr.getString(R.string.settings_log_out));
           in_login.setOnClickListener(
@@ -781,7 +781,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
 
       @Override
       public void onLoginSuccess(
-        final AccountCredentials creds) {
+        final AccountAuthenticationCredentials creds) {
         MainSettingsAccountActivity.LOG.trace(
           "feed auth: login supplied new credentials");
 //        LoginActivity.this.openCatalog();
@@ -929,7 +929,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
 
     final AccountsDatabaseType accounts_database  = Simplified.getAccountsDatabase(this.account, this);
     if (accounts_database.accountGetCredentials().isSome()) {
-      final AccountCredentials creds = ((Some<AccountCredentials>) accounts_database.accountGetCredentials()).get();
+      final AccountAuthenticationCredentials creds = ((Some<AccountAuthenticationCredentials>) accounts_database.accountGetCredentials()).get();
 
       final BooksType final_books = books;
       UIThread.runOnUIThread(
@@ -940,10 +940,10 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
             in_table_with_code.setVisibility(View.VISIBLE);
             in_table_signup.setVisibility(View.GONE);
 
-            in_barcode_text.setText(creds.getBarcode().toString());
-            in_barcode_text.setContentDescription(creds.getBarcode().toString().replaceAll(".(?=.)", "$0,"));
-            in_pin_text.setText(creds.getPin().toString());
-            in_pin_text.setContentDescription(creds.getPin().toString().replaceAll(".(?=.)", "$0,"));
+            in_barcode_text.setText(creds.barcode().toString());
+            in_barcode_text.setContentDescription(creds.barcode().toString().replaceAll(".(?=.)", "$0,"));
+            in_pin_text.setText(creds.pin().toString());
+            in_pin_text.setContentDescription(creds.pin().toString().replaceAll(".(?=.)", "$0,"));
 
             in_eula_checkbox.setEnabled(false);
 

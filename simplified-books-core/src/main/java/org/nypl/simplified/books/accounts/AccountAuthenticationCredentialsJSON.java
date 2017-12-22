@@ -79,17 +79,16 @@ public final class AccountAuthenticationCredentialsJSON {
         });
 
     credentials.adobeCredentials().map_(
-        new ProcedureType<AccountAuthenticationAdobeCredentials>() {
+        new ProcedureType<AccountAuthenticationAdobePreActivationCredentials>() {
           @Override
-          public void call(AccountAuthenticationAdobeCredentials creds) {
+          public void call(AccountAuthenticationAdobePreActivationCredentials creds) {
             final ObjectNode adobe_pre_jo = jom.createObjectNode();
 
-            AccountAuthenticationAdobePreActivationCredentials pre = creds.preActivationCredentials();
-            adobe_pre_jo.put("client_token", pre.clientToken().tokenRaw());
-            adobe_pre_jo.put("device_manager_uri", pre.deviceManagerURI().toString());
-            adobe_pre_jo.put("vendor_id", pre.vendorID().getValue());
+            adobe_pre_jo.put("client_token", creds.clientToken().tokenRaw());
+            adobe_pre_jo.put("device_manager_uri", creds.deviceManagerURI().toString());
+            adobe_pre_jo.put("vendor_id", creds.vendorID().getValue());
 
-            pre.postActivationCredentials().map_(
+            creds.postActivationCredentials().map_(
                 new ProcedureType<AccountAuthenticationAdobePostActivationCredentials>() {
                   @Override
                   public void call(AccountAuthenticationAdobePostActivationCredentials post_creds) {
@@ -189,9 +188,10 @@ public final class AccountAuthenticationCredentialsJSON {
 
     builder.setAdobeCredentials(
         JSONParserUtilities.getObjectOptional(obj, "adobe_credentials")
-            .mapPartial(new PartialFunctionType<ObjectNode, AccountAuthenticationAdobeCredentials, JSONParseException>() {
+            .mapPartial(new PartialFunctionType<ObjectNode, AccountAuthenticationAdobePreActivationCredentials, JSONParseException>() {
               @Override
-              public AccountAuthenticationAdobeCredentials call(ObjectNode jo_creds)
+              public AccountAuthenticationAdobePreActivationCredentials call(
+                  final ObjectNode jo_creds)
                   throws JSONParseException {
 
                 final OptionType<AccountAuthenticationAdobePostActivationCredentials> creds_post =
@@ -206,14 +206,11 @@ public final class AccountAuthenticationCredentialsJSON {
                           }
                         });
 
-                final AccountAuthenticationAdobePreActivationCredentials creds_pre =
-                    AccountAuthenticationAdobePreActivationCredentials.create(
-                        new AdobeVendorID(JSONParserUtilities.getString(jo_creds, "vendor_id")),
-                        AccountAuthenticationAdobeClientToken.create(JSONParserUtilities.getString(jo_creds, "client_token")),
-                        JSONParserUtilities.getURI(jo_creds, "device_manager_uri"),
-                        creds_post);
-
-                return AccountAuthenticationAdobeCredentials.create(creds_pre);
+                return AccountAuthenticationAdobePreActivationCredentials.create(
+                    new AdobeVendorID(JSONParserUtilities.getString(jo_creds, "vendor_id")),
+                    AccountAuthenticationAdobeClientToken.create(JSONParserUtilities.getString(jo_creds, "client_token")),
+                    JSONParserUtilities.getURI(jo_creds, "device_manager_uri"),
+                    creds_post);
               }
             }));
 
