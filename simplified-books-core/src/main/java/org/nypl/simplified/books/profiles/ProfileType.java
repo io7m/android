@@ -1,13 +1,9 @@
 package org.nypl.simplified.books.profiles;
 
-import org.nypl.simplified.books.accounts.AccountID;
-import org.nypl.simplified.books.accounts.AccountType;
-
-import java.io.File;
-import java.util.SortedMap;
+import java.io.IOException;
 
 /**
- * <p>The interface exposed by profiles.</p>
+ * <p>The readable and writable interface exposed by profiles.</p>
  * <p>A profile aggregates a display name, a set of accounts, a set
  * of preferences, and a current account. Profiles are assigned
  * monotonically increasing identifiers by the application, but the
@@ -18,41 +14,14 @@ import java.util.SortedMap;
  * default to derive accounts for newly created profiles.</p>
  */
 
-public interface ProfileType {
+public interface ProfileType extends ProfileReadableType {
 
   /**
-   * @return The unique profile identifier
+   * Set the profile's preferences to the given value.
+   *
+   * @param preferences The new preferences
    */
 
-  ProfileID id();
-
-  /**
-   * @return The directory containing the profile's data
-   */
-
-  File directory();
-
-  /**
-   * @return The profile's display name
-   */
-
-  String displayName();
-
-  /**
-   * @return {@code true} Iff this profile is the current profile
-   */
-
-  boolean isCurrent();
-
-  /**
-   * @return The ID of the current account
-   */
-
-  AccountID accountCurrent();
-
-  /**
-   * @return A read-only map of the accounts for this profile
-   */
-
-  SortedMap<AccountID, AccountType> accounts();
+  void preferencesUpdate(
+      ProfilePreferences preferences) throws IOException;
 }

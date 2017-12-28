@@ -40,14 +40,14 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
   private @Nullable ProfileID profile_current;
 
   private ProfilesDatabase(
-      File directory,
-      SortedMap<ProfileID, Profile> profiles) {
+      final File directory,
+      final SortedMap<ProfileID, Profile> profiles) {
     this.directory = NullCheck.notNull(directory, "directory");
     this.profiles = NullCheck.notNull(profiles, "profiles");
     this.profiles_read = castMap(Collections.unmodifiableSortedMap(this.profiles));
     this.profile_current = null;
 
-    for (Profile profile : this.profiles.values()) {
+    for (final Profile profile : this.profiles.values()) {
       profile.setOwner(this);
     }
   }
@@ -58,7 +58,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
    */
 
   @SuppressWarnings("unchecked")
-  private static <K, VB, V extends VB> SortedMap<K, VB> castMap(SortedMap<K, V> m) {
+  private static <K, VB, V extends VB> SortedMap<K, VB> castMap(final SortedMap<K, V> m) {
     return (SortedMap<K, VB>) m;
   }
 
@@ -71,7 +71,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
    */
 
   public static ProfilesDatabaseType open(
-      File directory)
+      final File directory)
       throws ProfileDatabaseException {
 
     NullCheck.notNull(directory, "Directory");
@@ -93,41 +93,13 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
     final String[] profile_dirs = directory.list();
     if (profile_dirs != null) {
       for (int index = 0; index < profile_dirs.length; ++index) {
-        String profile_id_name = profile_dirs[index];
+        final String profile_id_name = profile_dirs[index];
         LOG.debug("opening profile: {}/{}", directory, profile_id_name);
-
-        final int id;
-        try {
-          id = Integer.parseInt(profile_id_name);
-        } catch (NumberFormatException e) {
-          errors.add(new IOException("Could not parse directory name as profile ID", e));
+        final Profile profile = openOneProfile(jom, directory, errors, profile_id_name);
+        if (profile == null) {
           continue;
         }
-
-        final File profile_dir = new File(directory, profile_id_name);
-        final File profile_file = new File(profile_dir, "profile.json");
-        final ProfileDescription desc;
-
-        try {
-          desc = ProfileDescriptionJSON.deserializeFromFile(jom, profile_file);
-        } catch (IOException e) {
-          errors.add(new IOException("Could not parse profile: " + profile_file, e));
-          continue;
-        }
-
-        final ProfileID profile_id = ProfileID.create(id);
-        final Profile profile = new Profile(null, profile_id, profile_dir, desc);
-        final File profile_accounts = new File(profile_dir, "accounts");
-
-        try {
-          AccountsDatabaseType accounts = AccountsDatabase.open(profile, profile_accounts);
-          profile.setAccounts(accounts);
-        } catch (AccountsDatabaseException e) {
-          errors.add(e);
-          continue;
-        }
-
-        profiles.put(profile_id, profile);
+        profiles.put(profile.id, profile);
       }
     }
 
@@ -137,6 +109,46 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
     }
 
     return new ProfilesDatabase(directory, profiles);
+  }
+
+  private static @Nullable Profile openOneProfile(
+      final ObjectMapper jom,
+      final File directory,
+      final List<Exception> errors,
+      final String profile_id_name) {
+
+    final int id;
+    try {
+      id = Integer.parseInt(profile_id_name);
+    } catch (final NumberFormatException e) {
+      errors.add(new IOException("Could not parse directory name as profile ID", e));
+      return null;
+    }
+
+    final File profile_dir = new File(directory, profile_id_name);
+    final File profile_file = new File(profile_dir, "profile.json");
+    final ProfileDescription desc;
+
+    try {
+      desc = ProfileDescriptionJSON.deserializeFromFile(jom, profile_file);
+    } catch (final IOException e) {
+      errors.add(new IOException("Could not parse profile: " + profile_file, e));
+      return null;
+    }
+
+    final ProfileID profile_id = ProfileID.create(id);
+    final Profile profile = new Profile(null, profile_id, profile_dir, desc);
+    final File profile_accounts = new File(profile_dir, "accounts");
+
+    try {
+      final AccountsDatabaseType accounts = AccountsDatabase.open(profile, profile_accounts);
+      profile.setAccounts(accounts);
+    } catch (final AccountsDatabaseException e) {
+      errors.add(e);
+      return null;
+    }
+
+    return profile;
   }
 
   @Override
@@ -151,14 +163,14 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
 
   @Override
   public ProfileType createProfile(
-      AccountProvider account_provider,
-      String display_name)
+      final AccountProvider account_provider,
+      final String display_name)
       throws ProfileDatabaseException {
 
     NullCheck.notNull(account_provider, "Provider");
     NullCheck.notNull(display_name, "Display name");
 
-    OptionType<ProfileType> existing = findProfileWithDisplayName(display_name);
+    final OptionType<ProfileType> existing = findProfileWithDisplayName(display_name);
     if (existing.isSome()) {
       throw new ProfileDatabaseException(
           "Display name is already used by an existing profile",
@@ -179,35 +191,35 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
     try {
       final File profile_dir =
           new File(this.directory, Integer.toString(next.id()));
-      final File profile_file =
-          new File(profile_dir, "profile.json");
-      final File profile_file_tmp =
-          new File(profile_dir, "profile.json.tmp");
       final File profile_accounts =
           new File(profile_dir, "accounts");
 
       // Ignore the return value, writing the file will raise an error if this call failed
       profile_dir.mkdirs();
 
-      ProfileDescription desc = ProfileDescription.create(display_name);
-      FileUtilities.fileWriteUTF8Atomically(
-          profile_file,
-          profile_file_tmp,
-          ProfileDescriptionJSON.serializeToString(new ObjectMapper(), desc));
+      final ProfilePreferences prefs =
+          ProfilePreferences.builder()
+              .build();
 
-      Profile profile = new Profile(this, next, profile_dir, desc);
+      final ProfileDescription desc =
+          ProfileDescription.builder(display_name, prefs)
+              .build();
+
+      writeDescription(profile_dir, desc);
+
+      final Profile profile = new Profile(this, next, profile_dir, desc);
       try {
-        AccountsDatabaseType accounts = AccountsDatabase.open(profile, profile_accounts);
+        final AccountsDatabaseType accounts = AccountsDatabase.open(profile, profile_accounts);
         profile.setAccounts(accounts);
 
         this.profiles.put(next, profile);
         return profile;
-      } catch (AccountsDatabaseException e) {
+      } catch (final AccountsDatabaseException e) {
         throw new ProfileDatabaseException(
             "Could not initialize accounts database",
             Collections.singletonList((Exception) e));
       }
-    } catch (IOException e) {
+    } catch (final IOException e) {
       throw new ProfileDatabaseException(
           "Could not write profile data", Collections.singletonList((Exception) e));
     }
@@ -215,10 +227,10 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
 
   @Override
   public OptionType<ProfileType> findProfileWithDisplayName(
-      String display_name) {
+      final String display_name) {
     NullCheck.notNull(display_name, "Display name");
 
-    for (Profile profile : this.profiles.values()) {
+    for (final Profile profile : this.profiles.values()) {
       if (profile.displayName().equals(display_name)) {
         return Option.some((ProfileType) profile);
       }
@@ -228,7 +240,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
 
   @Override
   public void setProfileCurrent(
-      ProfileID profile)
+      final ProfileID profile)
       throws ProfileDatabaseException {
     NullCheck.notNull(profile, "Profile");
 
@@ -248,7 +260,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
 
   private static final class Profile implements ProfileType {
 
-    private final ProfileDescription description;
+    private volatile ProfileDescription description;
     private final ProfileID id;
     private final File directory;
     private ProfilesDatabase owner;
@@ -265,7 +277,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
       this.description = NullCheck.notNull(in_description, "description");
     }
 
-    private void setOwner(ProfilesDatabase owner) {
+    private void setOwner(final ProfilesDatabase owner) {
       this.owner = NullCheck.notNull(owner, "Owner");
     }
 
@@ -300,9 +312,45 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
       return this.accounts.accounts();
     }
 
+    @Override
+    public ProfilePreferences preferences() {
+      return this.description.preferences();
+    }
+
     public void setAccounts(
         final AccountsDatabaseType accounts) {
       this.accounts = NullCheck.notNull(accounts, "Accounts");
     }
+
+    @Override
+    public void preferencesUpdate(
+        final ProfilePreferences preferences)
+        throws IOException {
+
+      NullCheck.notNull(preferences, "Preferences");
+
+      final ProfileDescription new_desc =
+          this.description.toBuilder()
+              .setPreferences(preferences)
+              .build();
+
+      writeDescription(this.directory, new_desc);
+      this.description = new_desc;
+    }
+  }
+
+  private static void writeDescription(
+      final File directory,
+      final ProfileDescription new_desc) throws IOException {
+
+    final File profile_file =
+        new File(directory, "profile.json");
+    final File profile_file_tmp =
+        new File(directory, "profile.json.tmp");
+
+    FileUtilities.fileWriteUTF8Atomically(
+        profile_file,
+        profile_file_tmp,
+        ProfileDescriptionJSON.serializeToString(new ObjectMapper(), new_desc));
   }
 }

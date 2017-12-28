@@ -22,9 +22,9 @@ import java.io.IOException;
  * Functions to serialize and deserialize profile preferences to/from JSON.
  */
 
-public final class ProfileDescriptionJSON {
+public final class ProfilePreferencesJSON {
 
-  private ProfileDescriptionJSON() {
+  private ProfilePreferencesJSON() {
     throw new UnreachableCodeException();
   }
 
@@ -37,7 +37,7 @@ public final class ProfileDescriptionJSON {
    * @throws IOException On I/O and/or parse errors
    */
 
-  public static ProfileDescription deserializeFromFile(
+  public static ProfilePreferences deserializeFromFile(
       final ObjectMapper jom,
       final File file)
       throws IOException {
@@ -55,7 +55,7 @@ public final class ProfileDescriptionJSON {
    * @throws IOException On I/O and/or parse errors
    */
 
-  public static ProfileDescription deserializeFromText(
+  public static ProfilePreferences deserializeFromText(
       final ObjectMapper jom,
       final String text) throws IOException {
     NullCheck.notNull(jom, "Object mapper");
@@ -72,7 +72,7 @@ public final class ProfileDescriptionJSON {
    * @throws JSONParseException On parse errors
    */
 
-  public static ProfileDescription deserializeFromJSON(
+  public static ProfilePreferences deserializeFromJSON(
       final ObjectMapper jom,
       final JsonNode node)
       throws JSONParseException {
@@ -81,14 +81,25 @@ public final class ProfileDescriptionJSON {
 
     final ObjectNode obj =
         JSONParserUtilities.checkObject(null, node);
-    final String display_name =
-        JSONParserUtilities.getString(obj, "display_name");
-    final ProfilePreferences preferences =
-        ProfilePreferencesJSON.deserializeFromJSON(
-            jom,
-            JSONParserUtilities.getObject(obj, "preferences"));
 
-    return ProfileDescription.builder(display_name, preferences).build();
+    final OptionType<ProfilePreferences.Age> age =
+        JSONParserUtilities.getStringOptional(obj, "age")
+        .mapPartial(new PartialFunctionType<String, ProfilePreferences.Age, JSONParseException>() {
+          @Override
+          public ProfilePreferences.Age call(
+              final String x)
+              throws JSONParseException {
+            try {
+              return ProfilePreferences.Age.valueOf(x);
+            } catch (final IllegalArgumentException e) {
+              throw new JSONParseException(e);
+            }
+          }
+        });
+
+    return ProfilePreferences.builder()
+        .setAge(age)
+        .build();
   }
 
   /**
@@ -100,13 +111,19 @@ public final class ProfileDescriptionJSON {
 
   public static ObjectNode serializeToJSON(
       final ObjectMapper jom,
-      final ProfileDescription description) {
+      final ProfilePreferences description) {
     NullCheck.notNull(jom, "Object mapper");
     NullCheck.notNull(description, "Description");
 
     final ObjectNode jo = jom.createObjectNode();
-    jo.put("display_name", description.displayName());
-    jo.set("preferences", ProfilePreferencesJSON.serializeToJSON(jom, description.preferences()));
+
+    description.age().map_(new ProcedureType<ProfilePreferences.Age>() {
+      @Override
+      public void call(final ProfilePreferences.Age x) {
+        jo.put("age", x.name());
+      }
+    });
+
     return jo;
   }
 
@@ -120,7 +137,7 @@ public final class ProfileDescriptionJSON {
 
   public static String serializeToString(
       final ObjectMapper jom,
-      final ProfileDescription description)
+      final ProfilePreferences description)
       throws IOException {
     final ObjectNode jo = serializeToJSON(jom, description);
     final ByteArrayOutputStream bao = new ByteArrayOutputStream(1024);
