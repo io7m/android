@@ -188,6 +188,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
 
       // Ignore the return value, writing the file will raise an error if this call failed
       profile_dir.mkdirs();
+
       ProfileDescription desc = ProfileDescription.create(display_name);
       FileUtilities.fileWriteUTF8Atomically(
           profile_file,

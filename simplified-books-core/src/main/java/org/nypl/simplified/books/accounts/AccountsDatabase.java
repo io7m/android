@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * The default implementation of the {@link AccountsDatabaseType} interface.
@@ -60,7 +61,7 @@ public final class AccountsDatabase implements AccountsDatabaseType {
 
     LOG.debug("opening account database: {}", directory);
 
-    final SortedMap<AccountID, Account> accounts = new TreeMap<>();
+    final SortedMap<AccountID, Account> accounts = new ConcurrentSkipListMap<>();
     final ObjectMapper jom = new ObjectMapper();
 
     final List<Exception> errors = new ArrayList<>();
@@ -162,6 +163,7 @@ public final class AccountsDatabase implements AccountsDatabaseType {
 
       // Ignore the return value, writing the file will raise an error if this call failed
       account_dir.mkdirs();
+
       AccountDescription desc = AccountDescription.create(account_provider.id());
       FileUtilities.fileWriteUTF8Atomically(
           account_file,
