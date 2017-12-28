@@ -7,6 +7,7 @@ import android.content.res.Resources;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.util.DisplayMetrics;
 
 import com.io7m.jfunctional.FunctionType;
@@ -97,6 +98,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class Simplified extends Application
 {
   private static final              Logger     LOG;
+  private static volatile           File DISK_DATA_DIRECTORY;
   private static volatile @Nullable Simplified INSTANCE;
 
   static {
@@ -211,7 +213,18 @@ public final class Simplified extends Application
   static File getDiskDataDir(
     final Context context)
   {
-    /**
+    if (DISK_DATA_DIRECTORY == null) {
+      DISK_DATA_DIRECTORY = determineDiskDataDirectory(context);
+    }
+
+    return DISK_DATA_DIRECTORY;
+  }
+
+  @NonNull
+  private static File determineDiskDataDirectory(
+      final Context context) {
+
+    /*
      * If external storage is mounted and is on a device that doesn't allow
      * the storage to be removed, use the external storage for data.
      */
@@ -219,24 +232,22 @@ public final class Simplified extends Application
     if (Environment.MEDIA_MOUNTED.equals(
       Environment.getExternalStorageState())) {
 
-      Simplified.LOG.debug("trying external storage");
+      LOG.debug("trying external storage");
       if (!Environment.isExternalStorageRemovable()) {
         final File r = context.getExternalFilesDir(null);
-        Simplified.LOG.debug(
-          "external storage is not removable, using it ({})", r);
+        LOG.debug("external storage is not removable, using it ({})", r);
         Assertions.checkPrecondition(
           r.isDirectory(), "Data directory {} is a directory", r);
         return NullCheck.notNull(r);
       }
     }
 
-    /**
+    /*
      * Otherwise, use internal storage.
      */
 
     final File r = context.getFilesDir();
-    Simplified.LOG.debug(
-      "no non-removable external storage, using internal storage ({})", r);
+    LOG.debug("no non-removable external storage, using internal storage ({})", r);
     Assertions.checkPrecondition(
       r.isDirectory(), "Data directory {} is a directory", r);
     return NullCheck.notNull(r);
