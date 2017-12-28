@@ -85,6 +85,60 @@ public final class JSONParserUtilities
   }
 
   /**
+   * Check that {@code n} is an array.
+   *
+   * @param key An optional advisory key to be used in error messages
+   * @param n   A node
+   *
+   * @return {@code n} as an {@link ObjectNode}
+   *
+   * @throws JSONParseException On type errors
+   */
+
+  public static ArrayNode checkArray(
+      final @Nullable String key,
+      final JsonNode n)
+      throws JSONParseException
+  {
+    NullCheck.notNull(n);
+
+    switch (n.getNodeType()) {
+      case ARRAY:
+      {
+        return (ArrayNode) n;
+      }
+      case BINARY:
+      case BOOLEAN:
+      case MISSING:
+      case NULL:
+      case NUMBER:
+      case POJO:
+      case OBJECT:
+      case STRING: {
+        final StringBuilder sb = new StringBuilder(128);
+        if (key != null) {
+          sb.append("Expected: A key '");
+          sb.append(key);
+          sb.append("' with a value of type Object\n");
+          sb.append("Got: A value of type ");
+          sb.append(n.getNodeType());
+          sb.append("\n");
+        } else {
+          sb.append("Expected: A value of type Object\n");
+          sb.append("Got: A value of type ");
+          sb.append(n.getNodeType());
+          sb.append("\n");
+        }
+
+        final String m = NullCheck.notNull(sb.toString());
+        throw new JSONParseException(m);
+      }
+    }
+
+    throw new UnreachableCodeException();
+  }
+
+  /**
    * @param key A key assumed to be holding a value
    * @param s   A node
    *

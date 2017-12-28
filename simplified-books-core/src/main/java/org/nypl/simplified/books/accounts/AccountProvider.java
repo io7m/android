@@ -115,7 +115,7 @@ public abstract class AccountProvider {
    * @return The support email address
    */
 
-  public abstract String supportEmail();
+  public abstract OptionType<String> supportEmail();
 
   /**
    * @return The URI of the EULA if one is required
@@ -273,7 +273,18 @@ public abstract class AccountProvider {
      * @return The current builder
      */
 
-    public abstract Builder setSupportEmail(String email);
+    public Builder setSupportEmail(String email)
+    {
+      return setSupportEmail(Option.some(email));
+    }
+
+    /**
+     * @see #supportEmail()
+     * @param email The support email
+     * @return The current builder
+     */
+
+    public abstract Builder setSupportEmail(OptionType<String> email);
 
     /**
      * @see #eula()
@@ -337,6 +348,7 @@ public abstract class AccountProvider {
     b.setSupportsReservations(false);
     b.setSupportsCardCreator(false);
     b.setSupportsHelpCenter(false);
+    b.setSupportEmail(Option.<String>none());
     b.setCatalogURIForOver13s(Option.<URI>none());
     b.setCatalogURIForUnder13s(Option.<URI>none());
     b.setEula(Option.<URI>none());
