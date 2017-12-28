@@ -208,15 +208,6 @@ public final class Simplified extends Application
     return AccountsDatabase.openDatabase(accounts_dir);
   }
 
-  /**
-   * @return Current Theme
-   */
-  public static Resources.Theme getCurrentTheme() {
-    final Simplified i = Simplified.checkInitialized();
-
-    return i.getApplicationContext().getTheme();
-  }
-
   static File getDiskDataDir(
     final Context context)
   {
