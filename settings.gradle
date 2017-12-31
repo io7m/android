@@ -16,6 +16,7 @@ include ':simplified-files'
 include ':simplified-http-core'
 include ':simplified-json-core'
 include ':simplified-multilibrary'
+include ':simplified-observable'
 include ':simplified-opds-core'
 include ':simplified-prefs'
 include ':simplified-rfc3339-core'
@@ -42,6 +43,7 @@ project(':simplified-http-core').projectDir = "$rootDir/simplified-http-core" as
 project(':simplified-json-core').projectDir = "$rootDir/simplified-json-core" as File
 project(':simplified-multilibrary').projectDir = "$rootDir/simplified-multilibrary" as File
 project(':simplified-opds-core').projectDir = "$rootDir/simplified-opds-core" as File
+project(':simplified-observable').projectDir = "$rootDir/simplified-observable" as File
 project(':simplified-prefs').projectDir = "$rootDir/simplified-prefs" as File
 project(':simplified-rfc3339-core').projectDir = "$rootDir/simplified-rfc3339-core" as File
 project(':simplified-stack').projectDir = "$rootDir/simplified-stack" as File
