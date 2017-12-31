@@ -3,8 +3,10 @@ package org.nypl.simplified.app.reader;
 import android.app.Activity;
 import android.os.Bundle;
 import com.io7m.jnull.Nullable;
+
+import org.nypl.simplified.books.book_database.BookIDs;
 import org.nypl.simplified.books.core.LogUtilities;
-import org.nypl.simplified.books.core.BookID;
+import org.nypl.simplified.books.book_database.BookID;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -43,7 +45,7 @@ public final class ReaderTestActivity extends Activity
     b.append("/book.epub");
 
     final File epub_file = new File(b.toString());
-    final BookID id = BookID.exactString("0");
+    final BookID id = BookIDs.newFromText("0");
 
     ReaderTestActivity.LOG.debug(
       "forking reader activity with {} : {}", id, epub_file);

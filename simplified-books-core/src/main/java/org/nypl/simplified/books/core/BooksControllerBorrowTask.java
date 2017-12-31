@@ -22,6 +22,7 @@ import org.nypl.simplified.assertions.Assertions;
 import org.nypl.simplified.books.accounts.AccountAuthenticatedHTTP;
 import org.nypl.simplified.books.accounts.AccountAuthenticationAdobePostActivationCredentials;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
+import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.downloader.core.DownloadListenerType;
 import org.nypl.simplified.downloader.core.DownloadType;
 import org.nypl.simplified.downloader.core.DownloaderType;
@@ -105,7 +106,7 @@ final class BooksControllerBorrowTask implements Runnable {
     this.books_status = NullCheck.notNull(in_books_status);
     this.feed_loader = NullCheck.notNull(in_feed_loader);
     this.adobe_drm = NullCheck.notNull(in_adobe_drm);
-    this.short_id = this.book_id.getShortID();
+    this.short_id = this.book_id.value();
     this.needs_auth = in_needs_auth;
   }
 

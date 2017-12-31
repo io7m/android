@@ -18,6 +18,8 @@ package org.nypl.simplified.books.core;
 
 import com.io7m.jfunctional.OptionType;
 
+import org.nypl.simplified.books.book_database.BookID;
+
 import java.util.Set;
 
 /**
@@ -33,8 +35,7 @@ public interface BookDatabaseReadableType
    * the book exists
    */
 
-  OptionType<BookDatabaseEntrySnapshot> databaseGetEntrySnapshot(
-    BookID book);
+  OptionType<BookDatabaseEntrySnapshot> databaseGetEntrySnapshot(BookID book);
 
   /**
    * @return The set of books currently in the database

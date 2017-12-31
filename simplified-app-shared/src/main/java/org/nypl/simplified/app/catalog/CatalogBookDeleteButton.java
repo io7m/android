@@ -3,23 +3,22 @@ package org.nypl.simplified.app.catalog;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.res.Resources;
-import android.graphics.Color;
 import android.view.View;
+import android.widget.TextView;
+
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
+import com.io7m.junreachable.UnimplementedCodeException;
+
 import org.nypl.simplified.app.R;
-import org.nypl.simplified.app.Simplified;
-import org.nypl.simplified.app.SimplifiedCatalogAppServicesType;
-import org.nypl.simplified.books.core.BookID;
-import org.nypl.simplified.books.core.BooksType;
+import org.nypl.simplified.books.book_database.BookID;
 
 /**
  * A button for deleting books.
  */
 
 public final class CatalogBookDeleteButton extends CatalogLeftPaddedButton
-  implements CatalogBookButtonType
-{
+    implements CatalogBookButtonType {
   /**
    * Construct a button.
    *
@@ -28,39 +27,40 @@ public final class CatalogBookDeleteButton extends CatalogLeftPaddedButton
    */
 
   public CatalogBookDeleteButton(
-    final Activity in_activity,
-    final BookID in_book_id)
-  {
+      final Activity in_activity,
+      final BookID in_book_id) {
     super(in_activity);
 
-    final Resources rr = NullCheck.notNull(in_activity.getResources());
-    this.getTextView().setText(NullCheck.notNull(rr.getString(R.string.catalog_book_delete)));
-    this.getTextView().setContentDescription(NullCheck.notNull(rr.getString(R.string.catalog_accessibility_book_delete)));
-    this.getTextView().setTextSize(12.0f);
+    final Resources resources = NullCheck.notNull(in_activity.getResources());
+
+    final TextView text_view = this.getTextView();
+    text_view.setText(NullCheck.notNull(resources.getString(R.string.catalog_book_delete)));
+    text_view.setContentDescription(NullCheck.notNull(resources.getString(R.string.catalog_accessibility_book_delete)));
+    text_view.setTextSize(12.0f);
+    text_view.setTextColor(getBrandingColor());
+
     this.setBackgroundResource(R.drawable.simplified_button);
-    this.getTextView().setTextColor(Color.parseColor(Simplified.getCurrentAccount().getMainColor()));
 
     this.setOnClickListener(
-      new OnClickListener()
-      {
-        @Override public void onClick(
-          final @Nullable View v)
-        {
-          final CatalogBookDeleteDialog d = CatalogBookDeleteDialog.newDialog();
-          d.setOnConfirmListener(
-            new Runnable()
-            {
-              @Override public void run()
-              {
-                final SimplifiedCatalogAppServicesType app =
-                  Simplified.getCatalogAppServices();
-                final BooksType books = app.getBooks();
-                books.bookDeleteData(in_book_id, Simplified.getCurrentAccount().needsAuth());
-              }
-            });
-          final FragmentManager fm = in_activity.getFragmentManager();
-          d.show(fm, "delete-confirm");
-        }
-      });
+        new OnClickListener() {
+          @Override
+          public void onClick(
+              final @Nullable View v) {
+            final CatalogBookDeleteDialog d = CatalogBookDeleteDialog.newDialog();
+            d.setOnConfirmListener(
+                new Runnable() {
+                  @Override
+                  public void run() {
+                    throw new UnimplementedCodeException();
+                  }
+                });
+            final FragmentManager fm = in_activity.getFragmentManager();
+            d.show(fm, "delete-confirm");
+          }
+        });
+  }
+
+  private static int getBrandingColor() {
+    throw new UnimplementedCodeException();
   }
 }

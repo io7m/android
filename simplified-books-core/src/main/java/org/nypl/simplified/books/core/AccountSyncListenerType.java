@@ -2,6 +2,8 @@ package org.nypl.simplified.books.core;
 
 import com.io7m.jfunctional.OptionType;
 
+import org.nypl.simplified.books.book_database.BookID;
+
 /**
  * The type of listeners for account sync operations.
  *

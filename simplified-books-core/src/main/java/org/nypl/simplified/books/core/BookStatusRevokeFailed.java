@@ -3,6 +3,8 @@ package org.nypl.simplified.books.core;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;
 
+import org.nypl.simplified.books.book_database.BookID;
+
 /**
  * The given book could not be revoked (hold cancelled, loan returned, etc).
  */

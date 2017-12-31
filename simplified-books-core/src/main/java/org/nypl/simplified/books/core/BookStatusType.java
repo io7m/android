@@ -1,5 +1,7 @@
 package org.nypl.simplified.books.core;
 
+import org.nypl.simplified.books.book_database.BookID;
+
 /**
  * The type of book status.
  */

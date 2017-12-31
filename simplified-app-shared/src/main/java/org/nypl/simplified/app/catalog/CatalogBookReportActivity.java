@@ -18,11 +18,10 @@ import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.Some;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
+import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.simplified.app.R;
-import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.app.SimplifiedActivity;
-import org.nypl.simplified.app.SimplifiedCatalogAppServicesType;
 import org.nypl.simplified.app.SimplifiedPart;
 import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.FeedEntryOPDS;
@@ -124,8 +123,7 @@ public class CatalogBookReportActivity extends SimplifiedActivity
   {
     super.onCreate(state);
 
-    final SimplifiedCatalogAppServicesType cs = Simplified.getCatalogAppServices();
-    this.books = cs.getBooks();
+    this.books = getBooks();
 
     final Intent intent = NullCheck.notNull(this.getIntent());
     final Bundle a = NullCheck.notNull(intent.getExtras());
@@ -176,6 +174,10 @@ public class CatalogBookReportActivity extends SimplifiedActivity
         CatalogBookReportActivity.this.submitReport();
       }
     });
+  }
+
+  private BooksType getBooks() {
+    throw new UnimplementedCodeException();
   }
 
   private void submitReport()

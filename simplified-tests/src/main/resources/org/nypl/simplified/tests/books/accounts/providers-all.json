@@ -17,6 +17,7 @@
     "licenseUrl": "http://www.librarysimplified.org/license.html",
     "privacyUrl": "http://www.librarysimplified.org/privacypolicy.html",
     "mainColor": "#da2527",
+    "styleNameOverride": "SimplifiedThemeNoActionBar_NYPL",
 
     "authentication": {
       "passcodeLength" : 4,
@@ -43,6 +44,7 @@
     "licenseUrl": "http://www.librarysimplified.org/bklynlicenses.html",
     "privacyUrl": "http://www.librarysimplified.org/bklynprivacypolicy.html",
     "mainColor": "#446ebf",
+    "styleNameOverride": "SimplifiedThemeNoActionBar_BPL",
 
     "authentication": {
       "passcodeLength" : 4,

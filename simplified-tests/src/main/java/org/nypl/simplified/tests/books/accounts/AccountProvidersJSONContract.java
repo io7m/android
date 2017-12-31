@@ -105,6 +105,7 @@ public abstract class AccountProvidersJSONContract {
     Assert.assertEquals(Option.some(URI.create("http://www.librarysimplified.org/privacypolicy.html")), p.privacyPolicy());
     Assert.assertEquals("#da2527", p.mainColor());
     Assert.assertEquals(URI.create("LibraryLogoNYPL"), p.logo());
+    Assert.assertEquals(Option.some("SimplifiedThemeNoActionBar_NYPL"), p.styleNameOverride());
   }
 
   @Test

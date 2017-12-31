@@ -4,6 +4,8 @@ import com.google.auto.value.AutoValue;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
 
+import org.joda.time.LocalDate;
+
 /**
  * A set of preferences for a profile.
  */
@@ -16,29 +18,16 @@ public abstract class ProfilePreferences {
   }
 
   /**
-   * @return The age of the reader (if one has been explicitly specified)
+   * @return The date of birth of the reader (if one has been explicitly specified)
    */
 
-  public abstract OptionType<Age> age();
+  public abstract OptionType<LocalDate> dateOfBirth();
 
   /**
-   * The age of the reader.
+   * @return The current value as a mutable builder
    */
 
-  enum Age {
-
-    /**
-     * The reader is 13 or over.
-     */
-
-    AGE_OVER_OR_EXACTLY_13,
-
-    /**
-     * The reader is under 13.
-     */
-
-    AGE_UNDER_13
-  }
+  public abstract Builder toBuilder();
 
   /**
    * A mutable builder for the type.
@@ -52,24 +41,23 @@ public abstract class ProfilePreferences {
     }
 
     /**
-     * @param age The age
+     * @param date The date
      * @return The current builder
-     * @see #age()
+     * @see #dateOfBirth()
      */
 
-    public abstract Builder setAge(
-        OptionType<Age> age);
+    public abstract Builder setDateOfBirth(
+        OptionType<LocalDate> date);
 
     /**
-     * @param age The age
+     * @param date The date
      * @return The current builder
-     * @see #age()
+     * @see #dateOfBirth()
      */
 
-    public final Builder setAge(
-        final Age age)
-    {
-      return setAge(Option.some(age));
+    public final Builder setDateOfBirth(
+        final LocalDate date) {
+      return setDateOfBirth(Option.some(date));
     }
 
     /**
@@ -79,9 +67,12 @@ public abstract class ProfilePreferences {
     public abstract ProfilePreferences build();
   }
 
-  public static ProfilePreferences.Builder builder()
-  {
+  /**
+   * @return A new builder
+   */
+
+  public static ProfilePreferences.Builder builder() {
     return new AutoValue_ProfilePreferences.Builder()
-        .setAge(Option.<Age>none());
+        .setDateOfBirth(Option.<LocalDate>none());
   }
 }

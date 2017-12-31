@@ -3,6 +3,7 @@ package org.nypl.simplified.books.core;
 import com.io7m.jfunctional.OptionType;
 
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
+import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.opds.core.DRMLicensor;
 
 /**

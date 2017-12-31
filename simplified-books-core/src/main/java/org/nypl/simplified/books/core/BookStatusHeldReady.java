@@ -3,6 +3,8 @@ package org.nypl.simplified.books.core;
 import com.io7m.jfunctional.FunctionType;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;
+
+import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.rfc3339.core.RFC3339Formatter;
 
 import java.text.SimpleDateFormat;

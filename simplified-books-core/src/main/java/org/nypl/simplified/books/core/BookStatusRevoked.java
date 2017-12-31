@@ -2,6 +2,8 @@ package org.nypl.simplified.books.core;
 
 import com.io7m.jnull.NullCheck;
 
+import org.nypl.simplified.books.book_database.BookID;
+
 import java.net.URI;
 
 /**

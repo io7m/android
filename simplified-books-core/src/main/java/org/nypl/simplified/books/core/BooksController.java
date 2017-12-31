@@ -11,6 +11,7 @@ import com.io7m.junreachable.UnreachableCodeException;
 
 import org.nypl.drm.core.AdobeAdeptExecutorType;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
+import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.downloader.core.DownloadType;
 import org.nypl.simplified.downloader.core.DownloaderType;
 import org.nypl.simplified.http.core.HTTPType;

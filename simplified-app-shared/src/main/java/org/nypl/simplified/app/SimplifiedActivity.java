@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -25,15 +26,16 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.io7m.jfunctional.FunctionType;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
+import com.io7m.junreachable.UnimplementedCodeException;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.nypl.simplified.app.catalog.CatalogFeedActivity;
 import org.nypl.simplified.app.catalog.CatalogFeedArgumentsLocalBooks;
 import org.nypl.simplified.app.catalog.CatalogFeedArgumentsRemote;
@@ -41,60 +43,57 @@ import org.nypl.simplified.app.catalog.CatalogFeedArgumentsType;
 import org.nypl.simplified.app.catalog.MainBooksActivity;
 import org.nypl.simplified.app.catalog.MainCatalogActivity;
 import org.nypl.simplified.app.catalog.MainHoldsActivity;
-import org.nypl.simplified.app.utilities.UIThread;
-import org.nypl.simplified.books.core.BooksControllerConfigurationType;
+import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.accounts.AccountProviderCollection;
+import org.nypl.simplified.books.accounts.AccountType;
+import org.nypl.simplified.books.controller.ProfileUnknownAccountProviderException;
 import org.nypl.simplified.books.core.BooksFeedSelection;
-import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.FeedFacetPseudo;
 import org.nypl.simplified.books.core.LogUtilities;
+import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
+import org.nypl.simplified.books.profiles.ProfileReadableType;
 import org.nypl.simplified.multilibrary.Account;
-import org.nypl.simplified.multilibrary.AccountsRegistry;
-import org.nypl.simplified.prefs.Prefs;
 import org.nypl.simplified.stack.ImmutableStack;
 import org.slf4j.Logger;
 
+import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.nypl.simplified.app.SimplifiedPart.*;
+
 /**
  * The type of non-reader activities in the app.
- *
+ * <p>
  * This is the where navigation drawer configuration takes place.
  */
 
 public abstract class SimplifiedActivity extends Activity
-  implements DrawerListener, OnItemClickListener
-{
-  private static final Logger  LOG;
-  private static final String  NAVIGATION_DRAWER_OPEN_ID;
-  private static       int     ACTIVITY_COUNT;
-  private static       boolean DEVICE_ACTIVATED;
+    implements DrawerListener, OnItemClickListener {
+
+  private static final Logger LOG;
+  private static final String NAVIGATION_DRAWER_OPEN_ID;
+  private static int ACTIVITY_COUNT;
+  private static boolean DEVICE_ACTIVATED;
 
   static {
     LOG = LogUtilities.getLog(SimplifiedActivity.class);
-  }
-
-  static {
-    NAVIGATION_DRAWER_OPEN_ID =
-      "org.nypl.simplified.app.SimplifiedActivity.drawer_open";
+    NAVIGATION_DRAWER_OPEN_ID = "org.nypl.simplified.app.SimplifiedActivity.drawer_open";
   }
 
   private @Nullable ArrayAdapter<SimplifiedPart> adapter;
-  private @Nullable ArrayAdapter<Object>         adapter_accounts;
-  private @Nullable FrameLayout                  content_frame;
-  private @Nullable DrawerLayout                 drawer;
-  private @Nullable Map<SimplifiedPart, FunctionType<Bundle, Unit>>
-    drawer_arg_funcs;
-  private @Nullable Map<SimplifiedPart, Class<? extends Activity>>
-    drawer_classes_by_name;
-  private @Nullable List<SimplifiedPart>         drawer_items;
-  private @Nullable ListView                     drawer_list;
-  private @Nullable SharedPreferences            drawer_settings;
-  private           boolean                      finishing;
-  private           int                          selected;
-  private           SimplifiedCatalogAppServicesType app;
+  private @Nullable ArrayAdapter<Object> adapter_accounts;
+  private @Nullable FrameLayout content_frame;
+  private @Nullable DrawerLayout drawer;
+  private @Nullable Map<SimplifiedPart, FunctionType<Bundle, Unit>> drawer_arg_funcs;
+  private @Nullable Map<SimplifiedPart, Class<? extends Activity>> drawer_classes_by_name;
+  private @Nullable List<SimplifiedPart> drawer_items;
+  private @Nullable ListView drawer_list;
+  private @Nullable SharedPreferences drawer_settings;
+  private boolean finishing;
+  private int selected;
+
   /**
    * Set the arguments for the activity that will be created.
    *
@@ -103,59 +102,218 @@ public abstract class SimplifiedActivity extends Activity
    */
 
   public static void setActivityArguments(
-    final Bundle b,
-    final boolean open_drawer)
-  {
+      final Bundle b,
+      final boolean open_drawer) {
     NullCheck.notNull(b);
-    b.putBoolean(SimplifiedActivity.NAVIGATION_DRAWER_OPEN_ID, open_drawer);
+    b.putBoolean(NAVIGATION_DRAWER_OPEN_ID, open_drawer);
   }
 
-  private void finishWithConditionalAnimationOverride()
-  {
+  /**
+   * Set up a map of part names to functions that configure argument
+   * bundles. Given a {@link SimplifiedPart}, this allows the construction
+   * of an argument bundle for the target activity class.
+   */
+
+  private static ImmutableMap<SimplifiedPart, FunctionType<Bundle, Unit>> calculateDrawerActions(
+      final Resources resources,
+      final boolean holds_enabled) {
+
+    final ImmutableMap.Builder<SimplifiedPart, FunctionType<Bundle, Unit>> drawer_actions =
+        ImmutableMap.builder();
+
+    drawer_actions.put(
+        PART_BOOKS, new FunctionType<Bundle, Unit>() {
+          @Override
+          public Unit call(final Bundle b) {
+            final OptionType<String> no_search = Option.none();
+            final ImmutableStack<CatalogFeedArgumentsType> empty_stack =
+                ImmutableStack.empty();
+            final CatalogFeedArgumentsLocalBooks local =
+                new CatalogFeedArgumentsLocalBooks(
+                    empty_stack,
+                    PART_BOOKS.getPartName(resources),
+                    FeedFacetPseudo.FacetType.SORT_BY_TITLE,
+                    no_search,
+                    BooksFeedSelection.BOOKS_FEED_LOANED);
+            CatalogFeedActivity.setActivityArguments(b, local);
+            return Unit.unit();
+          }
+        });
+
+    drawer_actions.put(
+        PART_CATALOG, new FunctionType<Bundle, Unit>() {
+          @Override
+          public Unit call(final Bundle b) {
+
+            final AccountProvider account_provider =
+                Simplified.getProfilesController().profileAccountProviderCurrent();
+            final ImmutableStack<CatalogFeedArgumentsType> empty =
+                ImmutableStack.empty();
+            final CatalogFeedArgumentsRemote remote =
+                new CatalogFeedArgumentsRemote(
+                    false,
+                    NullCheck.notNull(empty),
+                    NullCheck.notNull(resources.getString(R.string.feature_app_name)),
+                    account_provider.catalogURI(),
+                    false);
+            CatalogFeedActivity.setActivityArguments(b, remote);
+            return Unit.unit();
+          }
+        });
+
+    if (holds_enabled) {
+      drawer_actions.put(
+          PART_HOLDS, new FunctionType<Bundle, Unit>() {
+            @Override
+            public Unit call(final Bundle b) {
+              final OptionType<String> no_search = Option.none();
+              final ImmutableStack<CatalogFeedArgumentsType> empty_stack =
+                  ImmutableStack.empty();
+              final CatalogFeedArgumentsLocalBooks local =
+                  new CatalogFeedArgumentsLocalBooks(
+                      empty_stack,
+                      PART_HOLDS.getPartName(resources),
+                      FeedFacetPseudo.FacetType.SORT_BY_TITLE,
+                      no_search,
+                      BooksFeedSelection.BOOKS_FEED_HOLDS);
+              CatalogFeedActivity.setActivityArguments(b, local);
+              return Unit.unit();
+            }
+          });
+    }
+
+    drawer_actions.put(
+        PART_SETTINGS, new FunctionType<Bundle, Unit>() {
+          @Override
+          public Unit call(final Bundle b) {
+            setActivityArguments(b, false);
+            return Unit.unit();
+          }
+        });
+
+    drawer_actions.put(
+        PART_SWITCHER, new FunctionType<Bundle, Unit>() {
+          @Override
+          public Unit call(final Bundle b) {
+            setActivityArguments(b, false);
+            return Unit.unit();
+          }
+        });
+
+    return drawer_actions.build();
+  }
+
+  /**
+   * Set up a map of names ↔ classes. This is used to start an activity
+   * by class, given a {@link SimplifiedPart}.
+   */
+
+  private static ImmutableMap<SimplifiedPart, Class<? extends Activity>>
+  calculateActivityClassesByPart(final boolean holds_enabled) {
+
+    final ImmutableMap.Builder<SimplifiedPart, Class<? extends Activity>> classes_by_name =
+        ImmutableMap.builder();
+
+    classes_by_name.put(PART_BOOKS, MainBooksActivity.class);
+    classes_by_name.put(PART_CATALOG, MainCatalogActivity.class);
+    if (holds_enabled) {
+      classes_by_name.put(PART_HOLDS, MainHoldsActivity.class);
+    }
+    classes_by_name.put(PART_SETTINGS, MainSettingsActivity.class);
+    return classes_by_name.build();
+  }
+
+  /**
+   * Calculate the basic items that should appear in the navigation drawer.
+   */
+
+  private static ImmutableList<SimplifiedPart> calculateDrawerItems(
+      final boolean holds_enabled) {
+
+    final ImmutableList.Builder<SimplifiedPart> drawer_items = ImmutableList.builder();
+    drawer_items.add(PART_SWITCHER);
+    drawer_items.add(PART_CATALOG);
+    drawer_items.add(PART_BOOKS);
+    if (holds_enabled) {
+      drawer_items.add(PART_HOLDS);
+    }
+    drawer_items.add(PART_SETTINGS);
+    return drawer_items.build();
+  }
+
+  /**
+   * @return A list of the account providers used by the current profile
+   */
+
+  private static ImmutableList<AccountProvider> calculateCurrentlyUsedAccountProviders() {
+
+    final ArrayList<AccountProvider> drawer_items_accounts = new ArrayList<>();
+    final AccountProviderCollection account_providers =
+        Simplified.getAccountProviders();
+    final ProfileReadableType profile =
+        Simplified.getProfilesController().profileCurrent();
+
+    for (final AccountType account : profile.accounts().values()) {
+      if (account_providers.providers().containsKey(account.provider())) {
+        final AccountProvider account_provider =
+            account_providers.providers().get(account.provider());
+        drawer_items_accounts.add(account_provider);
+      }
+    }
+
+    return ImmutableList.sortedCopyOf(drawer_items_accounts);
+  }
+
+  private void finishWithConditionalAnimationOverride() {
     this.finish();
 
-    /**
+    /*
      * If this activity is the last activity, do not override the closing
      * transition animation.
      */
 
-    if (SimplifiedActivity.ACTIVITY_COUNT > 1) {
+    if (ACTIVITY_COUNT > 1) {
       this.overridePendingTransition(0, 0);
     }
   }
 
-  protected final FrameLayout getContentFrame()
-  {
+  protected final FrameLayout getContentFrame() {
     return NullCheck.notNull(this.content_frame);
   }
 
-  private void hideKeyboard()
-  {
+  private void hideKeyboard() {
     // Check if no view has focus:
     final View view = this.getCurrentFocus();
     if (view != null) {
       final InputMethodManager im = (InputMethodManager) this.getSystemService(
-        Context.INPUT_METHOD_SERVICE);
+          Context.INPUT_METHOD_SERVICE);
       im.hideSoftInputFromWindow(
-        view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+          view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
     }
   }
 
+  /**
+   * @return The application part to which this activity belongs
+   */
+
   protected abstract SimplifiedPart navigationDrawerGetPart();
 
-  protected final void navigationDrawerSetActionBarTitle()
-  {
+  protected final void navigationDrawerSetActionBarTitle() {
     final ActionBar bar = NullCheck.notNull(this.getActionBar());
     final Resources rr = NullCheck.notNull(this.getResources());
     final SimplifiedPart part = this.navigationDrawerGetPart();
     bar.setTitle(part.getPartName(rr));
   }
 
+  /**
+   * @return {@code true} iff the navigation drawer should show an indicator
+   */
+
   protected abstract boolean navigationDrawerShouldShowIndicator();
 
-  @Override public void onBackPressed()
-  {
-    SimplifiedActivity.LOG.debug("onBackPressed: {}", this);
+  @Override
+  public void onBackPressed() {
+    LOG.debug("onBackPressed: {}", this);
     final Resources rr = NullCheck.notNull(this.getResources());
 
     final DrawerLayout d = NullCheck.notNull(this.drawer);
@@ -166,15 +324,12 @@ public abstract class SimplifiedActivity extends Activity
       bar.setHomeActionContentDescription(rr.getString(R.string.navigation_accessibility_drawer_show));
     } else {
 
-      /**
+      /*
        * If this activity is the last activity, do not override the closing
        * transition animation.
        */
 
-
-      if (SimplifiedActivity.ACTIVITY_COUNT == 1)
-      {
-
+      if (ACTIVITY_COUNT == 1) {
         if (this.getClass() != MainCatalogActivity.class) {
           // got to main catalog activity
           //final DrawerLayout d = NullCheck.notNull(this.drawer);
@@ -200,15 +355,15 @@ public abstract class SimplifiedActivity extends Activity
 
       if (this.selected > 0) {
         final Map<SimplifiedPart, Class<? extends Activity>> dc =
-          NullCheck.notNull(this.drawer_classes_by_name);
+            NullCheck.notNull(this.drawer_classes_by_name);
         final Class<? extends Activity> c = NullCheck.notNull(dc.get(name));
 
         final Map<SimplifiedPart, FunctionType<Bundle, Unit>> fas =
-          NullCheck.notNull(this.drawer_arg_funcs);
+            NullCheck.notNull(this.drawer_arg_funcs);
         final FunctionType<Bundle, Unit> fa = NullCheck.notNull(fas.get(name));
 
         final Bundle b = new Bundle();
-        SimplifiedActivity.setActivityArguments(b, false);
+        setActivityArguments(b, false);
         fa.call(b);
 
         final Intent i = new Intent();
@@ -219,7 +374,6 @@ public abstract class SimplifiedActivity extends Activity
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-
         i.putExtras(b);
         this.startActivity(i);
 
@@ -227,11 +381,10 @@ public abstract class SimplifiedActivity extends Activity
       } else {
         // replace drawer with selection of libraries
         final ListView dl =
-          NullCheck.notNull((ListView) this.findViewById(R.id.left_drawer));
+            NullCheck.notNull((ListView) this.findViewById(R.id.left_drawer));
 
         dl.setOnItemClickListener(this);
         dl.setAdapter(this.adapter_accounts);
-
       }
     }
 
@@ -242,100 +395,38 @@ public abstract class SimplifiedActivity extends Activity
     }
   }
 
-  @Override protected void onCreate(
-    final @Nullable Bundle state)
-  {
+  @Override
+  protected void onCreate(
+      final @Nullable Bundle state) {
 
-    final int id = Simplified.getCurrentAccount().getId();
-    if (id == 0) {
-      setTheme(R.style.SimplifiedTheme_NYPL);
-    }
-    else if (id == 1) {
-      setTheme(R.style.SimplifiedTheme_BPL);
-    }
-    else if (id == 7) {
-      setTheme(R.style.SimplifiedTheme_ACL);
-    }
-    else if (id == 8) {
-      setTheme(R.style.SimplifiedTheme_HCLS);
-    }
-    else if (id == 9) {
-      setTheme(R.style.SimplifiedTheme_MCPL);
-    }
-    else if (id == 10) {
-      setTheme(R.style.SimplifiedTheme_FCPL);
-    }
-    else if (id == 11) {
-      setTheme(R.style.SimplifiedTheme_AACPL);
-    }
-    else if (id == 12) {
-      setTheme(R.style.SimplifiedTheme_BGC);
-    }
-    else if (id == 13) {
-      setTheme(R.style.SimplifiedTheme_SMCL);
-    }
-    else if (id == 14) {
-      setTheme(R.style.SimplifiedTheme_CL);
-    }
-    else if (id == 15) {
-      setTheme(R.style.SimplifiedTheme_CCPL);
-    }
-    else if (id == 16) {
-      setTheme(R.style.SimplifiedTheme_CCL);
-    }
-    else if (id == 17) {
-      setTheme(R.style.SimplifiedTheme_BCL);
-    }
-    else if (id == 18) {
-      setTheme(R.style.SimplifiedTheme_LAPL);
-    }
-    else if (id == 19) {
-      setTheme(R.style.SimplifiedTheme_PCL);
-    }
-    else if (id == 20) {
-      setTheme(R.style.SimplifiedTheme_SCCL);
-    }
-    else if (id == 21) {
-      setTheme(R.style.SimplifiedTheme_ACLS);
-    }
-    else if (id == 22) {
-      setTheme(R.style.SimplifiedTheme_REL);
-    }
-    else if (id == 23) {
-      setTheme(R.style.SimplifiedTheme_WCFL);
-    }
-    else {
-      setTheme(R.style.SimplifiedTheme);
-    }
-
+    this.setTheme(Simplified.getCurrentTheme());
     super.onCreate(state);
 
-    SimplifiedActivity.LOG.debug("onCreate: {}", this);
+    LOG.debug("onCreate: {}", this);
     this.setContentView(R.layout.main);
 
     boolean open_drawer = true;
 
     final Intent i = NullCheck.notNull(this.getIntent());
-    SimplifiedActivity.LOG.debug("non-null intent");
+    LOG.debug("non-null intent");
     final Bundle a = i.getExtras();
     if (a != null) {
-      SimplifiedActivity.LOG.debug("non-null intent extras");
-      open_drawer = a.getBoolean(SimplifiedActivity.NAVIGATION_DRAWER_OPEN_ID);
-      SimplifiedActivity.LOG.debug("drawer requested: {}", open_drawer);
+      LOG.debug("non-null intent extras");
+      open_drawer = a.getBoolean(NAVIGATION_DRAWER_OPEN_ID);
+      LOG.debug("drawer requested: {}", open_drawer);
     }
 
-    /**
+    /*
      * The activity is being re-initialized. Set the drawer to whatever
      * state it was in when the activity was destroyed.
      */
 
     if (state != null) {
-      SimplifiedActivity.LOG.debug("reinitializing");
-      open_drawer = state.getBoolean(
-        SimplifiedActivity.NAVIGATION_DRAWER_OPEN_ID, open_drawer);
+      LOG.debug("reinitializing");
+      open_drawer = state.getBoolean(NAVIGATION_DRAWER_OPEN_ID, open_drawer);
     }
 
-    /**
+    /*
      * As per the Android design documents: If the user has manually opened
      * the navigation drawer, then the user is assumed to understand how the
      * drawer works. Therefore, if it appears that the drawer should be
@@ -343,444 +434,119 @@ public abstract class SimplifiedActivity extends Activity
      */
 
     final SharedPreferences in_drawer_settings =
-      NullCheck.notNull(this.getSharedPreferences("drawer-settings", 0));
+        NullCheck.notNull(this.getSharedPreferences("drawer-settings", 0));
     if (in_drawer_settings.getBoolean("has-opened-manually", false)) {
-      SimplifiedActivity.LOG.debug(
-        "user has manually opened drawer in the past, not opening it now!");
+      LOG.debug("user has manually opened drawer in the past, not opening it now!");
       open_drawer = false;
     }
     this.drawer_settings = in_drawer_settings;
 
-    /**
+    /*
      * Holds are an optional feature. If they are disabled, then the item
      * is simply removed from the navigation drawer.
      */
 
-    this.app =
-      Simplified.getCatalogAppServices();
-    final Resources rr = NullCheck.notNull(this.getResources());
-    final boolean holds_enabled = rr.getBoolean(R.bool.feature_holds_enabled);
+    final Resources resources = NullCheck.notNull(this.getResources());
+    final boolean holds_enabled = resources.getBoolean(R.bool.feature_holds_enabled);
 
-    /**
+    /*
      * Configure the navigation drawer.
      */
 
-    final DrawerLayout d =
-      NullCheck.notNull((DrawerLayout) this.findViewById(R.id.drawer_layout));
-    final ListView dl =
-      NullCheck.notNull((ListView) this.findViewById(R.id.left_drawer));
-    final FrameLayout fl =
-      NullCheck.notNull((FrameLayout) this.findViewById(R.id.content_frame));
+    final DrawerLayout drawer_layout =
+        NullCheck.notNull((DrawerLayout) this.findViewById(R.id.drawer_layout));
+    final ListView drawer_list_view =
+        NullCheck.notNull((ListView) this.findViewById(R.id.left_drawer));
+    final FrameLayout frame_layout =
+        NullCheck.notNull((FrameLayout) this.findViewById(R.id.content_frame));
 
-    d.setDrawerListener(this);
-    d.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
-    dl.setOnItemClickListener(this);
-    d.setDrawerTitle(Gravity.LEFT, rr.getString(R.string.navigation_accessibility));
+    drawer_layout.setDrawerListener(this);
+    drawer_layout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
+    drawer_list_view.setOnItemClickListener(this);
+    drawer_layout.setDrawerTitle(Gravity.LEFT, resources.getString(R.string.navigation_accessibility));
 
-    final String app_name = NullCheck.notNull(rr.getString(R.string.feature_app_name));
-    final List<SimplifiedPart> di = new ArrayList<SimplifiedPart>();
-    di.add(SimplifiedPart.PART_SWITCHER);
-
-    di.add(SimplifiedPart.PART_CATALOG);
-    di.add(SimplifiedPart.PART_BOOKS);
-    if (holds_enabled && Simplified.getCurrentAccount().supportsReservations()) {
-      di.add(SimplifiedPart.PART_HOLDS);
-    }
-    di.add(SimplifiedPart.PART_SETTINGS);
-
-
-    final List<Object> dia = new ArrayList<Object>();
-
-    final JSONArray registry = new AccountsRegistry(this).getCurrentAccounts(Simplified.getSharedPrefs());
-    for (int index = 0; index < registry.length(); ++index) {
-      try {
-        dia.add(new Account(registry.getJSONObject(index)));
-      } catch (JSONException e) {
-        e.printStackTrace();
-      }
-    }
-    dia.add(SimplifiedPart.PART_MANAGE_ACCOUNTS);
+    final List<SimplifiedPart> drawer_items =
+        calculateDrawerItems(holds_enabled);
+    final ImmutableList<AccountProvider> drawer_item_accounts =
+        calculateCurrentlyUsedAccountProviders();
+    final ImmutableList<Object> drawer_item_accounts_untyped =
+        ImmutableList.builder()
+            .addAll(drawer_item_accounts)
+            .add(PART_MANAGE_ACCOUNTS)
+            .build();
 
     final LayoutInflater inflater = NullCheck.notNull(this.getLayoutInflater());
 
     this.adapter_accounts =
-      new ArrayAdapter<Object>(this,  R.layout.drawer_item_account, dia)
-      {
-        @Override public View getView(
-          final int position,
-          final @Nullable View reuse,
-          final @Nullable ViewGroup parent)
-        {
-          final View v;
-          if (reuse != null) {
-            v = reuse;
-          } else {
-            v = inflater.inflate(R.layout.drawer_item_account, parent, false);
-          }
-
-          final Object object = NullCheck.notNull(dia.get(position));
-
-          if (object instanceof Account) {
-
-            final Account account = (Account) object;
-            final TextView tv =
-              NullCheck.notNull((TextView) v.findViewById(android.R.id.text1));
-            tv.setText(account.getName());
-
-            final ImageView icon_view =
-              NullCheck.notNull((ImageView) v.findViewById(R.id.cellIcon));
-            if (account.getId() == 0) {
-              icon_view.setImageResource(R.drawable.account_logo_nypl);
-            } else if (account.getId() == 1) {
-              icon_view.setImageResource(R.drawable.account_logo_bpl);
-            } else if (account.getId() == 2) {
-              icon_view.setImageResource(R.drawable.account_logo_instant);
-            } else if (account.getId() == 7) {
-              icon_view.setImageResource(R.drawable.account_logo_alameda);
-            } else if (account.getId() == 8) {
-              icon_view.setImageResource(R.drawable.account_logo_hcls);
-            } else if (account.getId() == 9) {
-              icon_view.setImageResource(R.drawable.account_logo_mcpl);
-            } else if (account.getId() == 10) {
-              icon_view.setImageResource(R.drawable.account_logo_fcpl);
-            } else if (account.getId() == 11) {
-              icon_view.setImageResource(R.drawable.account_logo_anne_arundel);
-            } else if (account.getId() == 12) {
-              icon_view.setImageResource(R.drawable.account_logo_bgc);
-            } else if (account.getId() == 13) {
-              icon_view.setImageResource(R.drawable.account_logo_smcl);
-            } else if (account.getId() == 14) {
-              icon_view.setImageResource(R.drawable.account_logo_cl);
-            } else if (account.getId() == 15) {
-              icon_view.setImageResource(R.drawable.account_logo_ccpl);
-            } else if (account.getId() == 16) {
-              icon_view.setImageResource(R.drawable.account_logo_ccl);
-            } else if (account.getId() == 17) {
-              icon_view.setImageResource(R.drawable.account_logo_bcl);
-            } else if (account.getId() == 18) {
-              icon_view.setImageResource(R.drawable.account_logo_lapl);
-            } else if (account.getId() == 19) {
-              icon_view.setImageResource(R.drawable.account_logo_pcl);
-            } else if (account.getId() == 20) {
-              icon_view.setImageResource(R.drawable.account_logo_sccl);
-            } else if (account.getId() == 21) {
-              icon_view.setImageResource(R.drawable.account_logo_acls);
-            } else if (account.getId() == 22) {
-              icon_view.setImageResource(R.drawable.account_logo_rel);
-            } else if (account.getId() == 23) {
-              icon_view.setImageResource(R.drawable.account_logo_wcfl);
-            }
-          } else {
-            final ImageView icon_view =
-              NullCheck.notNull((ImageView) v.findViewById(R.id.cellIcon));
-            icon_view.setImageResource(R.drawable.menu_icon_settings);
-            final TextView tv =
-              NullCheck.notNull((TextView) v.findViewById(android.R.id.text1));
-            tv.setText(R.string.settings_manage_accounts);
-
-          }
-          return v;
-        }
-      };
-
-
+        new ArrayAdapterWithAccounts(this, drawer_item_accounts_untyped, inflater);
     this.adapter =
-      new ArrayAdapter<SimplifiedPart>(this, R.layout.drawer_item, di)
-      {
-        @Override public View getView(
-          final int position,
-          final @Nullable View reuse,
-          final @Nullable ViewGroup parent)
-        {
-          View v;
-          if (reuse != null) {
-            v = reuse;
-          } else {
-            v = inflater.inflate(R.layout.drawer_item, parent, false);
-          }
-          final SimplifiedPart part = NullCheck.notNull(di.get(position));
+        new ArrayAdapterWithoutAccounts(this, drawer_items, inflater, resources, drawer_list_view);
 
-          if (part.equals(SimplifiedPart.PART_SWITCHER)) {
-            v = inflater.inflate(R.layout.drawer_item_current_account, parent, false);
-          }
+    drawer_list_view.setAdapter(this.adapter);
 
-          final TextView tv =
-            NullCheck.notNull((TextView) v.findViewById(android.R.id.text1));
+    final ImmutableMap<SimplifiedPart, Class<? extends Activity>> classes_by_name =
+        calculateActivityClassesByPart(holds_enabled);
+    final ImmutableMap<SimplifiedPart, FunctionType<Bundle, Unit>> drawer_actions =
+        calculateDrawerActions(resources, holds_enabled);
 
-          final ImageView icon_view =
-            NullCheck.notNull((ImageView) v.findViewById(R.id.cellIcon));
-
-
-          if (part.equals(SimplifiedPart.PART_SWITCHER)) {
-            v.setBackgroundResource(R.drawable.textview_underline);
-            final Prefs prefs = Simplified.getSharedPrefs();
-            final Account account = new AccountsRegistry(SimplifiedActivity.this).getAccount(prefs.getInt("current_account"));
-            tv.setText(account.getName());
-            tv.setTextColor(Color.parseColor(Simplified.getCurrentAccount().getMainColor()));
-
-            if (account.getId() == 0) {
-              icon_view.setImageResource(R.drawable.account_logo_nypl);
-            } else if (account.getId() == 1) {
-              icon_view.setImageResource(R.drawable.account_logo_bpl);
-            } else if (account.getId() == 2) {
-              icon_view.setImageResource(R.drawable.account_logo_instant);
-            } else if (account.getId() == 7) {
-              icon_view.setImageResource(R.drawable.account_logo_alameda);
-            } else if (account.getId() == 8) {
-              icon_view.setImageResource(R.drawable.account_logo_hcls);
-            } else if (account.getId() == 9) {
-              icon_view.setImageResource(R.drawable.account_logo_mcpl);
-            } else if (account.getId() == 10) {
-              icon_view.setImageResource(R.drawable.account_logo_fcpl);
-            } else if (account.getId() == 11) {
-              icon_view.setImageResource(R.drawable.account_logo_anne_arundel);
-            } else if (account.getId() == 12) {
-              icon_view.setImageResource(R.drawable.account_logo_bgc);
-            } else if (account.getId() == 13) {
-              icon_view.setImageResource(R.drawable.account_logo_smcl);
-            } else if (account.getId() == 14) {
-              icon_view.setImageResource(R.drawable.account_logo_cl);
-            } else if (account.getId() == 15) {
-              icon_view.setImageResource(R.drawable.account_logo_ccpl);
-            } else if (account.getId() == 16) {
-              icon_view.setImageResource(R.drawable.account_logo_ccl);
-            } else if (account.getId() == 17) {
-              icon_view.setImageResource(R.drawable.account_logo_bcl);
-            } else if (account.getId() == 18) {
-              icon_view.setImageResource(R.drawable.account_logo_lapl);
-            } else if (account.getId() == 19) {
-              icon_view.setImageResource(R.drawable.account_logo_pcl);
-            } else if (account.getId() == 20) {
-              icon_view.setImageResource(R.drawable.account_logo_sccl);
-            } else if (account.getId() == 21) {
-              icon_view.setImageResource(R.drawable.account_logo_acls);
-            } else if (account.getId() == 22) {
-              icon_view.setImageResource(R.drawable.account_logo_rel);
-            } else if (account.getId() == 23) {
-              icon_view.setImageResource(R.drawable.account_logo_wcfl);
-            }
-
-          } else {
-            tv.setText(part.getPartName(rr));
-            if (dl.getCheckedItemPosition() == position) {
-              tv.setContentDescription(tv.getText() + ". selected.");
-              if (SimplifiedPart.PART_CATALOG == part) {
-                icon_view.setImageResource(R.drawable.menu_icon_catalog_white);
-              } else if (SimplifiedPart.PART_BOOKS == part) {
-                icon_view.setImageResource(R.drawable.menu_icon_books_white);
-              } else if (SimplifiedPart.PART_HOLDS == part) {
-                icon_view.setImageResource(R.drawable.menu_icon_holds_white);
-              } else if (SimplifiedPart.PART_SETTINGS == part) {
-                icon_view.setImageResource(R.drawable.menu_icon_settings_white);
-              }
-
-            }
-            else
-            {
-              if (SimplifiedPart.PART_CATALOG == part) {
-                icon_view.setImageResource(R.drawable.menu_icon_catalog);
-              } else if (SimplifiedPart.PART_BOOKS == part) {
-                icon_view.setImageResource(R.drawable.menu_icon_books);
-              } else if (SimplifiedPart.PART_HOLDS == part) {
-                icon_view.setImageResource(R.drawable.menu_icon_holds);
-              } else if (SimplifiedPart.PART_SETTINGS == part) {
-                icon_view.setImageResource(R.drawable.menu_icon_settings);
-              }
-
-            }
-          }
-
-          return v;
-        }
-      };
-
-    dl.setAdapter(this.adapter);
-
-    /**
-     * Set up a map of names ↔ classes. This is used to start an activity
-     * by class, given a {@link SimplifiedPart}.
-     */
-
-    final Map<SimplifiedPart, Class<? extends Activity>> classes_by_name =
-      new HashMap<SimplifiedPart, Class<? extends Activity>>();
-    classes_by_name.put(SimplifiedPart.PART_BOOKS, MainBooksActivity.class);
-    classes_by_name.put(
-      SimplifiedPart.PART_CATALOG, MainCatalogActivity.class);
-    if (holds_enabled && Simplified.getCurrentAccount().supportsReservations()) {
-      classes_by_name.put(SimplifiedPart.PART_HOLDS, MainHoldsActivity.class);
-    }
-    classes_by_name.put(
-      SimplifiedPart.PART_SETTINGS, MainSettingsActivity.class);
-
-    /**
-     * Set up a map of part names to functions that configure argument
-     * bundles. Given a {@link SimplifiedPart}, this allows the construction
-     * of an argument bundle for the target activity class.
-     */
-
-    final Map<SimplifiedPart, FunctionType<Bundle, Unit>> da =
-      new HashMap<SimplifiedPart, FunctionType<Bundle, Unit>>();
-
-    da.put(
-      SimplifiedPart.PART_BOOKS, new FunctionType<Bundle, Unit>()
-      {
-        @Override public Unit call(
-          final Bundle b)
-        {
-          final OptionType<String> no_search = Option.none();
-          final ImmutableStack<CatalogFeedArgumentsType> empty_stack =
-            ImmutableStack.empty();
-          final CatalogFeedArgumentsLocalBooks local =
-            new CatalogFeedArgumentsLocalBooks(
-              empty_stack,
-              SimplifiedPart.PART_BOOKS.getPartName(rr),
-              FeedFacetPseudo.FacetType.SORT_BY_TITLE,
-              no_search,
-              BooksFeedSelection.BOOKS_FEED_LOANED);
-          CatalogFeedActivity.setActivityArguments(b, local);
-          return Unit.unit();
-        }
-      });
-
-    da.put(
-      SimplifiedPart.PART_CATALOG, new FunctionType<Bundle, Unit>()
-      {
-        @Override public Unit call(
-          final Bundle b)
-        {
-          final BooksType books = SimplifiedActivity.this.app.getBooks();
-          final BooksControllerConfigurationType config =
-            books.booksGetConfiguration();
-
-          final ImmutableStack<CatalogFeedArgumentsType> empty =
-            ImmutableStack.empty();
-          final CatalogFeedArgumentsRemote remote =
-            new CatalogFeedArgumentsRemote(
-              false,
-              NullCheck.notNull(empty),
-              app_name,
-              config.getCurrentRootFeedURI(),
-              false);
-          CatalogFeedActivity.setActivityArguments(b, remote);
-          return Unit.unit();
-        }
-      });
-
-    if (holds_enabled && Simplified.getCurrentAccount().supportsReservations()) {
-      da.put(
-        SimplifiedPart.PART_HOLDS, new FunctionType<Bundle, Unit>()
-        {
-          @Override public Unit call(
-            final Bundle b)
-          {
-            final OptionType<String> no_search = Option.none();
-            final ImmutableStack<CatalogFeedArgumentsType> empty_stack =
-              ImmutableStack.empty();
-            final CatalogFeedArgumentsLocalBooks local =
-              new CatalogFeedArgumentsLocalBooks(
-                empty_stack,
-                SimplifiedPart.PART_HOLDS.getPartName(rr),
-                FeedFacetPseudo.FacetType.SORT_BY_TITLE,
-                no_search,
-                BooksFeedSelection.BOOKS_FEED_HOLDS);
-            CatalogFeedActivity.setActivityArguments(b, local);
-            return Unit.unit();
-          }
-        });
-    }
-
-    da.put(
-      SimplifiedPart.PART_SETTINGS, new FunctionType<Bundle, Unit>()
-      {
-        @Override public Unit call(
-          final Bundle b)
-        {
-          SimplifiedActivity.setActivityArguments(b, false);
-          return Unit.unit();
-        }
-      });
-    da.put(
-      SimplifiedPart.PART_SWITCHER, new FunctionType<Bundle, Unit>()
-      {
-        @Override public Unit call(
-          final Bundle b)
-        {
-          SimplifiedActivity.setActivityArguments(b, false);
-          return Unit.unit();
-        }
-      });
-
-    /**
+    /*
      * Show or hide the three dashes next to the home button.
      */
 
-    final ActionBar bar = this.getActionBar();
+    final ActionBar bar = NullCheck.notNull(this.getActionBar(), "Action bar");
     if (this.navigationDrawerShouldShowIndicator()) {
-      SimplifiedActivity.LOG.debug("setting navigation drawer indicator");
+      LOG.debug("setting navigation drawer indicator");
       if (android.os.Build.VERSION.SDK_INT < 21) {
         bar.setDisplayHomeAsUpEnabled(false);
         bar.setHomeButtonEnabled(true);
       }
     }
 
-    /**
+    /*
      * If the drawer should be open, open it.
      */
 
     if (open_drawer) {
-      d.openDrawer(GravityCompat.START);
-      bar.setHomeActionContentDescription(rr.getString(R.string.navigation_accessibility_drawer_hide));
+      drawer_layout.openDrawer(GravityCompat.START);
+      bar.setHomeActionContentDescription(resources.getString(R.string.navigation_accessibility_drawer_hide));
     }
 
-    this.drawer_items = di;
+    this.drawer_items = drawer_items;
     this.drawer_classes_by_name = classes_by_name;
-    this.drawer_arg_funcs = da;
-    this.drawer = d;
-    this.drawer_list = dl;
-    this.content_frame = fl;
+    this.drawer_arg_funcs = drawer_actions;
+    this.drawer = drawer_layout;
+    this.drawer_list = drawer_list_view;
+    this.content_frame = frame_layout;
     this.selected = -1;
-    SimplifiedActivity.ACTIVITY_COUNT = SimplifiedActivity.ACTIVITY_COUNT + 1;
-    SimplifiedActivity.LOG.debug(
-      "activity count: {}", SimplifiedActivity.ACTIVITY_COUNT);
+    ACTIVITY_COUNT = ACTIVITY_COUNT + 1;
 
-
-//    UIThread.runOnUIThreadDelayed(
-//      new Runnable() {
-//        @Override
-//        public void run() {
-//
-//          if (!SimplifiedActivity.DEVICE_ACTIVATED && Simplified.getCurrentAccount().needsAuth()) {
-//            // Don't try to activate the device unless we're connected to the Internet, since
-//            // it will discard its credentials if it fails.
-//            final ConnectivityManager connectivity_manager = (ConnectivityManager) SimplifiedActivity.this.getSystemService(Context.CONNECTIVITY_SERVICE);
-//            final NetworkInfo network_info = connectivity_manager.getActiveNetworkInfo();
-//            if (network_info != null && network_info.isConnected()) {
-//              // This is commented out because it turns out that activating the device on startup breaks
-//              // decryption until a book is fulfilled.
-//              SimplifiedActivity.DEVICE_ACTIVATED = true;
-//            }
-//          }
-//
-//        }
-//      }, 3000L);
-
-
+    LOG.debug("activity count: {}", ACTIVITY_COUNT);
   }
 
-  @Override protected void onDestroy()
-  {
+  /**
+   * Perform an unchecked (but safe) cast of the given list. The cast is safe because {@code S <: B}
+   * and so therefore we can behave as if {@code List<S> <: List<B>}.
+   */
+
+  @SuppressWarnings("unchecked")
+  private <B, S extends B> ImmutableList<B> castList(final ImmutableList<S> xs) {
+    return (ImmutableList<B>) xs;
+  }
+
+  @Override
+  protected void onDestroy() {
     super.onDestroy();
-    SimplifiedActivity.LOG.debug("onDestroy: {}", this);
-    SimplifiedActivity.ACTIVITY_COUNT = SimplifiedActivity.ACTIVITY_COUNT - 1;
+    LOG.debug("onDestroy: {}", this);
+    ACTIVITY_COUNT = ACTIVITY_COUNT - 1;
   }
 
-  @Override public final void onDrawerClosed(
-    final @Nullable View drawer_view)
-  {
-    SimplifiedActivity.LOG.debug(
-      "onDrawerClosed: selected: {}", this.selected);
+  @Override
+  public final void onDrawerClosed(
+      final @Nullable View drawer_view) {
 
-    /**
+    LOG.debug("onDrawerClosed: selected: {}", this.selected);
+
+    /*
      * If the drawer is closing because the user pressed the back button, then
      * finish the activity.
      */
@@ -790,52 +556,48 @@ public abstract class SimplifiedActivity extends Activity
       return;
     }
 
-    /**
+    /*
      * If the drawer is closing because the user selected an entry, start the
      * relevant activity.
      */
-
-
   }
 
-  @Override public final void onDrawerOpened(
-    final @Nullable View drawer_view)
-  {
+  @Override
+  public final void onDrawerOpened(
+      final @Nullable View drawer_view) {
     this.selected = -1;
-    SimplifiedActivity.LOG.debug("onDrawerOpened: {}", drawer_view);
+    LOG.debug("onDrawerOpened: {}", drawer_view);
 
-    final SharedPreferences in_drawer_settings =
-      NullCheck.notNull(this.drawer_settings);
+    final SharedPreferences in_drawer_settings = NullCheck.notNull(this.drawer_settings);
     in_drawer_settings.edit().putBoolean("has-opened-manually", true).apply();
-
     this.hideKeyboard();
   }
 
-  @Override public final void onDrawerSlide(
-    final @Nullable View drawer_view,
-    final float slide_offset)
-  {
+  @Override
+  public final void onDrawerSlide(
+      final @Nullable View drawer_view,
+      final float slide_offset) {
     // Nothing
   }
 
-  @Override public final void onDrawerStateChanged(
-    final int new_state)
-  {
-    SimplifiedActivity.LOG.debug("onDrawerStateChanged: {}", new_state);
+  @Override
+  public final void onDrawerStateChanged(
+      final int new_state) {
+    LOG.debug("onDrawerStateChanged: {}", new_state);
   }
 
-  @Override public void onItemClick(
-    final @Nullable AdapterView<?> parent,
-    final @Nullable View view,
-    final int position,
-    final long id)
-  {
-    final ListView dl =
-      NullCheck.notNull((ListView) this.findViewById(R.id.left_drawer));
+  @Override
+  public void onItemClick(
+      final @Nullable AdapterView<?> parent,
+      final @Nullable View view,
+      final int position,
+      final long id) {
 
-    if (dl.getAdapter().equals(this.adapter)) {
+    final ListView drawer_list =
+        NullCheck.notNull((ListView) this.findViewById(R.id.left_drawer));
 
-      SimplifiedActivity.LOG.debug("onItemClick: {}", position);
+    if (drawer_list.getAdapter().equals(this.adapter)) {
+      LOG.debug("onItemClick: {}", position);
       final Resources rr = NullCheck.notNull(this.getResources());
 
       final ActionBar bar = this.getActionBar();
@@ -848,58 +610,21 @@ public abstract class SimplifiedActivity extends Activity
       final Object object = this.adapter_accounts.getItem(position);
 
       if (object instanceof Account) {
-        final Account account = (Account) object;
-
-
-        if (account.getId() != Simplified.getCurrentAccount().getId()) {
-
-          final Prefs prefs = Simplified.getSharedPrefs();
-          prefs.putInt("current_account", account.getId());
-
-          dl.setAdapter(this.adapter);
-
-          this.app =
-            Simplified.getCatalogAppServices();
-
-          UIThread.runOnUIThreadDelayed(
-            new Runnable() {
-              @Override
-              public void run() {
-
-                final Resources rr = NullCheck.notNull(SimplifiedActivity.this.getResources());
-                final ActionBar bar = SimplifiedActivity.this.getActionBar();
-                bar.setHomeActionContentDescription(rr.getString(R.string.navigation_accessibility_drawer_show));
-                SimplifiedActivity.this.selected = 1;
-                SimplifiedActivity.this.startSideBarActivity();
-
-
-                if (Simplified.getSharedPrefs().contains("destroy_database") && Simplified.getSharedPrefs().getInt("destroy_database") == Simplified.getCurrentAccount().getId())
-                {
-                    SimplifiedActivity.this.app.destroyDatabase();
-                    Simplified.getSharedPrefs().remove("destroy_database");
-                }
-
-              }
-            }, 30L);
-        } else {
-          dl.setAdapter(this.adapter);
-        }
+        throw new UnimplementedCodeException();
       } else {
         this.selected = this.adapter.getCount() - 1;
         this.startSideBarActivity();
       }
     }
-
   }
 
-  @Override public boolean onOptionsItemSelected(
-    final @Nullable MenuItem item_mn)
-  {
+  @Override
+  public boolean onOptionsItemSelected(
+      final @Nullable MenuItem item_mn) {
     final MenuItem item = NullCheck.notNull(item_mn);
     final Resources rr = NullCheck.notNull(this.getResources());
 
     switch (item.getItemId()) {
-
       case android.R.id.home: {
         final DrawerLayout d = NullCheck.notNull(this.drawer);
         final ActionBar bar = this.getActionBar();
@@ -920,31 +645,32 @@ public abstract class SimplifiedActivity extends Activity
     }
   }
 
-  @Override protected void onResume()
-  {
+  @Override
+  protected void onResume() {
     super.onResume();
-    SimplifiedActivity.LOG.debug("onResume: {}", this);
 
-    final List<SimplifiedPart> di = NullCheck.notNull(this.drawer_items);
-    final ListView dl = NullCheck.notNull(this.drawer_list);
-    final SimplifiedPart p = this.navigationDrawerGetPart();
+    LOG.debug("onResume: {}", this);
 
-    final int pos = di.indexOf(p);
-    SimplifiedActivity.LOG.debug("restored selected item: {}", pos);
+    final List<SimplifiedPart> drawer_items = NullCheck.notNull(this.drawer_items);
+    final ListView drawer_list_view = NullCheck.notNull(this.drawer_list);
+    final SimplifiedPart part = this.navigationDrawerGetPart();
 
-    dl.setSelection(pos);
-    dl.setItemChecked(pos, true);
+    final int pos = drawer_items.indexOf(part);
+    LOG.debug("restored selected item: {}", pos);
+
+    drawer_list_view.setSelection(pos);
+    drawer_list_view.setItemChecked(pos, true);
 
     // opening the drawer, when the user comes back from the help section, the view will not be empty.
 
   }
 
-  @Override protected void onSaveInstanceState(
-    final @Nullable Bundle state)
-  {
+  @Override
+  protected void onSaveInstanceState(
+      final @Nullable Bundle state) {
     super.onSaveInstanceState(state);
 
-    /**
+    /*
      * Save the state of the navigation drawer. The intention here is that
      * the draw will correctly be open or closed based on the state it was
      * in when the user left the activity. In practice, the drawer tends to
@@ -954,8 +680,147 @@ public abstract class SimplifiedActivity extends Activity
 
     final Bundle state_nn = NullCheck.notNull(state);
     final DrawerLayout d = NullCheck.notNull(this.drawer);
-    state_nn.putBoolean(
-      SimplifiedActivity.NAVIGATION_DRAWER_OPEN_ID,
-      d.isDrawerOpen(GravityCompat.START));
+    state_nn.putBoolean(NAVIGATION_DRAWER_OPEN_ID, d.isDrawerOpen(GravityCompat.START));
+  }
+
+  /**
+   * An array adapter that shows application parts.
+   */
+
+  private static final class ArrayAdapterWithoutAccounts extends ArrayAdapter<SimplifiedPart> {
+
+    private final List<SimplifiedPart> drawer_items;
+    private final LayoutInflater inflater;
+    private final Resources resources;
+    private final ListView drawer_list_view;
+
+    ArrayAdapterWithoutAccounts(
+        final SimplifiedActivity activity,
+        final List<SimplifiedPart> drawer_items,
+        final LayoutInflater inflater,
+        final Resources resources,
+        final ListView drawer_list_view) {
+
+      super(activity, R.layout.drawer_item, drawer_items);
+      this.drawer_items = drawer_items;
+      this.inflater = inflater;
+      this.resources = resources;
+      this.drawer_list_view = drawer_list_view;
+    }
+
+    @Override
+    public View getView(
+        final int position,
+        final @Nullable View reuse,
+        final @Nullable ViewGroup parent) {
+      View v;
+      if (reuse != null) {
+        v = reuse;
+      } else {
+        v = inflater.inflate(R.layout.drawer_item, parent, false);
+      }
+      final SimplifiedPart part = NullCheck.notNull(drawer_items.get(position));
+
+      if (part.equals(PART_SWITCHER)) {
+        v = inflater.inflate(R.layout.drawer_item_current_account, parent, false);
+      }
+
+      final TextView text_view =
+          NullCheck.notNull((TextView) v.findViewById(android.R.id.text1));
+      final ImageView icon_view =
+          NullCheck.notNull((ImageView) v.findViewById(R.id.cellIcon));
+
+      if (part.equals(PART_SWITCHER)) {
+        v.setBackgroundResource(R.drawable.textview_underline);
+
+        final AccountProvider account_provider =
+            Simplified.getProfilesController().profileAccountProviderCurrent();
+
+        text_view.setText(account_provider.displayName());
+        text_view.setTextColor(Color.parseColor(account_provider.mainColor()));
+        icon_view.setImageURI(Uri.parse(account_provider.logo().toString()));
+
+      } else {
+        text_view.setText(part.getPartName(resources));
+        if (drawer_list_view.getCheckedItemPosition() == position) {
+          text_view.setContentDescription(text_view.getText() + ". selected.");
+
+          if (PART_CATALOG == part) {
+            icon_view.setImageResource(R.drawable.menu_icon_catalog_white);
+          } else if (PART_BOOKS == part) {
+            icon_view.setImageResource(R.drawable.menu_icon_books_white);
+          } else if (PART_HOLDS == part) {
+            icon_view.setImageResource(R.drawable.menu_icon_holds_white);
+          } else if (PART_SETTINGS == part) {
+            icon_view.setImageResource(R.drawable.menu_icon_settings_white);
+          }
+
+        } else {
+          if (PART_CATALOG == part) {
+            icon_view.setImageResource(R.drawable.menu_icon_catalog);
+          } else if (PART_BOOKS == part) {
+            icon_view.setImageResource(R.drawable.menu_icon_books);
+          } else if (PART_HOLDS == part) {
+            icon_view.setImageResource(R.drawable.menu_icon_holds);
+          } else if (PART_SETTINGS == part) {
+            icon_view.setImageResource(R.drawable.menu_icon_settings);
+          }
+
+        }
+      }
+
+      return v;
+    }
+  }
+
+  /**
+   * An array adapter that shows both application parts and account providers.
+   */
+
+  private static final class ArrayAdapterWithAccounts extends ArrayAdapter<Object> {
+
+    private final ImmutableList<Object> drawer_item_accounts_untyped;
+    private final LayoutInflater inflater;
+
+    ArrayAdapterWithAccounts(
+        final SimplifiedActivity activity,
+        final ImmutableList<Object> drawer_item_accounts_untyped,
+        final LayoutInflater inflater) {
+
+      super(activity, R.layout.drawer_item_account, drawer_item_accounts_untyped);
+      this.drawer_item_accounts_untyped = drawer_item_accounts_untyped;
+      this.inflater = inflater;
+    }
+
+    @Override
+    public View getView(
+        final int position,
+        final @Nullable View reuse,
+        final @Nullable ViewGroup parent) {
+
+      final View v;
+      if (reuse != null) {
+        v = reuse;
+      } else {
+        v = inflater.inflate(R.layout.drawer_item_account, parent, false);
+      }
+
+      final TextView text_view =
+          NullCheck.notNull((TextView) v.findViewById(android.R.id.text1));
+      final ImageView icon_view =
+          NullCheck.notNull((ImageView) v.findViewById(R.id.cellIcon));
+
+      final Object object = NullCheck.notNull(drawer_item_accounts_untyped.get(position));
+      if (object instanceof AccountProvider) {
+        final AccountProvider account_provider = (AccountProvider) object;
+        text_view.setText(account_provider.displayName());
+        icon_view.setImageURI(Uri.parse(account_provider.logo().toString()));
+        return v;
+      }
+
+      text_view.setText(R.string.settings_manage_accounts);
+      icon_view.setImageResource(R.drawable.menu_icon_settings);
+      return v;
+    }
   }
 }

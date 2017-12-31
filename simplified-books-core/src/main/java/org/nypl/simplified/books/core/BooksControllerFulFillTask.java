@@ -8,6 +8,8 @@ import com.io7m.jnull.NullCheck;
 
 import org.nypl.simplified.books.accounts.AccountAuthenticatedHTTP;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
+import org.nypl.simplified.books.book_database.BookID;
+import org.nypl.simplified.books.book_database.BookIDs;
 import org.nypl.simplified.http.core.HTTPAuthType;
 import org.nypl.simplified.http.core.HTTPResultError;
 import org.nypl.simplified.http.core.HTTPResultException;
@@ -196,7 +198,7 @@ final class BooksControllerFulFillTask implements Runnable {
     final List<OPDSAcquisitionFeedEntry> entries = feed.getFeedEntries();
     for (final OPDSAcquisitionFeedEntry e : entries) {
       final OPDSAcquisitionFeedEntry e_nn = NullCheck.notNull(e);
-      final BookID in_book_id = BookID.newIDFromEntry(e_nn);
+      final BookID in_book_id = BookIDs.newFromOPDSEntry(e_nn);
 
       if (this.book_id.isNone() || this.book_id.equals(Option.some(in_book_id))) {
         try {
@@ -215,7 +217,7 @@ final class BooksControllerFulFillTask implements Runnable {
           }
 
         } catch (final Throwable x) {
-          LOG.error("[{}]: unable to save entry: {}: ", in_book_id.getShortID(), x);
+          LOG.error("[{}]: unable to save entry: {}: ", in_book_id.value(), x);
         }
       }
     }

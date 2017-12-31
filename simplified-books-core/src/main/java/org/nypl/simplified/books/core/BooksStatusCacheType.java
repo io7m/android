@@ -2,6 +2,8 @@ package org.nypl.simplified.books.core;
 
 import com.io7m.jfunctional.OptionType;
 
+import org.nypl.simplified.books.book_database.BookID;
+
 /**
  * The type of book status caches.
  *
@@ -23,8 +25,7 @@ public interface BooksStatusCacheType extends BooksObservableType
    * @return The most recent status of the given book, if any.
    */
 
-  OptionType<BookStatusType> booksStatusGet(
-    BookID id);
+  OptionType<BookStatusType> booksStatusGet(BookID id);
 
   /**
    * @param id The book ID

@@ -28,6 +28,7 @@ import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.Some;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
+import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.drm.core.AdobeVendorID;
 import org.nypl.simplified.app.utilities.UIThread;
@@ -37,7 +38,7 @@ import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.core.AccountLoginListenerType;
 import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.core.AuthenticationDocumentType;
-import org.nypl.simplified.books.core.BookID;
+import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.DeviceActivationListenerType;
 import org.nypl.simplified.books.core.DocumentStoreType;
@@ -140,7 +141,7 @@ public final class LoginDialog extends DialogFragment
     NullCheck.notNull(barcode);
     NullCheck.notNull(pin);
 
-    final Account account = Simplified.getCurrentAccount();
+    final Account account = getCurrentAccount();
 
     final Bundle b = new Bundle();
     b.putSerializable(LoginDialog.TEXT_ID, text);
@@ -152,6 +153,10 @@ public final class LoginDialog extends DialogFragment
     final LoginDialog d = new LoginDialog();
     d.setArguments(b);
     return d;
+  }
+
+  private static Account getCurrentAccount() {
+    throw new UnimplementedCodeException();
   }
 
   /**
@@ -381,9 +386,7 @@ public final class LoginDialog extends DialogFragment
     final Button in_login_request_new_code = NullCheck.notNull(
         (Button) in_layout.findViewById(R.id.request_new_codes));
 
-    final SimplifiedCatalogAppServicesType app =
-        Simplified.getCatalogAppServices();
-    DocumentStoreType docs = app.getDocumentStore();
+    DocumentStoreType docs = Simplified.getDocumentStore();
 
     final AuthenticationDocumentType auth_doc =
         docs.getAuthenticationDocument();
@@ -393,12 +396,12 @@ public final class LoginDialog extends DialogFragment
     final Resources rr = NullCheck.notNull(this.getResources());
     final OptionType<AdobeVendorID> adobe_vendor = Option.some(new AdobeVendorID(rr.getString(R.string.feature_adobe_vendor_id)));
 
-    BooksType books = app.getBooks();
+    BooksType books = getBooksType();
 
     if (account_id != null) {
       final Account account = new AccountsRegistry(getActivity()).getAccount(Integer.valueOf(account_id));
-      books = Simplified.getBooks(account, getActivity(), Simplified.getCatalogAppServices().getAdobeDRMExecutor());
-      docs = Simplified.getDocumentStore(account, getActivity().getResources());
+      books = getBooksType();
+      docs = Simplified.getDocumentStore();
     }
 
     in_text.setText(initial_txt);
@@ -579,6 +582,10 @@ public final class LoginDialog extends DialogFragment
     }
 
     return in_layout;
+  }
+
+  private static BooksType getBooksType() {
+    throw new UnimplementedCodeException();
   }
 
   /**

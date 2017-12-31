@@ -5,8 +5,8 @@ import android.view.Gravity;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import org.nypl.simplified.app.ScreenSizeInformationType;
 import org.nypl.simplified.app.Simplified;
-import org.nypl.simplified.app.SimplifiedCatalogAppServicesType;
 
 /**
  * A button that will have a left margin of 8dp. This is used to provide spaces
@@ -14,8 +14,7 @@ import org.nypl.simplified.app.SimplifiedCatalogAppServicesType;
  */
 
 public abstract class CatalogLeftPaddedButton extends LinearLayout
-  implements CatalogBookButtonType
-{
+    implements CatalogBookButtonType {
 
   private TextView text_view;
 
@@ -25,15 +24,13 @@ public abstract class CatalogLeftPaddedButton extends LinearLayout
    * @param context The current context
    */
 
-  public CatalogLeftPaddedButton(final Context context)
-  {
+  public CatalogLeftPaddedButton(final Context context) {
     super(context);
 
-    final SimplifiedCatalogAppServicesType ss =
-      Simplified.getCatalogAppServices();
+    final ScreenSizeInformationType ss = Simplified.getScreenSizeInformation();
     final LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-      android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
-      (int) ss.screenDPToPixels(34));
+        android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+        (int) ss.screenDPToPixels(34));
     lp.leftMargin = (int) ss.screenDPToPixels(8);
     this.setLayoutParams(lp);
     this.text_view = new TextView(context);
@@ -48,8 +45,7 @@ public abstract class CatalogLeftPaddedButton extends LinearLayout
    * @return text_view
    */
 
-  final public TextView getTextView()
-  {
+  final public TextView getTextView() {
     return this.text_view;
   }
 }

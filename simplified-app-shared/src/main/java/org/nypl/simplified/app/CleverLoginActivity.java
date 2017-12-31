@@ -19,6 +19,7 @@ import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
+import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.drm.core.AdobeVendorID;
 import org.nypl.simplified.app.utilities.UIThread;
@@ -29,7 +30,7 @@ import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.accounts.AccountPatron;
 import org.nypl.simplified.books.core.AccountLoginListenerType;
-import org.nypl.simplified.books.core.BookID;
+import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.http.core.HTTPOAuthToken;
@@ -219,10 +220,7 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
           }
 
           if (error == null) {
-            final SimplifiedCatalogAppServicesType app =
-                Simplified.getCatalogAppServices();
-
-            final BooksType books = app.getBooks();
+            final BooksType books = getBooks();
 
             final AccountBarcode barcode =
                 AccountBarcode.create("");
@@ -297,6 +295,9 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
 
   }
 
+  private static BooksType getBooks() {
+    throw new UnimplementedCodeException();
+  }
 
   /**
    * Set the listener that will be used to receive the results of the login

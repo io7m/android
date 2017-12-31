@@ -19,8 +19,7 @@ public abstract class ProfileID implements Comparable<ProfileID> {
    * @param id A non-negative integer
    */
 
-  public static ProfileID create(int id)
-  {
+  public static ProfileID create(int id) {
     if (id < 0) {
       throw new IllegalArgumentException("Profile identifiers must be non-negative");
     }

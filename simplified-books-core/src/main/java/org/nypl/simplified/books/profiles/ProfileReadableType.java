@@ -8,23 +8,27 @@ import java.util.SortedMap;
 
 /**
  * <p>The readable interface exposed by profiles.</p>
- * <p>A profile aggregates a display name, a set of accounts, a set
- * of preferences, and a current account. Profiles are assigned
- * monotonically increasing identifiers by the application, but the
- * identifiers themselves carry no meaning. It is an error to depend on
- * the values of identifiers for any kind of program logic. Exactly
- * one account may be current at any given time. It is the responsibility
- * of the application to pick an account provider to be used as the
- * default to derive accounts for newly created profiles.</p>
+ * <p>A profile aggregates a display name, a set of accounts, a set of preferences, and a current
+ * account. Profiles are assigned monotonically increasing identifiers by the application, but the
+ * identifiers themselves carry no meaning. It is an error to depend on the values of identifiers
+ * for any kind of program logic. Exactly one account may be current at any given time. It is the
+ * responsibility of the application to pick an account provider to be used as the default to derive
+ * accounts for newly created profiles.</p>
  */
 
-interface ProfileReadableType {
+public interface ProfileReadableType extends Comparable<ProfileReadableType> {
 
   /**
    * @return The unique profile identifier
    */
 
   ProfileID id();
+
+  /**
+   * @return {@code true} iff this profile is the anonymous profile
+   */
+
+  boolean isAnonymous();
 
   /**
    * @return The directory containing the profile's data
@@ -45,10 +49,10 @@ interface ProfileReadableType {
   boolean isCurrent();
 
   /**
-   * @return The ID of the current account
+   * @return The current account
    */
 
-  AccountID accountCurrent();
+  AccountType accountCurrent();
 
   /**
    * @return A read-only map of the accounts for this profile

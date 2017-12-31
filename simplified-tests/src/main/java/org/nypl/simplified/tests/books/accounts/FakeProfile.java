@@ -7,6 +7,7 @@ import org.nypl.simplified.books.accounts.AccountID;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.profiles.ProfileID;
 import org.nypl.simplified.books.profiles.ProfilePreferences;
+import org.nypl.simplified.books.profiles.ProfileReadableType;
 import org.nypl.simplified.books.profiles.ProfileType;
 
 import java.io.File;
@@ -36,6 +37,11 @@ public final class FakeProfile implements ProfileType {
   }
 
   @Override
+  public boolean isAnonymous() {
+    return id.id() == 0;
+  }
+
+  @Override
   public File directory() {
     return this.directory;
   }
@@ -51,7 +57,7 @@ public final class FakeProfile implements ProfileType {
   }
 
   @Override
-  public AccountID accountCurrent() {
+  public AccountType accountCurrent() {
     throw new UnimplementedCodeException();
   }
 
@@ -70,5 +76,10 @@ public final class FakeProfile implements ProfileType {
       final ProfilePreferences preferences)
       throws IOException {
     this.prefs = NullCheck.notNull(preferences, "Preferences");
+  }
+
+  @Override
+  public int compareTo(final ProfileReadableType other) {
+    return displayName().compareTo(NullCheck.notNull(other, "Other").displayName());
   }
 }

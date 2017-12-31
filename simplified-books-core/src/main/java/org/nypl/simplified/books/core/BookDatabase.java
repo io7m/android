@@ -14,6 +14,8 @@ import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 import org.nypl.drm.core.AdobeAdeptLoan;
 import org.nypl.drm.core.AdobeLoanID;
+import org.nypl.simplified.books.book_database.BookID;
+import org.nypl.simplified.books.book_database.BookIDs;
 import org.nypl.simplified.files.DirectoryUtilities;
 import org.nypl.simplified.files.FileLocking;
 import org.nypl.simplified.files.FileUtilities;
@@ -149,7 +151,7 @@ public final class BookDatabase implements BookDatabaseType
         });
 
       for (final File f : book_list) {
-        final BookID id = BookID.exactString(NullCheck.notNull(f.getName()));
+        final BookID id = BookIDs.newFromText(NullCheck.notNull(f.getName()));
         xs.add(
           new BookDatabaseEntry(
             this.serializer, this.parser, this.directory, id));
@@ -199,7 +201,7 @@ public final class BookDatabase implements BookDatabaseType
         });
 
       for (final File f : book_list) {
-        final BookID id = BookID.exactString(NullCheck.notNull(f.getName()));
+        final BookID id = BookIDs.newFromText(NullCheck.notNull(f.getName()));
         final BookDatabaseEntry e = new BookDatabaseEntry(
           this.serializer, this.parser, this.directory, id);
 
@@ -211,7 +213,7 @@ public final class BookDatabase implements BookDatabaseType
           on_load.call(p);
         } catch (final IOException x) {
           BookDatabase.LOG.error(
-            "[{}]: error creating snapshot: ", id.getShortID(), x);
+            "[{}]: error creating snapshot: ", id, x);
           final Pair<BookID, Throwable> p = Pair.pair(id, (Throwable) x);
           on_failure.call(p);
         }
@@ -247,7 +249,7 @@ public final class BookDatabase implements BookDatabaseType
         });
 
       for (final File f : book_list) {
-        final BookID id = BookID.exactString(NullCheck.notNull(f.getName()));
+        final BookID id = BookIDs.newFromText(NullCheck.notNull(f.getName()));
         hs.add(id);
       }
     }
@@ -500,7 +502,7 @@ public final class BookDatabase implements BookDatabaseType
       final HTTPType http)
       throws IOException
     {
-      final String sid = this.id.getShortID();
+      final String sid = this.id.value();
 
       this.entryCreate(e);
 
@@ -641,7 +643,7 @@ public final class BookDatabase implements BookDatabaseType
     private void deleteSnapshot()
     {
       synchronized (BookDatabase.this.snapshots) {
-        final String sid = this.id.getShortID();
+        final String sid = this.id.value();
         BookDatabase.LOG.debug("[{}]: deleting snapshot", sid);
         BookDatabase.this.snapshots.remove(this.id);
       }
@@ -652,7 +654,7 @@ public final class BookDatabase implements BookDatabaseType
     {
       final BookDatabaseEntrySnapshot e = this.getSnapshotLocked();
       synchronized (BookDatabase.this.snapshots) {
-        final String sid = this.id.getShortID();
+        final String sid = this.id.value();
         BookDatabase.LOG.debug("[{}]: updating snapshot {}", sid, e);
         BookDatabase.this.snapshots.put(this.id, e);
         return e;

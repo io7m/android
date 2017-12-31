@@ -11,6 +11,7 @@ import org.nypl.simplified.json.core.JSONParseException;
 import org.nypl.simplified.json.core.JSONParserUtilities;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.TreeMap;
 
@@ -92,6 +93,8 @@ public final class AccountProvidersJSON {
         JSONParserUtilities.getURIOptional(obj, "privacyUrl"));
     b.setMainColor(
         JSONParserUtilities.getString(obj, "mainColor"));
+    b.setStyleNameOverride(
+        JSONParserUtilities.getStringOptional(obj, "styleNameOverride"));
 
     return b.build();
   }
@@ -160,6 +163,24 @@ public final class AccountProvidersJSON {
 
     final ObjectMapper jom = new ObjectMapper();
     final JsonNode node = jom.readTree(text);
+    return deserializeFromJSONArray(jom, JSONParserUtilities.checkArray(null, node));
+  }
+
+  /**
+   * Deserialize a set of account providers from the given JSON array node.
+   *
+   * @param stream An input stream
+   * @return A parsed account provider collection
+   * @throws IOException On I/O or parser errors
+   */
+
+  public static AccountProviderCollection deserializeFromStream(
+      final InputStream stream)
+      throws IOException {
+    NullCheck.notNull(stream, "Stream");
+
+    final ObjectMapper jom = new ObjectMapper();
+    final JsonNode node = jom.readTree(stream);
     return deserializeFromJSONArray(jom, JSONParserUtilities.checkArray(null, node));
   }
 }

@@ -1,5 +1,7 @@
 package org.nypl.simplified.books.accounts;
 
+import org.nypl.simplified.books.book_database.BookDatabaseType;
+
 import java.io.File;
 import java.net.URI;
 
@@ -31,4 +33,10 @@ public interface AccountType {
    */
 
   URI provider();
+
+  /**
+   * @return The book database owned by this account
+   */
+
+  BookDatabaseType bookDatabase();
 }

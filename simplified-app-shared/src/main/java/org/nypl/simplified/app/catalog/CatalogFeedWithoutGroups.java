@@ -8,22 +8,28 @@ import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
+
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.Pair;
+import com.io7m.jfunctional.ProcedureType;
 import com.io7m.jfunctional.Some;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
+import com.io7m.junreachable.UnimplementedCodeException;
 import com.io7m.junreachable.UnreachableCodeException;
+
 import org.nypl.simplified.app.BookCoverProviderType;
 import org.nypl.simplified.app.utilities.UIThread;
-import org.nypl.simplified.assertions.Assertions;
+import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.book_database.BookID;
+import org.nypl.simplified.books.book_registry.BookEvent;
+import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
+import org.nypl.simplified.books.controller.BooksControllerType;
 import org.nypl.simplified.books.core.BookDatabaseEntrySnapshot;
 import org.nypl.simplified.books.core.BookDatabaseReadableType;
-import org.nypl.simplified.books.core.BookID;
 import org.nypl.simplified.books.core.BooksStatusCacheType;
-import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.FeedEntryOPDS;
 import org.nypl.simplified.books.core.FeedEntryType;
 import org.nypl.simplified.books.core.FeedLoaderAuthenticationListenerType;
@@ -35,11 +41,10 @@ import org.nypl.simplified.books.core.FeedWithGroups;
 import org.nypl.simplified.books.core.FeedWithoutGroups;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.http.core.HTTPAuthType;
+import org.nypl.simplified.observable.ObservableSubscriptionType;
 import org.slf4j.Logger;
 
 import java.net.URI;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
@@ -48,27 +53,30 @@ import java.util.concurrent.atomic.AtomicReference;
  * A view that displays a catalog feed that does not contain any groups.
  */
 
-public final class CatalogFeedWithoutGroups implements ListAdapter,
-  OnScrollListener,
-  FeedLoaderListenerType,
-  FeedMatcherType<Unit, UnreachableCodeException>,
-  Observer
-{
+public final class CatalogFeedWithoutGroups
+    implements ListAdapter,
+    OnScrollListener,
+    FeedLoaderListenerType,
+    FeedMatcherType<Unit, UnreachableCodeException> {
+
   private static final Logger LOG;
 
   static {
     LOG = LogUtilities.getLog(CatalogFeedWithoutGroups.class);
   }
 
-  private final Activity                                 activity;
-  private final ArrayAdapter<FeedEntryType>              adapter;
-  private final BookCoverProviderType                    book_cover_provider;
-  private final CatalogBookSelectionListenerType         book_select_listener;
-  private final BooksType                                books;
-  private final FeedWithoutGroups                        feed;
-  private final FeedLoaderType                           feed_loader;
+  private final Activity activity;
+  private final ArrayAdapter<FeedEntryType> adapter;
+  private final BookCoverProviderType book_cover_provider;
+  private final CatalogBookSelectionListenerType book_select_listener;
+  private final FeedWithoutGroups feed;
+  private final FeedLoaderType feed_loader;
   private final AtomicReference<Pair<Future<Unit>, URI>> loading;
-  private final AtomicReference<OptionType<URI>>         uri_next;
+  private final AtomicReference<OptionType<URI>> uri_next;
+  private final ObservableSubscriptionType<BookEvent> book_event_sub;
+  private final BookRegistryReadableType books_registry;
+  private final BooksControllerType books_controller;
+  private final AccountProvider account_provider;
 
   /**
    * Construct a view.
@@ -76,86 +84,117 @@ public final class CatalogFeedWithoutGroups implements ListAdapter,
    * @param in_activity                The host activity
    * @param in_book_cover_provider     A cover provider
    * @param in_book_selection_listener A book selection listener
-   * @param in_books                   The books database
+   * @param in_book_registry                   The books registry
    * @param in_feed_loader             An asynchronous feed loader
    * @param in_feed                    The current feed
    */
 
   public CatalogFeedWithoutGroups(
-    final Activity in_activity,
-    final BookCoverProviderType in_book_cover_provider,
-    final CatalogBookSelectionListenerType in_book_selection_listener,
-    final BooksType in_books,
-    final FeedLoaderType in_feed_loader,
-    final FeedWithoutGroups in_feed)
-  {
-    this.activity = NullCheck.notNull(in_activity);
-    this.book_cover_provider = NullCheck.notNull(in_book_cover_provider);
-    this.book_select_listener = NullCheck.notNull(in_book_selection_listener);
-    this.books = NullCheck.notNull(in_books);
-    this.feed = NullCheck.notNull(in_feed);
-    this.feed_loader = NullCheck.notNull(in_feed_loader);
-    this.uri_next = new AtomicReference<OptionType<URI>>(in_feed.getFeedNext());
-    this.adapter = new ArrayAdapter<FeedEntryType>(this.activity, 0, this.feed);
-    this.loading = new AtomicReference<Pair<Future<Unit>, URI>>();
+      final Activity in_activity,
+      final AccountProvider in_account_provider,
+      final BookCoverProviderType in_book_cover_provider,
+      final CatalogBookSelectionListenerType in_book_selection_listener,
+      final BookRegistryReadableType in_book_registry,
+      final BooksControllerType in_book_controller,
+      final FeedLoaderType in_feed_loader,
+      final FeedWithoutGroups in_feed) {
 
-    final BooksStatusCacheType status = this.books.bookGetStatusCache();
-    status.booksObservableAddObserver(this);
+    this.activity =
+        NullCheck.notNull(in_activity, "Activity");
+    this.account_provider =
+        NullCheck.notNull(in_account_provider, "Account provider");
+    this.book_cover_provider =
+        NullCheck.notNull(in_book_cover_provider, "Cover provider");
+    this.book_select_listener =
+        NullCheck.notNull(in_book_selection_listener, "Selection listener");
+    this.books_registry =
+        NullCheck.notNull(in_book_registry, "Books registry");
+    this.books_controller =
+        NullCheck.notNull(in_book_controller, "Books controller");
+    this.feed =
+        NullCheck.notNull(in_feed, "Feed");
+    this.feed_loader =
+        NullCheck.notNull(in_feed_loader, "Feed loader");
+
+    this.uri_next = new AtomicReference<>(in_feed.getFeedNext());
+    this.adapter = new ArrayAdapter<>(this.activity, 0, this.feed);
+    this.loading = new AtomicReference<>();
+
+    this.book_event_sub = in_book_registry.bookEvents().subscribe(new ProcedureType<BookEvent>() {
+      @Override
+      public void call(final BookEvent event) {
+        onBookEvent(event);
+      }
+    });
+  }
+
+  private void onBookEvent(final BookEvent event) {
+    if (this.feed.containsID(event.book())) {
+      LOG.debug("update: updated feed entry");
+
+      UIThread.runOnUIThread(
+          new Runnable() {
+            @Override
+            public void run() {
+              adapter.notifyDataSetChanged();
+            }
+          });
+
+      throw new UnimplementedCodeException();
+    }
   }
 
   private static boolean shouldLoadNext(
-    final int first_visible_item,
-    final int total_count)
-  {
-    CatalogFeedWithoutGroups.LOG.debug(
-      "shouldLoadNext: {} - {} = {}",
-      Integer.valueOf(total_count),
-      Integer.valueOf(first_visible_item),
-      Integer.valueOf(total_count - first_visible_item));
+      final int first_visible_item,
+      final int total_count) {
+
+    LOG.debug("shouldLoadNext: {} - {} = {}",
+        total_count, first_visible_item, total_count - first_visible_item);
     return (total_count - first_visible_item) <= 50;
   }
 
-  @Override public boolean areAllItemsEnabled()
-  {
+  @Override
+  public boolean areAllItemsEnabled() {
     return this.adapter.areAllItemsEnabled();
   }
 
-  @Override public int getCount()
-  {
+  @Override
+  public int getCount() {
     return this.adapter.getCount();
   }
 
-  @Override public FeedEntryType getItem(
-    final int position)
-  {
+  @Override
+  public FeedEntryType getItem(final int position) {
     return NullCheck.notNull(this.adapter.getItem(position));
   }
 
-  @Override public long getItemId(
-    final int position)
-  {
+  @Override
+  public long getItemId(final int position) {
     return this.adapter.getItemId(position);
   }
 
-  @Override public int getItemViewType(
-    final int position)
-  {
+  @Override
+  public int getItemViewType(final int position) {
     return this.adapter.getItemViewType(position);
   }
 
-  @Override public View getView(
-    final int position,
-    final @Nullable View reused,
-    final @Nullable ViewGroup parent)
-  {
-    final FeedEntryType e = NullCheck.notNull(this.adapter.getItem(position));
+  @Override
+  public View getView(
+      final int position,
+      final @Nullable View reused,
+      final @Nullable ViewGroup parent) {
 
+    final FeedEntryType e = NullCheck.notNull(this.adapter.getItem(position));
     final CatalogFeedBookCellView cv;
     if (reused != null) {
       cv = (CatalogFeedBookCellView) reused;
     } else {
       cv = new CatalogFeedBookCellView(
-        this.activity, this.book_cover_provider, this.books);
+          this.activity,
+          this.account_provider,
+          this.book_cover_provider,
+          this.books_controller,
+          this.books_registry);
     }
 
     cv.viewConfigure(e, this.book_select_listener);
@@ -163,24 +202,23 @@ public final class CatalogFeedWithoutGroups implements ListAdapter,
 
   }
 
-  @Override public int getViewTypeCount()
-  {
+  @Override
+  public int getViewTypeCount() {
     return this.adapter.getViewTypeCount();
   }
 
-  @Override public boolean hasStableIds()
-  {
+  @Override
+  public boolean hasStableIds() {
     return this.adapter.hasStableIds();
   }
 
-  @Override public boolean isEmpty()
-  {
+  @Override
+  public boolean isEmpty() {
     return this.adapter.isEmpty();
   }
 
-  @Override public boolean isEnabled(
-    final int position)
-  {
+  @Override
+  public boolean isEnabled(final int position) {
     return this.adapter.isEnabled(position);
   }
 
@@ -189,13 +227,12 @@ public final class CatalogFeedWithoutGroups implements ListAdapter,
    * loading, the feed will not be requested again.
    *
    * @param next_ref The next URI, if any
-   *
    * @return A future representing the loading feed
    */
 
-  private @Nullable Future<Unit> loadNext(
-    final AtomicReference<OptionType<URI>> next_ref)
-  {
+  private @Nullable
+  Future<Unit> loadNext(
+      final AtomicReference<OptionType<URI>> next_ref) {
     final OptionType<URI> next_opt = next_ref.get();
     if (next_opt.isSome()) {
       final Some<URI> next_some = (Some<URI>) next_opt;
@@ -203,60 +240,57 @@ public final class CatalogFeedWithoutGroups implements ListAdapter,
 
       final Pair<Future<Unit>, URI> in_loading = this.loading.get();
       if (in_loading == null) {
-        CatalogFeedWithoutGroups.LOG.debug(
-          "no feed currently loading; loading next feed: {}", next);
+        LOG.debug("no feed currently loading; loading next feed: {}", next);
         return this.loadNextActual(next);
       }
 
       final URI loading_uri = in_loading.getRight();
-      if (loading_uri.equals(next) == false) {
-        CatalogFeedWithoutGroups.LOG.debug(
-          "different feed currently loading; loading next feed: {}", next);
+      if (!loading_uri.equals(next)) {
+        LOG.debug("different feed currently loading; loading next feed: {}", next);
         return this.loadNextActual(next);
       }
 
-      CatalogFeedWithoutGroups.LOG.debug(
-        "already loading next feed, not loading again: {}", next);
+      LOG.debug("already loading next feed, not loading again: {}", next);
     }
 
     return null;
   }
 
   private Future<Unit> loadNextActual(
-    final URI next)
-  {
-    CatalogFeedWithoutGroups.LOG.debug("loading: {}", next);
+      final URI next) {
+    LOG.debug("loading: {}", next);
     final OptionType<HTTPAuthType> none = Option.none();
     final Future<Unit> r = this.feed_loader.fromURIWithDatabaseEntries(
-      next, none, this);
+        next, none, this);
     this.loading.set(Pair.pair(r, next));
     return r;
   }
 
-  @Override public void onFeedLoadFailure(
-    final URI u,
-    final Throwable e)
-  {
+  @Override
+  public void onFeedLoadFailure(
+      final URI u,
+      final Throwable e) {
     if (e instanceof CancellationException) {
       return;
     }
 
-    CatalogFeedWithoutGroups.LOG.error("failed to load feed: ", e);
+    LOG.error("failed to load feed: ", e);
   }
 
-  @Override public void onFeedLoadSuccess(
-    final URI u,
-    final FeedType f)
-  {
+  @Override
+  public void onFeedLoadSuccess(
+      final URI u,
+      final FeedType f) {
     f.matchFeed(this);
   }
 
-  @Override public void onFeedRequiresAuthentication(
-    final URI u,
-    final int attempts,
-    final FeedLoaderAuthenticationListenerType listener)
-  {
-    /**
+  @Override
+  public void onFeedRequiresAuthentication(
+      final URI u,
+      final int attempts,
+      final FeedLoaderAuthenticationListenerType listener) {
+
+    /*
      * XXX: Delegate this to the current activity, as it knows
      * how to handle authentication!
      */
@@ -264,49 +298,47 @@ public final class CatalogFeedWithoutGroups implements ListAdapter,
     listener.onAuthenticationNotProvided();
   }
 
-  @Override public Unit onFeedWithGroups(
-    final FeedWithGroups f)
-  {
-    CatalogFeedWithoutGroups.LOG.error(
-      "received feed with groups: {}", f.getFeedID());
+  @Override
+  public Unit onFeedWithGroups(
+      final FeedWithGroups f) {
+    LOG.error(
+        "received feed with groups: {}", f.getFeedID());
 
     return Unit.unit();
   }
 
-  @Override public Unit onFeedWithoutGroups(
-    final FeedWithoutGroups f)
-  {
-    CatalogFeedWithoutGroups.LOG.debug(
-      "received feed without groups: {}", f.getFeedID());
+  @Override
+  public Unit onFeedWithoutGroups(
+      final FeedWithoutGroups f) {
+    LOG.debug("received feed without groups: {}", f.getFeedID());
 
     this.feed.addAll(f);
     this.uri_next.set(f.getFeedNext());
 
-    CatalogFeedWithoutGroups.LOG.debug(
-      "current feed size: {}", Integer.valueOf(this.feed.size()));
+    LOG.debug("current feed size: {}", this.feed.size());
     return Unit.unit();
   }
 
-  @Override public void onScroll(
-    final @Nullable AbsListView view,
-    final int first_visible_item,
-    final int visible_count,
-    final int total_count)
-  {
-    /**
+  @Override
+  public void onScroll(
+      final @Nullable AbsListView view,
+      final int first_visible_item,
+      final int visible_count,
+      final int total_count) {
+
+    /*
      * If the user is close enough to the end of the list, load the next feed.
      */
 
-    if (CatalogFeedWithoutGroups.shouldLoadNext(
-      first_visible_item, total_count)) {
+    if (CatalogFeedWithoutGroups.shouldLoadNext(first_visible_item, total_count)) {
       this.loadNext(this.uri_next);
     }
   }
 
-  @Override public void onScrollStateChanged(
-    final @Nullable AbsListView view,
-    final int state)
-  {
+  @Override
+  public void onScrollStateChanged(
+      final @Nullable AbsListView view,
+      final int state) {
     switch (state) {
       case OnScrollListener.SCROLL_STATE_FLING:
       case OnScrollListener.SCROLL_STATE_TOUCH_SCROLL: {
@@ -320,89 +352,59 @@ public final class CatalogFeedWithoutGroups implements ListAdapter,
     }
   }
 
-  @Override public void registerDataSetObserver(
-    final @Nullable DataSetObserver observer)
-  {
+  @Override
+  public void registerDataSetObserver(
+      final @Nullable DataSetObserver observer) {
     this.adapter.registerDataSetObserver(observer);
   }
 
-  @Override public void unregisterDataSetObserver(
-    final @Nullable DataSetObserver observer)
-  {
+  @Override
+  public void unregisterDataSetObserver(
+      final @Nullable DataSetObserver observer) {
     this.adapter.unregisterDataSetObserver(observer);
   }
 
   private boolean updateFetchDatabaseSnapshot(
-    final BookID current_id,
-    final BookDatabaseReadableType db)
-  {
-    final OptionType<BookDatabaseEntrySnapshot> snap_opt =
-      db.databaseGetEntrySnapshot(current_id);
+      final BookID current_id,
+      final BookDatabaseReadableType db) {
 
-    CatalogFeedWithoutGroups.LOG.debug(
-      "database snapshot is {}", snap_opt);
+//    final OptionType<BookDatabaseEntrySnapshot> snap_opt =
+//        db.databaseGetEntrySnapshot(current_id);
+//
+//    LOG.debug("database snapshot is {}", snap_opt);
+//
+//    if (snap_opt.isSome()) {
+//      final Some<BookDatabaseEntrySnapshot> some =
+//          (Some<BookDatabaseEntrySnapshot>) snap_opt;
+//      final BookDatabaseEntrySnapshot snap = some.get();
+//      final FeedEntryType re =
+//          FeedEntryOPDS.fromOPDSAcquisitionFeedEntry(snap.getEntry());
+//      this.feed.updateEntry(re);
+//      return true;
+//    }
+//
+//    return false;
 
-    if (snap_opt.isSome()) {
-      final Some<BookDatabaseEntrySnapshot> some =
-        (Some<BookDatabaseEntrySnapshot>) snap_opt;
-      final BookDatabaseEntrySnapshot snap = some.get();
-      final FeedEntryType re =
-        FeedEntryOPDS.fromOPDSAcquisitionFeedEntry(snap.getEntry());
-      this.feed.updateEntry(re);
-      return true;
-    }
-
-    return false;
+    throw new UnimplementedCodeException();
   }
 
   private boolean updateCheckForRevocationEntry(
-    final BookID current_id,
-    final BooksStatusCacheType status_cache)
-  {
-    final OptionType<FeedEntryType> revoke_opt =
-      status_cache.booksRevocationFeedEntryGet(current_id);
+      final BookID current_id,
+      final BooksStatusCacheType status_cache) {
 
-    CatalogFeedWithoutGroups.LOG.debug(
-      "revocation entry update is {}", revoke_opt);
+//    final OptionType<FeedEntryType> revoke_opt =
+//        status_cache.booksRevocationFeedEntryGet(current_id);
+//
+//    LOG.debug("revocation entry update is {}", revoke_opt);
+//
+//    if (revoke_opt.isSome()) {
+//      final Some<FeedEntryType> some = (Some<FeedEntryType>) revoke_opt;
+//      this.feed.updateEntry(some.get());
+//      return true;
+//    }
+//
+//    return false;
 
-    if (revoke_opt.isSome()) {
-      final Some<FeedEntryType> some = (Some<FeedEntryType>) revoke_opt;
-      this.feed.updateEntry(some.get());
-      return true;
-    }
-
-    return false;
-  }
-
-  @Override public void update(
-    final Observable observable,
-    final Object data)
-  {
-    Assertions.checkPrecondition(
-      data instanceof BookID, "%s instanceof %s", data, BookID.class);
-
-    CatalogFeedWithoutGroups.LOG.debug("update: {}", data);
-
-    final BookID update_id = (BookID) data;
-    if (this.feed.containsID(update_id)) {
-      CatalogFeedWithoutGroups.LOG.debug("update: feed does contain book id");
-
-      final boolean updated_snap = this.updateFetchDatabaseSnapshot(
-        update_id, this.books.bookGetDatabase());
-      final boolean updated_revoke = this.updateCheckForRevocationEntry(
-        update_id, this.books.bookGetStatusCache());
-
-      if (updated_snap || updated_revoke) {
-        CatalogFeedWithoutGroups.LOG.debug("update: updated feed entry");
-        UIThread.runOnUIThread(
-          new Runnable()
-          {
-            @Override public void run()
-            {
-              CatalogFeedWithoutGroups.this.adapter.notifyDataSetChanged();
-            }
-          });
-      }
-    }
+    throw new UnimplementedCodeException();
   }
 }

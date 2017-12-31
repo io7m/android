@@ -8,6 +8,8 @@ import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 import com.io7m.junreachable.UnreachableCodeException;
+
+import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.core.FeedFacetPseudo.FacetType;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 import org.nypl.simplified.opds.core.OPDSAvailabilityHeld;
@@ -118,7 +120,7 @@ final class BooksControllerFeedTask implements Runnable
           }
         } catch (final Throwable x) {
           BooksControllerFeedTask.LOG.error(
-            "[{}]: unable to load book metadata: ", id.getShortID(), x);
+            "[{}]: unable to load book metadata: ", id, x);
           f.add(FeedEntryCorrupt.fromIDAndError(id, x));
         }
       }

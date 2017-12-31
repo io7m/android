@@ -1,6 +1,9 @@
 package org.nypl.simplified.books.core;
 
 import com.io7m.jnull.NullCheck;
+
+import org.nypl.simplified.books.book_database.BookID;
+import org.nypl.simplified.books.book_database.BookIDs;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 
 /**
@@ -10,7 +13,7 @@ import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 public final class FeedEntryOPDS implements FeedEntryType
 {
   private static final long serialVersionUID = 1L;
-  private final BookID                   book_id;
+  private final BookID book_id;
   private final OPDSAcquisitionFeedEntry entry;
 
   private FeedEntryOPDS(
@@ -29,10 +32,10 @@ public final class FeedEntryOPDS implements FeedEntryType
    * @return A feed entry
    */
 
-  public static FeedEntryType fromOPDSAcquisitionFeedEntry(
+  public static FeedEntryOPDS fromOPDSAcquisitionFeedEntry(
     final OPDSAcquisitionFeedEntry e)
   {
-    return new FeedEntryOPDS(BookID.newIDFromEntry(e), e);
+    return new FeedEntryOPDS(BookIDs.newFromOPDSEntry(e), e);
   }
 
   /**

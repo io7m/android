@@ -4,6 +4,8 @@ import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 
+import org.nypl.simplified.books.book_database.BookID;
+
 import java.net.URI;
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -16,8 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * A (mutable) feed without groups.
  */
 
-public final class FeedWithoutGroups extends AbstractList<FeedEntryType>
-  implements FeedType
+public final class FeedWithoutGroups extends AbstractList<FeedEntryType> implements FeedType
 {
   private final Map<BookID, FeedEntryType>       entries;
   private final List<BookID>                     entries_order;
@@ -128,7 +129,7 @@ public final class FeedWithoutGroups extends AbstractList<FeedEntryType>
   {
     final FeedEntryType nn_element = NullCheck.notNull(element);
     final BookID book_id = nn_element.getBookID();
-    if (this.entries.containsKey(book_id) == false) {
+    if (!this.entries.containsKey(book_id)) {
       this.entries_order.add(index, book_id);
       this.entries.put(book_id, nn_element);
     }
@@ -270,7 +271,7 @@ public final class FeedWithoutGroups extends AbstractList<FeedEntryType>
 
   public void updateEntry(final FeedEntryType e)
   {
-    NullCheck.notNull(e);
+    NullCheck.notNull(e, "Entry");
 
     final BookID book_id = e.getBookID();
     if (this.entries.containsKey(book_id)) {
@@ -286,7 +287,7 @@ public final class FeedWithoutGroups extends AbstractList<FeedEntryType>
 
   public boolean containsID(final BookID in_id)
   {
-    NullCheck.notNull(in_id);
+    NullCheck.notNull(in_id, "ID");
     return this.entries.containsKey(in_id);
   }
 }

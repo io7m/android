@@ -7,10 +7,11 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.nypl.simplified.books.book_database.BookIDs;
 import org.nypl.simplified.books.core.BookDatabase;
 import org.nypl.simplified.books.core.BookDatabaseEntryType;
 import org.nypl.simplified.books.core.BookDatabaseType;
-import org.nypl.simplified.books.core.BookID;
+import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.opds.core.OPDSAcquisition;
 import org.nypl.simplified.opds.core.OPDSAcquisition.Type;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
@@ -77,7 +78,7 @@ public abstract class BookDatabaseContract {
     }
 
     final BookDatabaseEntryType e =
-        bd.databaseOpenEntryForWriting(BookID.exactString("abcd"));
+        bd.databaseOpenEntryForWriting(BookIDs.newFromText("abcd"));
     e.entryCreate(ee);
 
     final OPDSAcquisitionFeedEntry ef = e.entryGetFeedData();

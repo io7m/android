@@ -9,6 +9,9 @@ import com.io7m.jfunctional.ProcedureType;
 import com.io7m.jnull.NullCheck;
 import com.io7m.junreachable.UnreachableCodeException;
 
+import org.joda.time.LocalDate;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.DateTimeFormatterBuilder;
 import org.nypl.simplified.files.FileUtilities;
 import org.nypl.simplified.json.core.JSONParseException;
 import org.nypl.simplified.json.core.JSONParserUtilities;
@@ -79,27 +82,39 @@ public final class ProfilePreferencesJSON {
     NullCheck.notNull(jom, "Object mapper");
     NullCheck.notNull(node, "JSON");
 
+    final DateTimeFormatter date_formatter = standardDateFormatter();
+
     final ObjectNode obj =
         JSONParserUtilities.checkObject(null, node);
 
-    final OptionType<ProfilePreferences.Age> age =
-        JSONParserUtilities.getStringOptional(obj, "age")
-        .mapPartial(new PartialFunctionType<String, ProfilePreferences.Age, JSONParseException>() {
-          @Override
-          public ProfilePreferences.Age call(
-              final String x)
-              throws JSONParseException {
-            try {
-              return ProfilePreferences.Age.valueOf(x);
-            } catch (final IllegalArgumentException e) {
-              throw new JSONParseException(e);
-            }
-          }
-        });
+    final OptionType<LocalDate> date_of_birth =
+        JSONParserUtilities.getStringOptional(obj, "date-of-birth")
+            .mapPartial(new PartialFunctionType<String, LocalDate, JSONParseException>() {
+              @Override
+              public LocalDate call(
+                  final String text)
+                  throws JSONParseException {
+                try {
+                  return LocalDate.parse(text, date_formatter);
+                } catch (final IllegalArgumentException e) {
+                  throw new JSONParseException(e);
+                }
+              }
+            });
 
     return ProfilePreferences.builder()
-        .setAge(age)
+        .setDateOfBirth(date_of_birth)
         .build();
+  }
+
+  private static DateTimeFormatter standardDateFormatter() {
+    return new DateTimeFormatterBuilder()
+        .appendYear(4, 5)
+        .appendLiteral("-")
+        .appendMonthOfYear(2)
+        .appendLiteral("-")
+        .appendDayOfMonth(2)
+        .toFormatter();
   }
 
   /**
@@ -115,12 +130,13 @@ public final class ProfilePreferencesJSON {
     NullCheck.notNull(jom, "Object mapper");
     NullCheck.notNull(description, "Description");
 
+    final DateTimeFormatter date_formatter = standardDateFormatter();
     final ObjectNode jo = jom.createObjectNode();
 
-    description.age().map_(new ProcedureType<ProfilePreferences.Age>() {
+    description.dateOfBirth().map_(new ProcedureType<LocalDate>() {
       @Override
-      public void call(final ProfilePreferences.Age x) {
-        jo.put("age", x.name());
+      public void call(final LocalDate date) {
+        jo.put("date-of-birth", date_formatter.print(date));
       }
     });
 

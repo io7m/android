@@ -3,6 +3,7 @@ package org.nypl.simplified.books.core;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;
 import org.nypl.drm.core.AdobeAdeptLoan;
+import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 
 import java.io.File;
@@ -13,7 +14,7 @@ import java.io.File;
 
 public final class BookDatabaseEntrySnapshot
 {
-  private final BookID                     id;
+  private final BookID id;
   private final OptionType<AdobeAdeptLoan> adobe_rights;
   private final OptionType<File>           book;
   private final OptionType<File>           cover;

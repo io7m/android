@@ -14,6 +14,8 @@ import org.nypl.simplified.books.accounts.AccountAuthenticationAdobeClientToken;
 import org.nypl.simplified.books.accounts.AccountAuthenticationAdobePostActivationCredentials;
 import org.nypl.simplified.books.accounts.AccountAuthenticationAdobePreActivationCredentials;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
+import org.nypl.simplified.books.book_database.BookID;
+import org.nypl.simplified.books.book_database.BookIDs;
 import org.nypl.simplified.http.core.HTTPAuthType;
 import org.nypl.simplified.http.core.HTTPResultError;
 import org.nypl.simplified.http.core.HTTPResultException;
@@ -241,7 +243,7 @@ final class BooksControllerSyncTask implements Runnable {
     final List<OPDSAcquisitionFeedEntry> entries = feed.getFeedEntries();
     for (final OPDSAcquisitionFeedEntry e : entries) {
       final OPDSAcquisitionFeedEntry e_nn = NullCheck.notNull(e);
-      final BookID book_id = BookID.newIDFromEntry(e_nn);
+      final BookID book_id = BookIDs.newFromOPDSEntry(e_nn);
 
       try {
         received.add(book_id);
@@ -251,7 +253,7 @@ final class BooksControllerSyncTask implements Runnable {
 
         this.listener.onAccountSyncBook(book_id);
       } catch (final Throwable x) {
-        LOG.error("[{}]: unable to save entry: {}: ", book_id.getShortID(), x);
+        LOG.error("[{}]: unable to save entry: {}: ", book_id.value(), x);
       }
     }
 
@@ -278,7 +280,7 @@ final class BooksControllerSyncTask implements Runnable {
           this.listener.onAccountSyncBookDeleted(existing_id);
         }
       } catch (final Throwable x) {
-        LOG.error("[{}]: unable to delete entry: ", existing_id.getShortID(), x);
+        LOG.error("[{}]: unable to delete entry: ", existing_id.value(), x);
       }
     }
 

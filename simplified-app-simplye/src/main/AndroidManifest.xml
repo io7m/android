@@ -105,6 +105,20 @@
       android:contentDescription="@string/help"
       android:exported="false">
     </activity>
+    <activity
+      android:name="org.nypl.simplified.app.ProfileSelectionActivity"
+      android:configChanges="orientation|screenSize"
+      android:label="@string/profiles_title"
+      android:contentDescription="@string/profiles_title"
+      android:exported="true">
+    </activity>
+    <activity
+      android:name="org.nypl.simplified.app.ProfileCreationActivity"
+      android:configChanges="orientation|screenSize"
+      android:label="@string/profiles_title"
+      android:contentDescription="@string/profiles_title"
+      android:exported="false">
+    </activity>
 
     <!-- General components -->
     <activity

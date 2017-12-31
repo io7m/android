@@ -15,6 +15,7 @@ import android.widget.Button;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
+import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.simplified.books.core.AccountLogoutListenerType;
 import org.nypl.simplified.books.core.BooksType;
@@ -67,14 +68,12 @@ import org.slf4j.Logger;
   {
     // Nothing
 
-
-    final SimplifiedCatalogAppServicesType app =
-      Simplified.getCatalogAppServices();
-
-    final BooksType books = app.getBooks();
-
+    final BooksType books = getBooks();
     books.destroyBookStatusCache();
+  }
 
+  private static BooksType getBooks() {
+    throw new UnimplementedCodeException();
   }
 
   @Override

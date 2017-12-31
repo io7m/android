@@ -1,6 +1,9 @@
 package org.nypl.simplified.books.core;
 
 import com.io7m.jnull.NullCheck;
+import com.io7m.junreachable.UnimplementedCodeException;
+
+import org.nypl.simplified.books.book_database.BookID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,11 +19,10 @@ final class BooksControllerGetLatestStatusTask implements Runnable
   private static final Logger LOG;
 
   static {
-    LOG = NullCheck.notNull(
-      LoggerFactory.getLogger(BooksControllerSyncTask.class));
+    LOG = NullCheck.notNull(LoggerFactory.getLogger(BooksControllerSyncTask.class));
   }
 
-  private final BookID               book_id;
+  private final BookID book_id;
   private final BookDatabaseType     books_database;
   private final BooksStatusCacheType book_status;
 
@@ -36,15 +38,17 @@ final class BooksControllerGetLatestStatusTask implements Runnable
 
   @Override public void run()
   {
-    try {
-      final BookDatabaseEntryReadableType e =
-        this.books_database.databaseOpenEntryForReading(this.book_id);
-      final BookDatabaseEntrySnapshot snap = e.entryGetSnapshot();
-      this.book_status.booksStatusUpdate(
-        BookStatus.fromSnapshot(
-          this.book_id, snap));
-    } catch (final IOException e) {
-      LOG.error("[{}]: unable to fetch status: ", this.book_id.getShortID(), e);
-    }
+//    try {
+//      final BookDatabaseEntryReadableType e =
+//        this.books_database.databaseOpenEntryForReading(this.book_id);
+//      final BookDatabaseEntrySnapshot snap = e.entryGetSnapshot();
+//      this.book_status.booksStatusUpdate(
+//        BookStatus.fromSnapshot(
+//          this.book_id, snap));
+//    } catch (final IOException e) {
+//      LOG.error("[{}]: unable to fetch status: ", this.book_id.getShortID(), e);
+//    }
+
+    throw new UnimplementedCodeException();
   }
 }

@@ -3,13 +3,14 @@ package org.nypl.simplified.app.catalog;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.res.Resources;
-import android.graphics.Color;
 import android.view.View;
 import android.widget.Button;
+
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
+import com.io7m.junreachable.UnimplementedCodeException;
+
 import org.nypl.simplified.app.R;
-import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.assertions.Assertions;
 import org.nypl.simplified.books.core.FeedFacetType;
 
@@ -19,8 +20,8 @@ import java.util.ArrayList;
  * A  button that shows a list of facets.
  */
 
-public final class CatalogFacetButton extends Button
-{
+public final class CatalogFacetButton extends Button {
+
   /**
    * Construct a new button.
    *
@@ -31,11 +32,10 @@ public final class CatalogFacetButton extends Button
    */
 
   public CatalogFacetButton(
-    final Activity in_activity,
-    final String in_group_name,
-    final ArrayList<FeedFacetType> in_group,
-    final CatalogFacetSelectionListenerType in_listener)
-  {
+      final Activity in_activity,
+      final String in_group_name,
+      final ArrayList<FeedFacetType> in_group,
+      final CatalogFacetSelectionListenerType in_listener) {
     super(in_activity);
 
     NullCheck.notNull(in_group);
@@ -43,7 +43,7 @@ public final class CatalogFacetButton extends Button
     NullCheck.notNull(in_listener);
 
     Assertions.checkPrecondition(
-      in_group.isEmpty() == false, "Facet group is not empty");
+        in_group.isEmpty() == false, "Facet group is not empty");
 
     FeedFacetType active_maybe = NullCheck.notNull(in_group.get(0));
     for (final FeedFacetType f : in_group) {
@@ -57,30 +57,32 @@ public final class CatalogFacetButton extends Button
     final Resources rr = NullCheck.notNull(in_activity.getResources());
     this.setTextSize(12.0f);
     this.setBackgroundResource(R.drawable.simplified_button);
-    this.setTextColor(Color.parseColor(Simplified.getCurrentAccount().getMainColor()));
+    this.setTextColor(getBrandingColor());
 
     this.setText(active.facetGetTitle());
     this.setOnClickListener(
-      new OnClickListener()
-      {
-        @Override public void onClick(
-          final @Nullable View v)
-        {
-          final FragmentManager fm = in_activity.getFragmentManager();
-          final CatalogFacetDialog d =
-            CatalogFacetDialog.newDialog(in_group_name, in_group);
-          d.setFacetSelectionListener(
-            new CatalogFacetSelectionListenerType()
-            {
-              @Override public void onFacetSelected(
-                final FeedFacetType f)
-              {
-                d.dismiss();
-                in_listener.onFacetSelected(f);
-              }
-            });
-          d.show(fm, "facet-dialog");
-        }
-      });
+        new OnClickListener() {
+          @Override
+          public void onClick(
+              final @Nullable View v) {
+            final FragmentManager fm = in_activity.getFragmentManager();
+            final CatalogFacetDialog d =
+                CatalogFacetDialog.newDialog(in_group_name, in_group);
+            d.setFacetSelectionListener(
+                new CatalogFacetSelectionListenerType() {
+                  @Override
+                  public void onFacetSelected(
+                      final FeedFacetType f) {
+                    d.dismiss();
+                    in_listener.onFacetSelected(f);
+                  }
+                });
+            d.show(fm, "facet-dialog");
+          }
+        });
+  }
+
+  private static int getBrandingColor() {
+    throw new UnimplementedCodeException();
   }
 }

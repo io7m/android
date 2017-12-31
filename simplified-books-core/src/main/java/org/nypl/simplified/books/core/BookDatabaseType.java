@@ -3,6 +3,8 @@ package org.nypl.simplified.books.core;
 import com.io7m.jfunctional.Pair;
 import com.io7m.jfunctional.ProcedureType;
 
+import org.nypl.simplified.books.book_database.BookID;
+
 import java.io.IOException;
 
 /**

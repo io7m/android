@@ -11,8 +11,6 @@ import org.nypl.simplified.app.catalog.MainCatalogActivity;
 import org.nypl.simplified.books.core.DocumentStoreType;
 import org.nypl.simplified.books.core.EULAType;
 import org.nypl.simplified.books.core.LogUtilities;
-import org.nypl.simplified.multilibrary.Account;
-import org.nypl.simplified.multilibrary.AccountsRegistry;
 import org.slf4j.Logger;
 
 import java.util.Timer;
@@ -24,8 +22,7 @@ import java.util.TimerTask;
  * already agreed to the license.
  */
 
-public class MainSplashActivity extends Activity
-{
+public class MainSplashActivity extends Activity {
   private static final Logger LOG;
 
   static {
@@ -36,126 +33,71 @@ public class MainSplashActivity extends Activity
    * Construct an activity.
    */
 
-  public MainSplashActivity()
-  {
+  public MainSplashActivity() {
 
   }
 
   @Override
-  protected void onCreate(final Bundle state)
-  {
-    final int id = Simplified.getCurrentAccount().getId();
-    if (id == 0) {
-      setTheme(R.style.SimplifiedThemeNoActionBar_NYPL);
-    }
-    else if (id == 1) {
-      setTheme(R.style.SimplifiedThemeNoActionBar_BPL);
-    }
-    else {
-      setTheme(R.style.SimplifiedThemeNoActionBar);
-    }
+  protected void onCreate(
+      final Bundle state) {
+
+    this.setTheme(Simplified.getCurrentTheme());
     super.onCreate(state);
     this.setContentView(R.layout.splash);
 
     final Timer timer = new Timer();
     timer.schedule(
-      new TimerTask()
-      {
-        @Override
-        public void run()
-        {
-          MainSplashActivity.this.finishSplash(false);
-        }
-      }, 2000L);
+        new TimerTask() {
+          @Override
+          public void run() {
+            MainSplashActivity.this.finishSplash();
+          }
+        }, 2000L);
   }
 
   @Override
-  protected void onRestart()
-  {
+  protected void onRestart() {
     super.onRestart();
-    this.finishSplash(false);
+    this.finishSplash();
   }
 
-  private void finishSplash(
-    final boolean show_eula)
-  {
-    final SimplifiedCatalogAppServicesType app =
-      Simplified.getCatalogAppServices();
-    final DocumentStoreType docs = app.getDocumentStore();
+  private void finishSplash() {
+    final DocumentStoreType docs = Simplified.getDocumentStore();
     final OptionType<EULAType> eula_opt = docs.getEULA();
 
     if (eula_opt.isSome()) {
       final Some<EULAType> some_eula = (Some<EULAType>) eula_opt;
       final EULAType eula = some_eula.get();
       if (eula.eulaHasAgreed()) {
-        MainSplashActivity.LOG.debug("EULA: agreed");
-
-        if (Simplified.getSharedPrefs().contains("welcome")) {
-          this.openCatalog();
-        }
-        else {
-          final AccountsRegistry registry = new AccountsRegistry(this, Simplified.getSharedPrefs());
-          final Account account = registry.getAccount(0);
-
-          final Account existing = registry.getExistingAccount(account.getId());
-          if (existing == null) {
-            registry.addAccount(account, Simplified.getSharedPrefs());
-          }
-          else if (existing.getId() != account.getId()) {
-            registry.addAccount(account, Simplified.getSharedPrefs());
-          }
-
-
-          Simplified.getSharedPrefs().putInt("current_account", 0);
-          Simplified.getCatalogAppServices();
-          Simplified.getSharedPrefs().putBoolean("welcome", true);
-          this.openCatalog();
-
-        }
-
+        LOG.debug("EULA: agreed");
+        this.openCatalog();
       } else {
-        MainSplashActivity.LOG.debug("EULA: not agreed");
-        if (show_eula) {
-          this.openEULA();
-        } else {
-          this.openWelcome();
-        }
+        LOG.debug("EULA: not agreed");
+        this.openEULA();
       }
     } else {
-      MainSplashActivity.LOG.debug("EULA: unavailable");
+      LOG.debug("EULA: unavailable");
       this.openWelcome();
     }
   }
 
-  private void openEULA()
-  {
+  private void openEULA() {
     final Intent i = new Intent(this, MainEULAActivity.class);
     this.startActivity(i);
     this.overridePendingTransition(0, 0);
   }
 
-  private void openWelcome()
-  {
-
-    if (Simplified.getSharedPrefs().contains("welcome")) {
-      this.openCatalog();
-    }
-    else {
-      final Intent i = new Intent(this, MainWelcomeActivity.class);
-      this.startActivity(i);
-      this.overridePendingTransition(0, 0);
-      this.finish();
-    }
-
-  }
-
-  private void openCatalog()
-  {
-    final Intent i = new Intent(this, MainCatalogActivity.class);
-    i.putExtra("reload", true);
+  private void openWelcome() {
+    final Intent i = new Intent(this, MainWelcomeActivity.class);
     this.startActivity(i);
     this.overridePendingTransition(0, 0);
     this.finish();
   }
 
+  private void openCatalog() {
+    final Intent i = new Intent(this, MainCatalogActivity.class);
+    this.startActivity(i);
+    this.overridePendingTransition(0, 0);
+    this.finish();
+  }
 }

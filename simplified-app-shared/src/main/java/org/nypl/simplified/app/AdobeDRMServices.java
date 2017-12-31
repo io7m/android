@@ -136,15 +136,16 @@ public final class AdobeDRMServices
     NullCheck.notNull(context);
     NullCheck.notNull(package_name_opt);
 
-    final Logger log = AdobeDRMServices.LOG;
+    throw new DRMUnsupportedException("Not available");
 
-    final String device_name =
-      String.format("%s/%s", Build.MANUFACTURER, Build.MODEL);
+/*    final Logger log = AdobeDRMServices.LOG;
+
+    final String device_name = String.format("%s/%s", Build.MANUFACTURER, Build.MODEL);
     final String device_serial = AdobeDRMServices.getDeviceSerial();
     log.debug("adobe device name:            {}", device_name);
     log.debug("adobe device serial:          {}", device_serial);
 
-    final Account account = Simplified.getCurrentAccount();
+    final Account account = getCurrentAccount();
 
     File base_accounts_dir = context.getFilesDir();
     if (account.getId() > 0)
@@ -153,7 +154,7 @@ public final class AdobeDRMServices
         new File(context.getFilesDir(), account.getPathComponent());
     }
 
-    final File base_dir = Simplified.getDiskDataDir(context);
+    final File base_dir = getDiskDataDir();
 
     File base_library_dir = base_dir;
     if (account.getId() > 0)
@@ -168,7 +169,6 @@ public final class AdobeDRMServices
       new File(base_library_dir, "adobe-books-tmp");
     final File temp_storage =
       new File(base_library_dir, "adobe-tmp");
-
 
     log.debug("adobe app storage:            {}", app_storage);
     log.debug("adobe xml storage:            {}", xml_storage);
@@ -214,7 +214,7 @@ public final class AdobeDRMServices
       app_storage,
       xml_storage,
       book_storage,
-      temp_storage);
+      temp_storage);*/
   }
 
   /**
@@ -243,7 +243,9 @@ public final class AdobeDRMServices
     NullCheck.notNull(context);
     NullCheck.notNull(package_name_opt);
 
-    final Logger log = AdobeDRMServices.LOG;
+    throw new DRMUnsupportedException("Not available");
+
+    /*final Logger log = AdobeDRMServices.LOG;
 
     final String device_name =
       String.format("%s/%s", Build.MANUFACTURER, Build.MODEL);
@@ -252,7 +254,7 @@ public final class AdobeDRMServices
     log.debug("adobe device serial:          {}", device_serial);
 
 
-    final Account account = Simplified.getCurrentAccount();
+    final Account account = getCurrentAccount();
 
     File base_accounts_dir = context.getFilesDir();
     if (account.getId() > 0)
@@ -261,7 +263,7 @@ public final class AdobeDRMServices
         new File(context.getFilesDir(), account.getPathComponent());
     }
 
-    final File base_dir = Simplified.getDiskDataDir(context);
+    final File base_dir = getDiskDataDir();
 
     File base_library_dir = base_dir;
     if (account.getId() > 0)
@@ -332,7 +334,7 @@ public final class AdobeDRMServices
       return AdobeAdeptExecutor.newExecutor(factory, p);
     } catch (final InterruptedException e) {
       throw new UnreachableCodeException();
-    }
+    }*/
   }
 
   /**

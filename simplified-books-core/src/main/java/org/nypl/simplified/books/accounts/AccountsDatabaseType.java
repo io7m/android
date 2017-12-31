@@ -3,6 +3,7 @@ package org.nypl.simplified.books.accounts;
 import org.nypl.simplified.books.profiles.ProfileType;
 
 import java.io.File;
+import java.net.URI;
 import java.util.SortedMap;
 
 /**
@@ -27,10 +28,10 @@ public interface AccountsDatabaseType {
   SortedMap<AccountID, AccountType> accounts();
 
   /**
-   * @return The profile that owns the database
+   * @return A read-only view of the current accounts by their provider
    */
 
-  ProfileType owner();
+  SortedMap<URI, AccountType> accountsByProvider();
 
   /**
    * Create an account using the given account provider.

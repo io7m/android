@@ -29,6 +29,7 @@ import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
+import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.drm.core.AdobeVendorID;
 import org.nypl.simplified.app.catalog.MainCatalogActivity;
@@ -37,7 +38,7 @@ import org.nypl.simplified.books.accounts.AccountAuthenticationProvider;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.core.AccountLoginListenerType;
-import org.nypl.simplified.books.core.BookID;
+import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.cardcreator.fragments.AddressFragment;
 import org.nypl.simplified.cardcreator.fragments.AgeFragment;
@@ -80,7 +81,12 @@ public class CardCreatorActivity extends FragmentActivity implements
 
 
   protected static final String TAG = "CardCreatorActivity";
-  private Prefs prefs = Simplified.getSharedPrefs();
+
+  private Prefs prefs = getPrefs();
+
+  private Prefs getPrefs() {
+    throw new UnimplementedCodeException();
+  }
 
   /**
    *
@@ -762,13 +768,8 @@ public class CardCreatorActivity extends FragmentActivity implements
     this.prefs.putBoolean(this.getResources().getString(R.string.SHOW_NEXT_BUTTON), true);
     findViewById(R.id.next_button).setEnabled(this.prefs.getBoolean(this.getResources().getString(R.string.SHOW_NEXT_BUTTON)));
 
-
-    final SimplifiedCatalogAppServicesType app =
-      Simplified.getCatalogAppServices();
-
-
     final Resources rr = NullCheck.notNull(CardCreatorActivity.this.getResources());
-    final BooksType books = app.getBooks();
+    final BooksType books = getBooksType();
 
     final AccountBarcode barcode = AccountBarcode.create(this.prefs.getString(this.getResources().getString(R.string.USERNAME_DATA_KEY)));
     final AccountPIN pin = AccountPIN.create(this.prefs.getString(this.getResources().getString(R.string.PIN_DATA_KEY)));
@@ -791,6 +792,10 @@ public class CardCreatorActivity extends FragmentActivity implements
 
     this.showProgress(false);
 
+  }
+
+  private BooksType getBooksType() {
+    throw new UnimplementedCodeException();
   }
 
   @Override

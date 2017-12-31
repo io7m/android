@@ -2,13 +2,15 @@ package org.nypl.simplified.books.core;
 
 import com.io7m.jnull.NullCheck;
 
+import org.nypl.simplified.books.book_database.BookID;
+
 /**
  * The given book is being requested but it is not yet known if the book is
  * loaned or not.
  */
 
-public final class BookStatusRequestingLoan implements BookStatusType
-{
+public final class BookStatusRequestingLoan implements BookStatusType {
+
   private final BookID id;
 
   /**
@@ -18,25 +20,25 @@ public final class BookStatusRequestingLoan implements BookStatusType
    */
 
   public BookStatusRequestingLoan(
-    final BookID in_id)
-  {
+      final BookID in_id) {
+
     this.id = NullCheck.notNull(in_id);
   }
 
-  @Override public BookID getID()
-  {
+  @Override
+  public BookID getID() {
     return this.id;
   }
 
-  @Override public <A, E extends Exception> A matchBookStatus(
-    final BookStatusMatcherType<A, E> m)
-    throws E
-  {
+  @Override
+  public <A, E extends Exception> A matchBookStatus(
+      final BookStatusMatcherType<A, E> m)
+      throws E {
     return m.onBookStatusRequestingLoan(this);
   }
 
-  @Override public String toString()
-  {
+  @Override
+  public String toString() {
     final StringBuilder b = new StringBuilder(128);
     b.append("[BookStatusRequestingLoan ");
     b.append(this.id);
@@ -44,8 +46,8 @@ public final class BookStatusRequestingLoan implements BookStatusType
     return NullCheck.notNull(b.toString());
   }
 
-  @Override public BookStatusPriorityOrdering getPriority()
-  {
+  @Override
+  public BookStatusPriorityOrdering getPriority() {
     return BookStatusPriorityOrdering.BOOK_STATUS_LOAN_IN_PROGRESS;
   }
 }

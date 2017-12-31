@@ -45,18 +45,18 @@ public abstract class ProfileDescription {
     }
 
     /**
-     * @see #displayName()
      * @param display_name The display name
      * @return The current builder
+     * @see #displayName()
      */
 
     public abstract Builder setDisplayName(
         String display_name);
 
     /**
-     * @see #preferences()
      * @param preferences The profile preferences
      * @return The current builder
+     * @see #preferences()
      */
 
     public abstract Builder setPreferences(
@@ -76,8 +76,7 @@ public abstract class ProfileDescription {
 
   public static ProfileDescription.Builder builder(
       final String display_name,
-      final ProfilePreferences preferences)
-  {
+      final ProfilePreferences preferences) {
     return new AutoValue_ProfileDescription.Builder()
         .setDisplayName(display_name)
         .setPreferences(preferences);

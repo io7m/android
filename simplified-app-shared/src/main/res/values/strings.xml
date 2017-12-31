@@ -236,4 +236,13 @@
   <string name="need_card_button">Sign Up</string>
   <string name="need_card_create">Create Card</string>
 
+  <!-- Profiles Strings -->
+  <string name="profiles_title">Profiles</string>
+  <string name="profiles_select">Please select an existing profile or create a new one.</string>
+  <string name="profiles_create">Create</string>
+  <string name="profiles_please_enter">Please enter your name and date of birth.</string>
+  <string name="profiles_name_field">Name</string>
+  <string name="profiles_error_name_already_used">That name has already been used. Please pick another.</string>
+  <string name="profiles_error_io">An error occurred whilst trying to create your profile.</string>
+
 </resources>

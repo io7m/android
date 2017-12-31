@@ -5,14 +5,21 @@ import com.io7m.jfunctional.Option;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.core.StringContains;
+import org.joda.time.LocalDate;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.accounts.AccountsDatabase;
+import org.nypl.simplified.books.accounts.AccountsDatabaseFactoryType;
+import org.nypl.simplified.books.accounts.AccountsDatabases;
 import org.nypl.simplified.books.core.LogUtilities;
+import org.nypl.simplified.books.profiles.ProfileAnonymousDisabledException;
+import org.nypl.simplified.books.profiles.ProfileAnonymousEnabledException;
 import org.nypl.simplified.books.profiles.ProfileDatabaseException;
 import org.nypl.simplified.books.profiles.ProfileID;
+import org.nypl.simplified.books.profiles.ProfileNonexistentException;
 import org.nypl.simplified.books.profiles.ProfileType;
 import org.nypl.simplified.books.profiles.ProfilesDatabase;
 import org.nypl.simplified.books.profiles.ProfilesDatabaseType;
@@ -23,6 +30,10 @@ import org.slf4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
+import static org.nypl.simplified.books.profiles.ProfilesDatabaseType.AnonymousProfileEnabled.*;
 
 public abstract class ProfilesDatabaseContract {
 
@@ -44,17 +55,17 @@ public abstract class ProfilesDatabaseContract {
     private final String message;
 
     CausesContains(
-        Class<T> exception_type,
-        String message) {
+        final Class<T> exception_type,
+        final String message) {
       this.exception_type = exception_type;
       this.message = message;
     }
 
     @Override
-    public boolean matches(Object item) {
+    public boolean matches(final Object item) {
       if (item instanceof ProfileDatabaseException) {
-        ProfileDatabaseException ex = (ProfileDatabaseException) item;
-        for (Exception c : ex.causes()) {
+        final ProfileDatabaseException ex = (ProfileDatabaseException) item;
+        for (final Exception c : ex.causes()) {
           LOG.error("Cause: ", c);
           if (exception_type.isAssignableFrom(c.getClass()) && c.getMessage().contains(message)) {
             return true;
@@ -65,7 +76,7 @@ public abstract class ProfilesDatabaseContract {
     }
 
     @Override
-    public void describeTo(Description description) {
+    public void describeTo(final Description description) {
       description.appendText("must throw ProfileDatabaseException");
       description.appendText(" with at least one cause of type " + exception_type);
       description.appendText(" with a message containing '" + message + "'");
@@ -81,7 +92,7 @@ public abstract class ProfilesDatabaseContract {
 
     expected.expect(ProfileDatabaseException.class);
     expected.expect(new CausesContains<>(IOException.class, "Not a directory"));
-    ProfilesDatabase.open(f_pro);
+    ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
   }
 
   @Test
@@ -97,7 +108,12 @@ public abstract class ProfilesDatabaseContract {
     expected.expect(ProfileDatabaseException.class);
     expected.expect(new CausesContains<>(
         IOException.class, "Could not parse directory name as profile ID"));
-    ProfilesDatabase.open(f_pro);
+    ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+  }
+
+  private AccountsDatabaseFactoryType accountsDatabases()
+  {
+    return AccountsDatabases.get();
   }
 
   @Test
@@ -112,7 +128,7 @@ public abstract class ProfilesDatabaseContract {
 
     expected.expect(ProfileDatabaseException.class);
     expected.expect(new CausesContains<>(IOException.class, "Could not parse profile: "));
-    ProfilesDatabase.open(f_pro);
+    ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
   }
 
   @Test
@@ -129,7 +145,7 @@ public abstract class ProfilesDatabaseContract {
 
     expected.expect(ProfileDatabaseException.class);
     expected.expect(new CausesContains<>(IOException.class, "Could not parse profile: "));
-    ProfilesDatabase.open(f_pro);
+    ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
   }
 
   @Test
@@ -138,7 +154,9 @@ public abstract class ProfilesDatabaseContract {
     final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
     final File f_pro = new File(f_tmp, "profiles");
 
-    ProfilesDatabaseType db = ProfilesDatabase.open(f_pro);
+    final ProfilesDatabaseType db =
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+
     Assert.assertEquals(0, db.profiles().size());
     Assert.assertEquals(f_pro, db.directory());
     Assert.assertTrue(db.currentProfile().isNone());
@@ -150,13 +168,18 @@ public abstract class ProfilesDatabaseContract {
     final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
     final File f_pro = new File(f_tmp, "profiles");
 
-    ProfilesDatabaseType db = ProfilesDatabase.open(f_pro);
+    final ProfilesDatabaseType db =
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
 
-    AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+    final AccountProvider acc = fakeProvider("http://example.com/accounts0/");
 
-    ProfileType p0 = db.createProfile(acc, "Kermit");
-    ProfileType p1 = db.createProfile(acc, "Gonzo");
-    ProfileType p2 = db.createProfile(acc, "Beaker");
+    final ProfileType p0 = db.createProfile(acc, "Kermit");
+    final ProfileType p1 = db.createProfile(acc, "Gonzo");
+    final ProfileType p2 = db.createProfile(acc, "Beaker");
+
+    Assert.assertFalse("Profile is not anonymous", p0.isAnonymous());
+    Assert.assertFalse("Profile is not anonymous", p1.isAnonymous());
+    Assert.assertFalse("Profile is not anonymous", p2.isAnonymous());
 
     Assert.assertEquals("Kermit", p0.displayName());
     Assert.assertEquals("Gonzo", p1.displayName());
@@ -193,6 +216,14 @@ public abstract class ProfilesDatabaseContract {
     Assert.assertFalse(p0.isCurrent());
     Assert.assertFalse(p1.isCurrent());
     Assert.assertFalse(p2.isCurrent());
+
+    Assert.assertEquals(
+        URI.create("http://example.com/accounts0/"), p0.accountCurrent().provider());
+    Assert.assertEquals(
+        URI.create("http://example.com/accounts0/"), p1.accountCurrent().provider());
+    Assert.assertEquals(
+        URI.create("http://example.com/accounts0/"), p2.accountCurrent().provider());
+
     Assert.assertTrue(db.currentProfile().isNone());
   }
 
@@ -202,18 +233,20 @@ public abstract class ProfilesDatabaseContract {
     final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
     final File f_pro = new File(f_tmp, "profiles");
 
-    ProfilesDatabaseType db0 = ProfilesDatabase.open(f_pro);
+    final ProfilesDatabaseType db0 =
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
 
-    AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+    final AccountProvider acc = fakeProvider("http://example.com/accounts0/");
 
-    ProfileType p0 = db0.createProfile(acc, "Kermit");
-    ProfileType p1 = db0.createProfile(acc, "Gonzo");
-    ProfileType p2 = db0.createProfile(acc, "Beaker");
+    final ProfileType p0 = db0.createProfile(acc, "Kermit");
+    final ProfileType p1 = db0.createProfile(acc, "Gonzo");
+    final ProfileType p2 = db0.createProfile(acc, "Beaker");
 
-    ProfilesDatabaseType db1 = ProfilesDatabase.open(f_pro);
-    ProfileType pr0 = db1.profiles().get(p0.id());
-    ProfileType pr1 = db1.profiles().get(p1.id());
-    ProfileType pr2 = db1.profiles().get(p2.id());
+    final ProfilesDatabaseType db1 =
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+    final ProfileType pr0 = db1.profiles().get(p0.id());
+    final ProfileType pr1 = db1.profiles().get(p1.id());
+    final ProfileType pr2 = db1.profiles().get(p2.id());
 
     Assert.assertEquals(p0.directory(), pr0.directory());
     Assert.assertEquals(p1.directory(), pr1.directory());
@@ -229,20 +262,60 @@ public abstract class ProfilesDatabaseContract {
   }
 
   @Test
+  public final void testOpenCreateUpdatePreferences()
+      throws Exception {
+    final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
+    final File f_pro = new File(f_tmp, "profiles");
+
+    final ProfilesDatabaseType db =
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+
+    final AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+
+    final ProfileType p0 = db.createProfile(acc, "Kermit");
+    p0.preferencesUpdate(
+        p0.preferences()
+            .toBuilder()
+            .setDateOfBirth(new LocalDate(2010, 10, 30))
+            .build());
+
+    Assert.assertEquals(
+        Option.some(new LocalDate(2010, 10, 30)),
+        p0.preferences().dateOfBirth());
+  }
+
+  @Test
   public final void testCreateProfileDuplicate()
       throws Exception {
     final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
     final File f_pro = new File(f_tmp, "profiles");
 
-    ProfilesDatabaseType db = ProfilesDatabase.open(f_pro);
+    final ProfilesDatabaseType db =
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
 
-    AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+    final AccountProvider acc = fakeProvider("http://example.com/accounts0/");
 
-    ProfileType p0 = db.createProfile(acc, "Kermit");
+    final ProfileType p0 = db.createProfile(acc, "Kermit");
 
     expected.expect(ProfileDatabaseException.class);
     expected.expectMessage(StringContains.containsString("Display name is already used"));
     db.createProfile(acc, "Kermit");
+  }
+
+  @Test
+  public final void testCreateProfileEmptyDisplayName()
+      throws Exception {
+    final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
+    final File f_pro = new File(f_tmp, "profiles");
+
+    final ProfilesDatabaseType db =
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+
+    final AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+
+    expected.expect(ProfileDatabaseException.class);
+    expected.expectMessage(StringContains.containsString("Display name cannot be empty"));
+    db.createProfile(acc, "");
   }
 
   @Test
@@ -251,16 +324,17 @@ public abstract class ProfilesDatabaseContract {
     final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
     final File f_pro = new File(f_tmp, "profiles");
 
-    ProfilesDatabaseType db0 = ProfilesDatabase.open(f_pro);
+    final ProfilesDatabaseType db0 =
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
 
-    AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+    final AccountProvider acc = fakeProvider("http://example.com/accounts0/");
 
-    ProfileType p0 = db0.createProfile(acc, "Kermit");
+    final ProfileType p0 = db0.createProfile(acc, "Kermit");
 
     db0.setProfileCurrent(p0.id());
 
     Assert.assertTrue(p0.isCurrent());
-    Assert.assertEquals(Option.some(p0.id()), db0.currentProfile());
+    Assert.assertEquals(Option.some(p0), db0.currentProfile());
   }
 
   @Test
@@ -269,18 +343,76 @@ public abstract class ProfilesDatabaseContract {
     final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
     final File f_pro = new File(f_tmp, "profiles");
 
-    ProfilesDatabaseType db0 = ProfilesDatabase.open(f_pro);
+    final ProfilesDatabaseType db0 =
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
 
-    AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+    final AccountProvider acc = fakeProvider("http://example.com/accounts0/");
 
-    ProfileType p0 = db0.createProfile(acc, "Kermit");
+    final ProfileType p0 = db0.createProfile(acc, "Kermit");
 
-    expected.expect(ProfileDatabaseException.class);
+    expected.expect(ProfileNonexistentException.class);
     expected.expectMessage(StringContains.containsString("Profile does not exist"));
     db0.setProfileCurrent(ProfileID.create(23));
   }
 
-  private static AccountProvider fakeProvider(String provider_id) {
+  @Test
+  public final void testAnonymous()
+      throws Exception {
+    final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
+    final File f_pro = new File(f_tmp, "profiles");
+
+    final ProfilesDatabaseType db0 =
+        ProfilesDatabase.openWithAnonymousAccountEnabled(
+            accountsDatabases(), exampleAccountProvider(), f_pro);
+
+    Assert.assertEquals(1L, db0.profiles().size());
+
+    final ProfileType p0 = db0.anonymousProfile();
+    Assert.assertTrue("Anonymous profile must be enabled", p0.isAnonymous());
+    Assert.assertEquals(Option.some(p0), db0.currentProfile());
+  }
+
+  @Test
+  public final void testAnonymousSetCurrent()
+      throws Exception {
+    final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
+    final File f_pro = new File(f_tmp, "profiles");
+
+    final ProfilesDatabaseType db0 =
+        ProfilesDatabase.openWithAnonymousAccountEnabled(
+            accountsDatabases(), exampleAccountProvider(), f_pro);
+
+    expected.expect(ProfileAnonymousEnabledException.class);
+    db0.setProfileCurrent(ProfileID.create(23));
+  }
+
+  private static AccountProvider exampleAccountProvider() {
+    return AccountProvider.builder()
+        .setCatalogURI(URI.create("http://example.com"))
+        .setSupportEmail("postmaster@example.com")
+        .setId(URI.create("urn:com.example"))
+        .setMainColor("#eeeeee")
+        .setLogo(URI.create("http://example.com/logo.png"))
+        .setSubtitle("Example Subtitle")
+        .setDisplayName("Example Provider")
+        .build();
+  }
+
+  @Test
+  public final void testAnonymousNotEnabled()
+      throws Exception {
+    final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
+    final File f_pro = new File(f_tmp, "profiles");
+
+    final ProfilesDatabaseType db0 =
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+
+    expected.expect(ProfileAnonymousDisabledException.class);
+    expected.expectMessage(StringContains.containsString("The anonymous profile is not enabled"));
+    db0.anonymousProfile();
+  }
+
+  private static AccountProvider fakeProvider(final String provider_id) {
     return AccountProvider.builder()
         .setId(URI.create(provider_id))
         .setDisplayName("Fake Library")

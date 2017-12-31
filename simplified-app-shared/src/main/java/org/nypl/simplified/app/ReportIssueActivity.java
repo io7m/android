@@ -15,6 +15,7 @@ import android.widget.EditText;
 
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
+import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.multilibrary.Account;
@@ -56,7 +57,7 @@ public class ReportIssueActivity extends Activity {
     if (extras != null) {
       this.account = new AccountsRegistry(this).getAccount(extras.getInt("selected_account"));
     } else {
-      this.account = Simplified.getCurrentAccount();
+      this.account = getAccount();
     }
 
     this.subject_field = NullCheck.notNull(
@@ -205,4 +206,7 @@ public class ReportIssueActivity extends Activity {
     }
   }
 
+  public Account getAccount() {
+    throw new UnimplementedCodeException();
+  }
 }

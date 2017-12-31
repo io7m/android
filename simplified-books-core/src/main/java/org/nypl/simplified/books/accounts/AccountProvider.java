@@ -1,8 +1,12 @@
 package org.nypl.simplified.books.accounts;
 
 import com.google.auto.value.AutoValue;
+import com.io7m.jfunctional.None;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
+import com.io7m.jfunctional.OptionVisitorType;
+import com.io7m.jfunctional.Some;
+import com.io7m.jnull.NullCheck;
 
 import java.net.URI;
 
@@ -19,10 +23,15 @@ import java.net.URI;
  */
 
 @AutoValue
-public abstract class AccountProvider {
+public abstract class AccountProvider implements Comparable<AccountProvider> {
 
   AccountProvider() {
 
+  }
+
+  @Override
+  public final int compareTo(final AccountProvider other) {
+    return id().compareTo(NullCheck.notNull(other, "Other").id());
   }
 
   /**
@@ -140,6 +149,48 @@ public abstract class AccountProvider {
    */
 
   public abstract String mainColor();
+
+  /**
+   * @return The name of the Android theme to use instead of the standard theme
+   */
+
+  public abstract OptionType<String> styleNameOverride();
+
+  /**
+   * Determine the correct catalog URI to use for readers of a given age.
+   * @param age The age of the reader
+   * @return The correct catalog URI for the given age
+   */
+
+  public final URI catalogURIForAge(
+      final int age)
+  {
+    if (age >= 13) {
+      return this.catalogURIForOver13s().accept(new OptionVisitorType<URI, URI>() {
+        @Override
+        public URI none(final None<URI> catalog_none) {
+          return catalogURI();
+        }
+
+        @Override
+        public URI some(final Some<URI> catalog_some) {
+          return catalog_some.get();
+        }
+      });
+    }
+
+    return this.catalogURIForUnder13s().accept(new OptionVisitorType<URI, URI>() {
+      @Override
+      public URI none(final None<URI> catalog_none) {
+        return catalogURI();
+      }
+
+      @Override
+      public URI some(final Some<URI> catalog_some) {
+        return catalog_some.get();
+      }
+    });
+  }
 
   /**
    * The type of mutable builders for account providers.
@@ -323,6 +374,15 @@ public abstract class AccountProvider {
         String color);
 
     /**
+     * @see #styleNameOverride()
+     * @param style The style name override
+     * @return The current builder
+     */
+
+    public abstract Builder setStyleNameOverride(
+        OptionType<String> style);
+
+    /**
      * @return The constructed account provider
      */
 
@@ -355,6 +415,7 @@ public abstract class AccountProvider {
     b.setLicense(Option.<URI>none());
     b.setPrivacyPolicy(Option.<URI>none());
     b.setMainColor("#da2527");
+    b.setStyleNameOverride(Option.<String>none());
     return b;
   }
 }

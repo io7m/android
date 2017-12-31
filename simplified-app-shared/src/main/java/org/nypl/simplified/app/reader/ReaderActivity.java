@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.graphics.Color;
 import android.graphics.ColorMatrixColorFilter;
 import android.os.Build;
 import android.os.Bundle;
@@ -40,6 +39,7 @@ import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.Some;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
+import com.io7m.junreachable.UnimplementedCodeException;
 import com.io7m.junreachable.UnreachableCodeException;
 
 import org.joda.time.Instant;
@@ -47,8 +47,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.nypl.simplified.app.R;
 import org.nypl.simplified.app.Simplified;
-import org.nypl.simplified.app.SimplifiedCatalogAppServicesType;
-import org.nypl.simplified.app.SimplifiedReaderAppServicesType;
 import org.nypl.simplified.app.catalog.annotation.Annotation;
 import org.nypl.simplified.app.catalog.annotation.AnnotationResult;
 import org.nypl.simplified.app.reader.ReaderPaginationChangedEvent.OpenPage;
@@ -60,11 +58,13 @@ import org.nypl.simplified.app.utilities.FadeUtilities;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.core.AccountGetCachedCredentialsListenerType;
-import org.nypl.simplified.books.core.BookID;
+import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.FeedEntryOPDS;
 import org.nypl.simplified.books.core.LogUtilities;
+import org.nypl.simplified.multilibrary.Account;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
+import org.nypl.simplified.prefs.Prefs;
 import org.nypl.simplified.volley.NYPLStringRequest;
 import org.readium.sdk.android.Container;
 import org.readium.sdk.android.Package;
@@ -87,6 +87,7 @@ public final class ReaderActivity extends Activity implements
     ReaderTOCSelectionListenerType,
     ReaderSettingsListenerType,
     ReaderMediaOverlayAvailabilityListenerType {
+
   private static final String BOOK_ID;
   private static final String FILE_ID;
   private static final String ENTRY;
@@ -102,44 +103,25 @@ public final class ReaderActivity extends Activity implements
     ENTRY = "org.nypl.simplified.app.ReaderActivity.entry";
   }
 
-  private @Nullable
-  BookID book_id;
-  private @Nullable
-  FeedEntryOPDS entry;
-  private @Nullable
-  Container epub_container;
-  private @Nullable
-  ReaderReadiumJavaScriptAPIType readium_js_api;
-  private @Nullable
-  ReaderSimplifiedJavaScriptAPIType simplified_js_api;
-  private @Nullable
-  ViewGroup view_hud;
-  private @Nullable
-  ProgressBar view_loading;
-  private @Nullable
-  ViewGroup view_media;
-  private @Nullable
-  ImageView view_media_next;
-  private @Nullable
-  ImageView view_media_play;
-  private @Nullable
-  ImageView view_media_prev;
-  private @Nullable
-  ProgressBar view_progress_bar;
-  private @Nullable
-  TextView view_progress_text;
-  private @Nullable
-  View view_root;
-  private @Nullable
-  ImageView view_settings;
-  private @Nullable
-  TextView view_title_text;
-  private @Nullable
-  ImageView view_toc;
-  private @Nullable
-  WebView view_web_view;
-  private @Nullable
-  ReaderReadiumViewerSettings viewer_settings;
+  private @Nullable BookID book_id;
+  private @Nullable FeedEntryOPDS entry;
+  private @Nullable Container epub_container;
+  private @Nullable ReaderReadiumJavaScriptAPIType readium_js_api;
+  private @Nullable ReaderSimplifiedJavaScriptAPIType simplified_js_api;
+  private @Nullable ViewGroup view_hud;
+  private @Nullable ProgressBar view_loading;
+  private @Nullable ViewGroup view_media;
+  private @Nullable ImageView view_media_next;
+  private @Nullable ImageView view_media_play;
+  private @Nullable ImageView view_media_prev;
+  private @Nullable ProgressBar view_progress_bar;
+  private @Nullable TextView view_progress_text;
+  private @Nullable View view_root;
+  private @Nullable ImageView view_settings;
+  private @Nullable TextView view_title_text;
+  private @Nullable ImageView view_toc;
+  private @Nullable WebView view_web_view;
+  private @Nullable ReaderReadiumViewerSettings viewer_settings;
 
   private boolean web_view_resized;
   private ReaderBookLocation current_location;
@@ -169,6 +151,7 @@ public final class ReaderActivity extends Activity implements
       final File file,
       final FeedEntryOPDS entry) {
     NullCheck.notNull(file);
+
     final Bundle b = new Bundle();
     b.putSerializable(ReaderActivity.BOOK_ID, book);
     b.putSerializable(ReaderActivity.FILE_ID, file);
@@ -190,7 +173,7 @@ public final class ReaderActivity extends Activity implements
     final ImageView in_media_next = NullCheck.notNull(this.view_media_next);
     final ImageView in_media_prev = NullCheck.notNull(this.view_media_prev);
 
-    final int main_color = Color.parseColor(Simplified.getCurrentAccount().getMainColor());
+    final int main_color = getBrandingColor();
     final ColorMatrixColorFilter filter =
         ReaderColorMatrix.getImageFilterMatrix(main_color);
 
@@ -207,6 +190,10 @@ public final class ReaderActivity extends Activity implements
             in_media_prev.setColorFilter(filter);
           }
         });
+  }
+
+  private static int getBrandingColor() {
+    throw new UnimplementedCodeException();
   }
 
   /**
@@ -300,23 +287,24 @@ public final class ReaderActivity extends Activity implements
   @Override
   protected void onResume() {
     super.onResume();
-    if (Simplified.getSharedPrefs().getBoolean("setting_sync_last_read") && Simplified.getCurrentAccount().supportsSimplyESync()) {
+    if (getSharedPrefs().getBoolean("setting_sync_last_read") && getCurrentAccount().supportsSimplyESync()) {
       this.syncLastRead();
     }
+  }
+
+  private static Account getCurrentAccount() {
+    throw new UnimplementedCodeException();
+  }
+
+  private static Prefs getSharedPrefs() {
+    throw new UnimplementedCodeException();
   }
 
   @Override
   protected void onCreate(
       final @Nullable Bundle state) {
-    final int id = Simplified.getCurrentAccount().getId();
-    if (id == 0) {
-      setTheme(R.style.SimplifiedThemeNoActionBar_NYPL);
-    } else if (id == 1) {
-      setTheme(R.style.SimplifiedThemeNoActionBar_BPL);
-    } else {
-      setTheme(R.style.SimplifiedThemeNoActionBar);
-    }
 
+    this.setTheme(Simplified.getCurrentTheme());
     super.onCreate(state);
     this.setContentView(R.layout.reader);
 
@@ -336,10 +324,7 @@ public final class ReaderActivity extends Activity implements
     ReaderActivity.LOG.debug("book id:   {}", this.book_id);
     ReaderActivity.LOG.debug("entry id:   {}", this.entry.getFeedEntry().getID());
 
-    final SimplifiedReaderAppServicesType rs =
-        Simplified.getReaderAppServices();
-
-    final ReaderSettingsType settings = rs.getSettings();
+    final ReaderSettingsType settings = getSettings();
     settings.addListener(this);
 
     this.viewer_settings = new ReaderReadiumViewerSettings(
@@ -472,15 +457,12 @@ public final class ReaderActivity extends Activity implements
 
     in_title_text.setText("");
 
-    final ReaderReadiumEPUBLoaderType pl = rs.getEPUBLoader();
+    final ReaderReadiumEPUBLoaderType pl = getEpubLoader();
     pl.loadEPUB(in_epub_file, this);
 
     this.applyViewerColorFilters();
 
-    final SimplifiedCatalogAppServicesType app =
-        Simplified.getCatalogAppServices();
-
-    final BooksType books = app.getBooks();
+    final BooksType books = getBooks();
 
     books.accountGetCachedLoginDetails(
         new AccountGetCachedCredentialsListenerType() {
@@ -500,6 +482,18 @@ public final class ReaderActivity extends Activity implements
     );
   }
 
+  private static ReaderReadiumEPUBLoaderType getEpubLoader() {
+    throw new UnimplementedCodeException();
+  }
+
+  private static BooksType getBooks() {
+    throw new UnimplementedCodeException();
+  }
+
+  private static ReaderSettingsType getSettings() {
+    throw new UnimplementedCodeException();
+  }
+
   @Override
   public void onCurrentPageError(
       final Throwable x) {
@@ -513,34 +507,32 @@ public final class ReaderActivity extends Activity implements
 
     ReaderActivity.LOG.debug("received book location: {}", l);
 
-    if (Simplified.getSharedPrefs().getBoolean("setting_sync_last_read") && Simplified.getCurrentAccount().supportsSimplyESync()) {
+    if (getSharedPrefs().getBoolean("setting_sync_last_read") && getCurrentAccount().supportsSimplyESync()) {
 
-      LOG.debug("CurrentPage prefs {}", Simplified.getSharedPrefs().getBoolean("post_last_read"));
+      LOG.debug("CurrentPage prefs {}", getSharedPrefs().getBoolean("post_last_read"));
 
-      if (Simplified.getSharedPrefs().getBoolean("post_last_read")) {
+      if (getSharedPrefs().getBoolean("post_last_read")) {
 
         this.postLastRead(l);
 
       }
     } else {
-      final SimplifiedReaderAppServicesType rs =
-          Simplified.getReaderAppServices();
-      final ReaderBookmarksType bm = rs.getBookmarks();
+      final ReaderBookmarksType bm = getBookmarks();
       final BookID in_book_id = NullCheck.notNull(this.book_id);
-
       bm.setBookmark(in_book_id, l);
-
     }
+  }
+
+  private static ReaderBookmarksType getBookmarks() {
+    throw new UnimplementedCodeException();
   }
 
   @Override
   protected void onPause() {
     super.onPause();
 
-    final SimplifiedReaderAppServicesType rs = Simplified.getReaderAppServices();
-
     if (this.book_id != null && this.current_location != null) {
-      rs.getBookmarks().setBookmark(this.book_id, this.current_location);
+      getBookmarks().setBookmark(this.book_id, this.current_location);
     }
   }
 
@@ -553,10 +545,7 @@ public final class ReaderActivity extends Activity implements
     readium_js.getCurrentPage(ReaderActivity.this);
     readium_js.mediaOverlayIsAvailable(ReaderActivity.this);
 
-    final SimplifiedReaderAppServicesType rs =
-        Simplified.getReaderAppServices();
-
-    final ReaderSettingsType settings = rs.getSettings();
+    final ReaderSettingsType settings = getSettings();
     settings.removeListener(this);
 //    System.exit(0);
   }
@@ -592,9 +581,6 @@ public final class ReaderActivity extends Activity implements
      * Configure the TOC button.
      */
 
-    final SimplifiedReaderAppServicesType rs =
-        Simplified.getReaderAppServices();
-
     final View in_toc = NullCheck.notNull(this.view_toc);
 
     in_toc.setOnClickListener(
@@ -614,7 +600,7 @@ public final class ReaderActivity extends Activity implements
      * will still be executed if the server is already running).
      */
 
-    final ReaderHTTPServerType hs = rs.getHTTPServer();
+    final ReaderHTTPServerType hs = getHttpServer();
     hs.startIfNecessaryForPackage(p, this);
   }
 
@@ -739,8 +725,8 @@ public final class ReaderActivity extends Activity implements
               final Package p = NullCheck.notNull(c.getDefaultPackage());
 
               js.openBook(p, vs, page);
-              Simplified.getSharedPrefs().putBoolean("post_last_read", true);
-              LOG.debug("CurrentPage set prefs {}", Simplified.getSharedPrefs().getBoolean("post_last_read"));
+              getSharedPrefs().putBoolean("post_last_read", true);
+              LOG.debug("CurrentPage set prefs {}", getSharedPrefs().getBoolean("post_last_read"));
             }
           });
 
@@ -749,8 +735,8 @@ public final class ReaderActivity extends Activity implements
             @Override
             public void onClick(final DialogInterface dialog, final int which) {
               // negative button logic
-              Simplified.getSharedPrefs().putBoolean("post_last_read", true);
-              LOG.debug("CurrentPage set prefs {}", Simplified.getSharedPrefs().getBoolean("post_last_read"));
+              getSharedPrefs().putBoolean("post_last_read", true);
+              LOG.debug("CurrentPage set prefs {}", getSharedPrefs().getBoolean("post_last_read"));
 
             }
           });
@@ -760,8 +746,8 @@ public final class ReaderActivity extends Activity implements
     }
 
     if ((this.current_location == null && this.sync_location == null) || this.current_location != null && this.sync_location == null) {
-      Simplified.getSharedPrefs().putBoolean("post_last_read", true);
-      LOG.debug("CurrentPage set prefs {}", Simplified.getSharedPrefs().getBoolean("post_last_read"));
+      getSharedPrefs().putBoolean("post_last_read", true);
+      LOG.debug("CurrentPage set prefs {}", getSharedPrefs().getBoolean("post_last_read"));
     } else if (this.current_location == null && this.sync_location != null) {
       final AlertDialog dialog = builder.create();
       dialog.show();
@@ -769,8 +755,8 @@ public final class ReaderActivity extends Activity implements
       final AlertDialog dialog = builder.create();
       dialog.show();
     } else {
-      Simplified.getSharedPrefs().putBoolean("post_last_read", true);
-      LOG.debug("CurrentPage set prefs {}", Simplified.getSharedPrefs().getBoolean("post_last_read"));
+      getSharedPrefs().putBoolean("post_last_read", true);
+      LOG.debug("CurrentPage set prefs {}", getSharedPrefs().getBoolean("post_last_read"));
     }
 
   }
@@ -779,10 +765,7 @@ public final class ReaderActivity extends Activity implements
   public void onReadiumFunctionInitialize() {
     ReaderActivity.LOG.debug("readium initialize requested");
 
-    final SimplifiedReaderAppServicesType rs =
-        Simplified.getReaderAppServices();
-
-    final ReaderHTTPServerType hs = rs.getHTTPServer();
+    final ReaderHTTPServerType hs = getHttpServer();
     final Container c = NullCheck.notNull(this.epub_container);
     final Package p = NullCheck.notNull(c.getDefaultPackage());
     p.setRootUrls(hs.getURIBase().toString(), null);
@@ -801,7 +784,7 @@ public final class ReaderActivity extends Activity implements
 
     final OPDSAcquisitionFeedEntry in_entry = NullCheck.notNull(this.entry.getFeedEntry());
 
-    final ReaderBookmarksType bookmarks = rs.getBookmarks();
+    final ReaderBookmarksType bookmarks = getBookmarks();
     final OptionType<ReaderBookLocation> mark =
         bookmarks.getBookmark(in_book_id, in_entry);
 
@@ -839,7 +822,7 @@ public final class ReaderActivity extends Activity implements
     in_progress_bar.setVisibility(View.VISIBLE);
     in_progress_text.setVisibility(View.INVISIBLE);
 
-    final ReaderSettingsType settings = rs.getSettings();
+    final ReaderSettingsType settings = getSettings();
     this.onReaderSettingsChanged(settings);
 
     UIThread.runOnUIThread(
@@ -879,11 +862,13 @@ public final class ReaderActivity extends Activity implements
         });
   }
 
+  private static ReaderHTTPServerType getHttpServer() {
+    throw new UnimplementedCodeException();
+  }
+
   private void postLastRead(final ReaderBookLocation l) {
 
-    final SimplifiedReaderAppServicesType rs =
-        Simplified.getReaderAppServices();
-    final ReaderBookmarksType bm = rs.getBookmarks();
+    final ReaderBookmarksType bm = getBookmarks();
     final BookID in_book_id = NullCheck.notNull(this.book_id);
     final OPDSAcquisitionFeedEntry in_entry = NullCheck.notNull(this.entry.getFeedEntry());
 

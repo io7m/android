@@ -18,6 +18,7 @@ import org.nypl.drm.core.AdobeAdeptProcedureType;
 import org.nypl.simplified.books.accounts.AccountAuthenticatedHTTP;
 import org.nypl.simplified.books.accounts.AccountAuthenticationAdobePostActivationCredentials;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
+import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.http.core.HTTPAuthType;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntryBuilderType;
@@ -73,16 +74,16 @@ final class BooksControllerRevokeBookTask
   @Override
   public void run() {
     try {
-      LOG.debug("[{}]: revoking", this.book_id.getShortID());
+      LOG.debug("[{}]: revoking", this.book_id.value());
 
       final BookDatabaseEntryReadableType e =
           this.books_database.databaseOpenEntryForReading(this.book_id);
       final BookDatabaseEntrySnapshot snap = e.entryGetSnapshot();
       final OPDSAvailabilityType avail = snap.getEntry().getAvailability();
-      LOG.debug("[{}]: availability is {}", this.book_id.getShortID(), avail);
+      LOG.debug("[{}]: availability is {}", this.book_id.value(), avail);
       avail.matchAvailability(this);
     } catch (final Throwable e) {
-      LOG.error("[{}]: could not revoke book: ", this.book_id.getShortID(), e);
+      LOG.error("[{}]: could not revoke book: ", this.book_id.value(), e);
     }
   }
 
@@ -106,7 +107,7 @@ final class BooksControllerRevokeBookTask
       final RevokeType type)
       throws IOException {
     LOG.debug(
-        "[{}]: revoking URI {} of type {}", this.book_id.getShortID(), u, type);
+        "[{}]: revoking URI {} of type {}", this.book_id.value(), u, type);
 
     /*
      * Hitting a revoke link yields a single OPDS entry indicating
@@ -159,7 +160,7 @@ final class BooksControllerRevokeBookTask
       throws IOException {
     LOG.debug(
         "[{}]: received a feed of type {}",
-        this.book_id.getShortID(),
+        this.book_id.value(),
         f.getClass());
 
     f.matchFeed(
@@ -196,7 +197,7 @@ final class BooksControllerRevokeBookTask
       throws IOException {
     LOG.debug(
         "[{}]: received a feed entry of type {}",
-        this.book_id.getShortID(),
+        this.book_id.value(),
         e.getClass());
 
     e.matchFeedEntry(
@@ -232,7 +233,7 @@ final class BooksControllerRevokeBookTask
   private void revokeFeedEntryReceivedOPDS(final FeedEntryOPDS e)
       throws IOException {
     LOG.debug(
-        "[{}]: publishing revocation status", this.book_id.getShortID());
+        "[{}]: publishing revocation status", this.book_id.value());
 
     this.books_status.booksRevocationFeedEntryUpdate(e);
     this.books_status.booksStatusClearFor(this.book_id);
@@ -250,16 +251,16 @@ final class BooksControllerRevokeBookTask
       final OptionType<Throwable> error,
       final String message) {
     LOG.error(
-        "[{}]: revocation failed: ", this.book_id.getShortID(), message);
+        "[{}]: revocation failed: ", this.book_id.value(), message);
 
     if (error.isSome()) {
       final Throwable ex = ((Some<Throwable>) error).get();
       LOG.error(
-          "[{}]: revocation failed, exception: ", this.book_id.getShortID(), ex);
+          "[{}]: revocation failed, exception: ", this.book_id.value(), ex);
     }
 
     LOG.debug(
-        "[{}] publishing failure status", this.book_id.getShortID());
+        "[{}] publishing failure status", this.book_id.value());
 
     final BookStatusRevokeFailed status =
         new BookStatusRevokeFailed(this.book_id, error);

@@ -6,6 +6,7 @@ import com.io7m.jfunctional.Some;
 import com.io7m.jnull.NullCheck;
 import com.io7m.junreachable.UnreachableCodeException;
 import org.nypl.drm.core.AdobeAdeptLoan;
+import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 import org.nypl.simplified.opds.core.OPDSAvailabilityHeld;
 import org.nypl.simplified.opds.core.OPDSAvailabilityHeldReady;

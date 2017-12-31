@@ -4,12 +4,12 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
+import com.io7m.junreachable.UnimplementedCodeException;
 
-import org.nypl.simplified.app.R;
 import org.nypl.simplified.app.Simplified;
-import org.nypl.simplified.app.SimplifiedReaderAppServicesType;
 import org.nypl.simplified.app.reader.ReaderTOC.TOCElement;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.slf4j.Logger;
@@ -19,8 +19,7 @@ import org.slf4j.Logger;
  */
 
 public final class ReaderTOCActivity extends Activity
-  implements ReaderSettingsListenerType, ReaderTOCViewSelectionListenerType
-{
+    implements ReaderSettingsListenerType, ReaderTOCViewSelectionListenerType {
   /**
    * The name of the argument containing the TOC.
    */
@@ -47,7 +46,7 @@ public final class ReaderTOCActivity extends Activity
     TOC_SELECTION_REQUEST_CODE = 23;
     TOC_ID = "org.nypl.simplified.app.reader.ReaderTOCActivity.toc";
     TOC_SELECTED_ID =
-      "org.nypl.simplified.app.reader.ReaderTOCActivity.toc_selected";
+        "org.nypl.simplified.app.reader.ReaderTOCActivity.toc_selected";
   }
 
   private @Nullable ReaderTOCView view;
@@ -56,8 +55,7 @@ public final class ReaderTOCActivity extends Activity
    * Construct an activity.
    */
 
-  public ReaderTOCActivity()
-  {
+  public ReaderTOCActivity() {
 
   }
 
@@ -71,9 +69,8 @@ public final class ReaderTOCActivity extends Activity
    */
 
   public static void startActivityForResult(
-    final Activity from,
-    final ReaderTOC toc)
-  {
+      final Activity from,
+      final ReaderTOC toc) {
     NullCheck.notNull(from);
     NullCheck.notNull(toc);
 
@@ -82,72 +79,63 @@ public final class ReaderTOCActivity extends Activity
     i.putExtra(ReaderTOCActivity.TOC_ID, toc);
 
     from.startActivityForResult(
-      i, ReaderTOCActivity.TOC_SELECTION_REQUEST_CODE);
+        i, ReaderTOCActivity.TOC_SELECTION_REQUEST_CODE);
   }
 
-  @Override public void finish()
-  {
+  @Override
+  public void finish() {
     super.finish();
     this.overridePendingTransition(0, 0);
   }
 
-  @Override protected void onCreate(
-    final @Nullable Bundle state)
-  {
-    final int id = Simplified.getCurrentAccount().getId();
-    if (id == 0) {
-      setTheme(R.style.SimplifiedThemeNoActionBar_NYPL);
-    }
-    else if (id == 1) {
-      setTheme(R.style.SimplifiedThemeNoActionBar_BPL);
-    }
-    else {
-      setTheme(R.style.SimplifiedThemeNoActionBar);
-    }
-
+  @Override
+  protected void onCreate(
+      final @Nullable Bundle state) {
+    this.setTheme(Simplified.getCurrentTheme());
     super.onCreate(state);
 
     ReaderTOCActivity.LOG.debug("onCreate");
 
-    final SimplifiedReaderAppServicesType rs =
-      Simplified.getReaderAppServices();
-
-    final ReaderSettingsType settings = rs.getSettings();
+    final ReaderSettingsType settings = getSettings();
     settings.addListener(this);
 
     final Intent input = NullCheck.notNull(this.getIntent());
     final Bundle args = NullCheck.notNull(input.getExtras());
 
     final ReaderTOC in_toc = NullCheck.notNull(
-      (ReaderTOC) args.getSerializable(ReaderTOCActivity.TOC_ID));
+        (ReaderTOC) args.getSerializable(ReaderTOCActivity.TOC_ID));
 
     final LayoutInflater inflater = NullCheck.notNull(this.getLayoutInflater());
     this.view = new ReaderTOCView(inflater, this, in_toc, this);
     this.setContentView(this.view.getLayoutView());
   }
 
-  @Override protected void onDestroy()
-  {
+  private static ReaderSettingsType getSettings() {
+    throw new UnimplementedCodeException();
+  }
+
+  @Override
+  protected void onDestroy() {
     super.onDestroy();
     ReaderTOCActivity.LOG.debug("onDestroy");
 
     NullCheck.notNull(this.view).onTOCViewDestroy();
   }
 
-  @Override public void onReaderSettingsChanged(
-    final ReaderSettingsType s)
-  {
+  @Override
+  public void onReaderSettingsChanged(
+      final ReaderSettingsType s) {
     NullCheck.notNull(this.view).onReaderSettingsChanged(s);
   }
 
-  @Override public void onTOCBackSelected()
-  {
+  @Override
+  public void onTOCBackSelected() {
     this.finish();
   }
 
-  @Override public void onTOCItemSelected(
-    final TOCElement e)
-  {
+  @Override
+  public void onTOCItemSelected(
+      final TOCElement e) {
     final Intent intent = new Intent();
     intent.putExtra(ReaderTOCActivity.TOC_SELECTED_ID, e);
     this.setResult(Activity.RESULT_OK, intent);

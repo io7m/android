@@ -4,7 +4,7 @@ package org.nypl.simplified.app;
  * Information about the device screen.
  */
 
-public interface ScreenSizeControllerType
+public interface ScreenSizeInformationType
 {
   /**
    * @param dp A size in dp

@@ -2,6 +2,8 @@ package org.nypl.simplified.books.core;
 
 import com.io7m.jnull.NullCheck;
 
+import org.nypl.simplified.books.book_database.BookID;
+
 /**
  * The given book not available for loan, but may be placed on hold.
  */

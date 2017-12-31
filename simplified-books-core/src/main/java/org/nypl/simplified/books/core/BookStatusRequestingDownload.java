@@ -3,6 +3,8 @@ package org.nypl.simplified.books.core;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;
 
+import org.nypl.simplified.books.book_database.BookID;
+
 import java.util.Calendar;
 
 /**
@@ -10,9 +12,9 @@ import java.util.Calendar;
  * actually started yet.
  */
 
-public final class BookStatusRequestingDownload implements BookStatusLoanedType
-{
-  private final BookID               id;
+public final class BookStatusRequestingDownload implements BookStatusLoanedType {
+
+  private final BookID id;
   private final OptionType<Calendar> loan_end_date;
 
   /**
@@ -23,34 +25,34 @@ public final class BookStatusRequestingDownload implements BookStatusLoanedType
    */
 
   public BookStatusRequestingDownload(
-    final BookID in_id,
-    final OptionType<Calendar> in_loan_end_date)
-  {
+      final BookID in_id,
+      final OptionType<Calendar> in_loan_end_date) {
+
     this.id = NullCheck.notNull(in_id);
     this.loan_end_date = NullCheck.notNull(in_loan_end_date);
   }
 
-  @Override public BookID getID()
-  {
+  @Override
+  public BookID getID() {
     return this.id;
   }
 
-  @Override public <A, E extends Exception> A matchBookLoanedStatus(
-    final BookStatusLoanedMatcherType<A, E> m)
-    throws E
-  {
+  @Override
+  public <A, E extends Exception> A matchBookLoanedStatus(
+      final BookStatusLoanedMatcherType<A, E> m)
+      throws E {
     return m.onBookStatusRequestingDownload(this);
   }
 
-  @Override public <A, E extends Exception> A matchBookStatus(
-    final BookStatusMatcherType<A, E> m)
-    throws E
-  {
+  @Override
+  public <A, E extends Exception> A matchBookStatus(
+      final BookStatusMatcherType<A, E> m)
+      throws E {
     return m.onBookStatusLoanedType(this);
   }
 
-  @Override public String toString()
-  {
+  @Override
+  public String toString() {
     final StringBuilder b = new StringBuilder(128);
     b.append("[BookStatusRequestingDownload ");
     b.append(this.id);
@@ -58,13 +60,13 @@ public final class BookStatusRequestingDownload implements BookStatusLoanedType
     return NullCheck.notNull(b.toString());
   }
 
-  @Override public OptionType<Calendar> getLoanExpiryDate()
-  {
+  @Override
+  public OptionType<Calendar> getLoanExpiryDate() {
     return this.loan_end_date;
   }
 
-  @Override public BookStatusPriorityOrdering getPriority()
-  {
+  @Override
+  public BookStatusPriorityOrdering getPriority() {
     return BookStatusPriorityOrdering.BOOK_STATUS_DOWNLOAD_REQUESTING;
   }
 }

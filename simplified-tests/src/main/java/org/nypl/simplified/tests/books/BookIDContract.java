@@ -6,7 +6,8 @@ import com.io7m.jnull.NullCheck;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.nypl.simplified.books.core.BookID;
+import org.nypl.simplified.books.book_database.BookID;
+import org.nypl.simplified.books.book_database.BookIDs;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntryBuilderType;
 import org.nypl.simplified.opds.core.OPDSAvailabilityOpenAccess;
@@ -30,7 +31,7 @@ public abstract class BookIDContract
         NullCheck.notNull(Calendar.getInstance()),
         OPDSAvailabilityOpenAccess.get(revoke));
     final OPDSAcquisitionFeedEntry e = eb.build();
-    final BookID b = BookID.newIDFromEntry(e);
+    final BookID b = BookIDs.newFromOPDSEntry(e);
     System.out.println("book: " + b);
     Assert.assertEquals(
       "7a99601f479c30f66f0949c51bbed2adac0e12eb79ad1319db638e16604400bf",
@@ -39,7 +40,7 @@ public abstract class BookIDContract
 
   @Test public void testBookID_0()
   {
-    final BookID b = BookID.newFromText(
+    final BookID b = BookIDs.newFromText(
       "http://circulation.alpha.librarysimplified.org/loans/Gutenberg/18405");
     System.out.println(b);
   }

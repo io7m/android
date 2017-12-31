@@ -39,6 +39,7 @@ import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.Some;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
+import com.io7m.junreachable.UnimplementedCodeException;
 import com.tenmiles.helpstack.HSHelpStack;
 import com.tenmiles.helpstack.gears.HSDeskGear;
 
@@ -51,7 +52,7 @@ import org.nypl.simplified.books.core.AccountLogoutListenerType;
 import org.nypl.simplified.books.core.AccountSyncListenerType;
 import org.nypl.simplified.books.core.AccountsDatabaseType;
 import org.nypl.simplified.books.core.AuthenticationDocumentType;
-import org.nypl.simplified.books.core.BookID;
+import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.DeviceActivationListenerType;
 import org.nypl.simplified.books.core.DocumentStoreType;
@@ -110,9 +111,8 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
     final AccountAuthenticationCredentials creds) {
     MainSettingsAccountActivity.LOG.debug("account is logged in: {}", creds);
 
-    final SimplifiedCatalogAppServicesType app =
-      Simplified.getCatalogAppServices();
-    final BooksType books = app.getBooks();
+
+    final BooksType books = getBooksType();
 
     final Resources rr = NullCheck.notNull(this.getResources());
 
@@ -208,6 +208,10 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
       });
   }
 
+  private BooksType getBooksType() {
+    throw new UnimplementedCodeException();
+  }
+
   @Override
   public void onAccountIsNotLoggedIn() {
     /*
@@ -256,13 +260,6 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
     MainSettingsAccountActivity.LOG.debug("onAccountLogoutSuccess");
     this.onAccountIsNotLoggedIn();
 
-    //if current account ??
-      final SimplifiedCatalogAppServicesType app =
-        Simplified.getCatalogAppServices();
-
-      app.getBooks().destroyBookStatusCache();
-
-    Simplified.getCatalogAppServices().reloadCatalog(true, MainSettingsAccountActivity.this.account);
     final Resources rr = NullCheck.notNull(this.getResources());
     final Context context = MainSettingsAccountActivity.this.getApplicationContext();
     final CharSequence text =
@@ -381,7 +378,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
     }
     else
     {
-      this.account = Simplified.getCurrentAccount();
+      this.account = getCurrentAccount();
     }
 
 
@@ -397,7 +394,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
     }
 
 
-    final DocumentStoreType docs = Simplified.getDocumentStore(this.account, getResources());
+    final DocumentStoreType docs = getDocumentStore();
 
     final LayoutInflater inflater = NullCheck.notNull(this.getLayoutInflater());
 
@@ -549,7 +546,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
 
     // check if key exists, if doesn't ask user how old they are, move this to catalog activity
 
-    if (Simplified.getSharedPrefs().contains("age13")) {
+    /*if (Simplified.getSharedPrefs().contains("age13")) {
       in_age13_checkbox.setChecked(Simplified.getSharedPrefs().getBoolean("age13"));
     }
 
@@ -601,7 +598,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
             });
         }
       }
-    });
+    });*/
 
 
     if (this.account.needsAuth()) {
@@ -757,6 +754,14 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
       WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
   }
 
+  private DocumentStoreType getDocumentStore() {
+    throw new UnimplementedCodeException();
+  }
+
+  private static Account getCurrentAccount() {
+    throw new UnimplementedCodeException();
+  }
+
   /**
    *
    */
@@ -803,7 +808,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
           final AccountBarcode barcode = AccountBarcode.create("");
           final AccountPIN pin = AccountPIN.create("");
 
-          if (Simplified.getCurrentAccount().getId() == MainSettingsAccountActivity.this.account.getId())
+          if (getCurrentAccount().getId() == MainSettingsAccountActivity.this.account.getId())
           {
             final LoginDialog df =
               LoginDialog.newDialog("Login required", barcode, pin);
@@ -857,15 +862,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
   protected void onResume() {
     super.onResume();
 
-    final SimplifiedCatalogAppServicesType app =
-      Simplified.getCatalogAppServices();
-
-
-    BooksType books = app.getBooks();
-    if (this.account != null)
-    {
-      books = Simplified.getBooks(this.account, this, Simplified.getCatalogAppServices().getAdobeDRMExecutor());
-    }
+    BooksType books = getBooksType();
 
     final Resources rr = NullCheck.notNull(this.getResources());
     final TableLayout in_table_with_code = NullCheck.notNull(this.table_with_code);
@@ -927,7 +924,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
     }
 
 
-    final AccountsDatabaseType accounts_database  = Simplified.getAccountsDatabase(this.account, this);
+    final AccountsDatabaseType accounts_database  = getAccountsDatabase();
     if (accounts_database.accountGetCredentials().isSome()) {
       final AccountAuthenticationCredentials creds = ((Some<AccountAuthenticationCredentials>) accounts_database.accountGetCredentials()).get();
 
@@ -960,7 +957,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
                       public void run() {
                         //if current account
                         final_books.accountLogout(creds, MainSettingsAccountActivity.this, MainSettingsAccountActivity.this, MainSettingsAccountActivity.this);
-                        if (MainSettingsAccountActivity.this.account == Simplified.getCurrentAccount()) {
+                        if (MainSettingsAccountActivity.this.account == getCurrentAccount()) {
                           final_books.destroyBookStatusCache();
                         }
                       }
@@ -977,6 +974,9 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
 
   }
 
+  private static AccountsDatabaseType getAccountsDatabase() {
+    throw new UnimplementedCodeException();
+  }
 
   @Override
   public boolean onCreateOptionsMenu(

@@ -10,6 +10,7 @@ import android.widget.ImageButton;
 
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;
+import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.simplified.app.catalog.MainCatalogActivity;
 import org.nypl.simplified.app.utilities.UIThread;
@@ -25,12 +26,13 @@ import org.slf4j.Logger;
  */
 public final class LoginActivity extends Activity {
 
-
   /**
    * Construct login activity
    */
+
   public LoginActivity()
   {
+
   }
 
   private static final Logger LOG;
@@ -40,23 +42,13 @@ public final class LoginActivity extends Activity {
   }
 
   @Override
-  protected void onCreate(final Bundle state) {
-    final int id = Simplified.getCurrentAccount().getId();
-    if (id == 0) {
-      setTheme(R.style.SimplifiedThemeNoActionBar_NYPL);
-    }
-    else if (id == 1) {
-      setTheme(R.style.SimplifiedThemeNoActionBar_BPL);
-    }
-    else {
-      setTheme(R.style.SimplifiedThemeNoActionBar);
-    }
+  protected void onCreate(
+      final Bundle state) {
 
+    this.setTheme(Simplified.getCurrentTheme());
     super.onCreate(state);
     this.setContentView(R.layout.login_view);
 
-    final SimplifiedCatalogAppServicesType app =
-      Simplified.getCatalogAppServices();
     final Resources rr = NullCheck.notNull(this.getResources());
     final boolean clever_enabled = rr.getBoolean(R.bool.feature_auth_provider_clever);
 
@@ -84,10 +76,6 @@ public final class LoginActivity extends Activity {
       clever.setVisibility(View.GONE);
     }
   }
-
-
-
-
 
   private void openCatalog() {
     final Intent i = new Intent(this, MainCatalogActivity.class);
@@ -167,14 +155,14 @@ public final class LoginActivity extends Activity {
     super.onActivityResult(request_code, result_code, data);
 
     if (result_code == 1) {
-
       this.openCatalog();
-      final SimplifiedCatalogAppServicesType app =
-        Simplified.getCatalogAppServices();
-
-      final BooksType books = app.getBooks();
+      final BooksType books = getBooks();
       books.fulfillExistingBooks();
 
     }
+  }
+
+  private static BooksType getBooks() {
+    throw new UnimplementedCodeException();
   }
 }

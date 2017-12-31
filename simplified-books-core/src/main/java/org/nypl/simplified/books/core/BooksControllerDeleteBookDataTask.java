@@ -1,6 +1,8 @@
 package org.nypl.simplified.books.core;
 
 import com.io7m.jnull.NullCheck;
+
+import org.nypl.simplified.books.book_database.BookID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +16,7 @@ final class BooksControllerDeleteBookDataTask implements Runnable
   }
 
   private final BookDatabaseType     book_database;
-  private final BookID               book_id;
+  private final BookID book_id;
   private final BooksStatusCacheType books_status;
   private final boolean              needs_auth;
 
@@ -48,7 +50,7 @@ final class BooksControllerDeleteBookDataTask implements Runnable
       }
     } catch (final Throwable e) {
       BooksControllerDeleteBookDataTask.LOG.error(
-        "[{}]: could not destroy book data: ", this.book_id.getShortID(), e);
+        "[{}]: could not destroy book data: ", this.book_id.value(), e);
     }
   }
 }

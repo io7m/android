@@ -16,12 +16,12 @@ import org.nypl.simplified.app.LoginActivity;
 import org.nypl.simplified.app.LoginDialog;
 import org.nypl.simplified.app.LoginListenerType;
 import org.nypl.simplified.app.R;
-import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
+import org.nypl.simplified.books.book_database.BookID;
+import org.nypl.simplified.books.controller.BooksControllerType;
 import org.nypl.simplified.books.core.AccountGetCachedCredentialsListenerType;
-import org.nypl.simplified.books.core.BookID;
 import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.FeedEntryOPDS;
 import org.nypl.simplified.books.core.LogUtilities;
@@ -31,14 +31,13 @@ import org.slf4j.Logger;
 
 /**
  * A controller for an acquisition button.
- *
+ * <p>
  * This is responsible for logging in, if necessary, and then starting the
  * borrow of a given book.
  */
 
 public final class CatalogAcquisitionButtonController
-  implements OnClickListener, LoginListenerType
-{
+    implements OnClickListener, LoginListenerType {
   private static final Logger LOG;
 
   static {
@@ -46,10 +45,10 @@ public final class CatalogAcquisitionButtonController
   }
 
   private final OPDSAcquisition acq;
-  private final Activity        activity;
-  private final BooksType       books;
-  private final FeedEntryOPDS   entry;
-  private final BookID          id;
+  private final Activity activity;
+  private final BooksControllerType books;
+  private final FeedEntryOPDS entry;
+  private final BookID id;
 
   /**
    * Construct a button controller.
@@ -62,54 +61,57 @@ public final class CatalogAcquisitionButtonController
    */
 
   public CatalogAcquisitionButtonController(
-    final Activity in_activity,
-    final BooksType in_books,
-    final BookID in_id,
-    final OPDSAcquisition in_acq,
-    final FeedEntryOPDS in_entry)
-  {
-    this.activity = NullCheck.notNull(in_activity);
-    this.acq = NullCheck.notNull(in_acq);
-    this.id = NullCheck.notNull(in_id);
+      final Activity in_activity,
+      final BooksControllerType in_books,
+      final BookID in_id,
+      final OPDSAcquisition in_acq,
+      final FeedEntryOPDS in_entry) {
+    this.activity = NullCheck.notNull(in_activity, "Activity");
+    this.acq = NullCheck.notNull(in_acq, "OPDS Acquisition");
+    this.id = NullCheck.notNull(in_id, "Book ID");
     this.books = NullCheck.notNull(in_books);
     this.entry = NullCheck.notNull(in_entry);
   }
 
-  @Override public void onClick(
-    final @Nullable View v)
-  {
-    if (this.books.accountIsLoggedIn() && Simplified.getCurrentAccount().needsAuth() && this.acq.getType() != OPDSAcquisition.Type.ACQUISITION_OPEN_ACCESS) {
-      this.books.accountGetCachedLoginDetails(
-        new AccountGetCachedCredentialsListenerType()
-        {
-          @Override public void onAccountIsNotLoggedIn()
-          {
-            throw new UnreachableCodeException();
-          }
+  @Override
+  public void onClick(final @Nullable View v) {
 
-          @Override public void onAccountIsLoggedIn(
-            final AccountAuthenticationCredentials creds)
-          {
-            CatalogAcquisitionButtonController.this.onLoginSuccess(creds);
-          }
-        });
-    } else if (!Simplified.getCurrentAccount().needsAuth() || this.acq.getType() == OPDSAcquisition.Type.ACQUISITION_OPEN_ACCESS) {
+
+    throw new UnimplementedCodeException();
+
+/*    if (this.books.accountIsLoggedIn() && isNeedsAuth() && this.acq.getType() != OPDSAcquisition.Type.ACQUISITION_OPEN_ACCESS) {
+      this.books.accountGetCachedLoginDetails(
+          new AccountGetCachedCredentialsListenerType() {
+            @Override
+            public void onAccountIsNotLoggedIn() {
+              throw new UnreachableCodeException();
+            }
+
+            @Override
+            public void onAccountIsLoggedIn(
+                final AccountAuthenticationCredentials creds) {
+              CatalogAcquisitionButtonController.this.onLoginSuccess(creds);
+            }
+          });
+    } else if (!isNeedsAuth() || this.acq.getType() == OPDSAcquisition.Type.ACQUISITION_OPEN_ACCESS) {
       this.getBook();
-    }
-    else {
+    } else {
       this.tryLogin();
-    }
+    }*/
   }
 
-  private void tryLogin()
-  {
+  private static boolean isNeedsAuth() {
+    throw new UnimplementedCodeException();
+  }
+
+  private void tryLogin() {
 
     final boolean clever_enabled = this.activity.getResources().getBoolean(R.bool.feature_auth_provider_clever);
 
     if (clever_enabled) {
 
       final Intent account =
-        new Intent(this.activity, LoginActivity.class);
+          new Intent(this.activity, LoginActivity.class);
 
       this.activity.startActivityForResult(account, 1);
 
@@ -121,7 +123,7 @@ public final class CatalogAcquisitionButtonController
       final AccountPIN pin = AccountPIN.create("");
 
       final LoginDialog df =
-        LoginDialog.newDialog("Login required", barcode, pin);
+          LoginDialog.newDialog("Login required", barcode, pin);
       df.setLoginListener(this);
 
       final FragmentManager fm = this.activity.getFragmentManager();
@@ -129,36 +131,35 @@ public final class CatalogAcquisitionButtonController
     }
   }
 
-  @Override public void onLoginAborted()
-  {
+  @Override
+  public void onLoginAborted() {
     // Nothing
   }
 
-  @Override public void onLoginFailure(
-    final OptionType<Throwable> error,
-    final String message)
-  {
+  @Override
+  public void onLoginFailure(
+      final OptionType<Throwable> error,
+      final String message) {
     // Nothing
   }
 
-  @Override public void onLoginSuccess(
-    final AccountAuthenticationCredentials creds)
-  {
+  @Override
+  public void onLoginSuccess(
+      final AccountAuthenticationCredentials creds) {
     CatalogAcquisitionButtonController.LOG.debug("login succeeded");
     this.getBook();
   }
 
   private void getBook() {
     CatalogAcquisitionButtonController.LOG.debug(
-      "attempting borrow of {} acquisition", this.acq.getType());
+        "attempting borrow of {} acquisition", this.acq.getType());
 
     switch (this.acq.getType()) {
       case ACQUISITION_BORROW:
       case ACQUISITION_GENERIC:
       case ACQUISITION_OPEN_ACCESS: {
         final OPDSAcquisitionFeedEntry eo = this.entry.getFeedEntry();
-        this.books.bookBorrow(this.id, this.acq, eo, Simplified.getCurrentAccount().needsAuth());
-        break;
+        throw new UnimplementedCodeException();
       }
       case ACQUISITION_BUY:
       case ACQUISITION_SAMPLE:

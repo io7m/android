@@ -3,7 +3,6 @@ package org.nypl.simplified.app.reader;
 import android.content.Context;
 import android.content.res.Resources;
 import android.database.DataSetObserver;
-import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -13,14 +12,17 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
+import com.io7m.junreachable.UnimplementedCodeException;
+
 import org.nypl.simplified.app.R;
+import org.nypl.simplified.app.ScreenSizeInformationType;
 import org.nypl.simplified.app.Simplified;
-import org.nypl.simplified.app.SimplifiedReaderAppServicesType;
 import org.nypl.simplified.app.reader.ReaderTOC.TOCElement;
-import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.app.utilities.UIThread;
+import org.nypl.simplified.books.core.LogUtilities;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -66,10 +68,7 @@ import java.util.List;
     NullCheck.notNull(in_toc);
     NullCheck.notNull(in_listener);
 
-    final SimplifiedReaderAppServicesType rs =
-      Simplified.getReaderAppServices();
-
-    final ReaderSettingsType settings = rs.getSettings();
+    final ReaderSettingsType settings = getSettings();
     settings.addListener(this);
 
     final ViewGroup in_layout = NullCheck.notNull(
@@ -99,18 +98,26 @@ import java.util.List;
       NullCheck.notNull(in_context.getResources()), settings.getColorScheme());
   }
 
+  private static ReaderSettingsType getSettings() {
+    throw new UnimplementedCodeException();
+  }
+
   private void applyColorScheme(
     final Resources r,
     final ReaderColorScheme cs)
   {
     UIThread.checkIsUIThread();
 
-    final int main_color = Color.parseColor(Simplified.getCurrentAccount().getMainColor());
+    final int main_color = getBrandingColor();
     final TextView in_title = NullCheck.notNull(this.view_title);
     final ViewGroup in_root = NullCheck.notNull(this.view_root);
 
     in_root.setBackgroundColor(cs.getBackgroundColor());
     in_title.setTextColor(main_color);
+  }
+
+  private static int getBrandingColor() {
+    throw new UnimplementedCodeException();
   }
 
   @Override public boolean areAllItemsEnabled()
@@ -164,7 +171,7 @@ import java.util.List;
         R.layout.reader_toc_element, parent, false);
     }
 
-    /**
+    /*
      * Populate the text view and set the left margin based on the desired
      * indentation level.
      */
@@ -174,14 +181,15 @@ import java.util.List;
     final TOCElement e = NullCheck.notNull(this.adapter).getItem(position);
     text_view.setText(e.getTitle());
 
-    final SimplifiedReaderAppServicesType rs =
-      Simplified.getReaderAppServices();
-    final ReaderSettingsType settings = rs.getSettings();
+    final ReaderSettingsType settings = getSettings();
 
-    final RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(
+    final RelativeLayout.LayoutParams p =
+        new RelativeLayout.LayoutParams(
       android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
       android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
-    p.setMargins((int) rs.screenDPToPixels(e.getIndent() * 16), 0, 0, 0);
+
+    final ScreenSizeInformationType screen = Simplified.getScreenSizeInformation();
+    p.setMargins((int) screen.screenDPToPixels(e.getIndent() * 16), 0, 0, 0);
     text_view.setLayoutParams(p);
     text_view.setTextColor(settings.getColorScheme().getForegroundColor());
 
@@ -246,10 +254,7 @@ import java.util.List;
   {
     ReaderTOCView.LOG.debug("onTOCViewDestroy");
 
-    final SimplifiedReaderAppServicesType rs =
-      Simplified.getReaderAppServices();
-
-    final ReaderSettingsType settings = rs.getSettings();
+    final ReaderSettingsType settings = getSettings();
     settings.removeListener(this);
   }
 

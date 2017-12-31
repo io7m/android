@@ -19,6 +19,7 @@
     "eulaUrl": "http://www.librarysimplified.org/EULA.html",
     "licenseUrl": "http://www.librarysimplified.org/license.html",
     "privacyUrl": "http://www.librarysimplified.org/privacypolicy.html",
-    "mainColor": "#da2527"
+    "mainColor": "#da2527",
+    "styleNameOverride": "SimplifiedThemeNoActionBar_NYPL"
   }
 ]

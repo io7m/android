@@ -1,5 +1,7 @@
 package org.nypl.simplified.books.core;
 
+import org.nypl.simplified.books.book_database.BookID;
+
 import java.util.Observer;
 
 /**
@@ -39,6 +41,5 @@ public interface BooksObservableType
    * @param id The book ID
    */
 
-  void booksObservableNotify(
-    BookID id);
+  void booksObservableNotify(BookID id);
 }

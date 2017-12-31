@@ -14,6 +14,7 @@ import android.widget.Toast;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.ProcedureType;
 import com.io7m.jnull.NullCheck;
+import com.io7m.junreachable.UnimplementedCodeException;
 import com.tenmiles.helpstack.HSHelpStack;
 import com.tenmiles.helpstack.gears.HSDeskGear;
 
@@ -46,9 +47,6 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
   public void onResume() {
     super.onResume();
 
-    final SimplifiedCatalogAppServicesType app =
-      Simplified.getCatalogAppServices();
-
     final Resources resources = NullCheck.notNull(this.getResources());
     final Preference secret = findPreference(resources.getString(R.string.settings_alt_uris));
 
@@ -62,7 +60,8 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
     }
 
     final BooksControllerConfigurationType books_config =
-      app.getBooks().booksGetConfiguration();
+        getBooksGetConfiguration();
+
     if (books_config.getAlternateRootFeedURI() != null) {
       final Bundle b = new Bundle();
       SimplifiedActivity.setActivityArguments(b, false);
@@ -104,6 +103,10 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
     }
   }
 
+  private static BooksControllerConfigurationType getBooksGetConfiguration() {
+    throw new UnimplementedCodeException();
+  }
+
   @Override
   public void onViewCreated(final View view, final Bundle state) {
     super.onViewCreated(view, state);
@@ -116,11 +119,9 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
 
     addPreferencesFromResource(R.xml.preferences);
 
-    final SimplifiedCatalogAppServicesType app =
-      Simplified.getCatalogAppServices();
     final Resources resources = NullCheck.notNull(this.getResources());
-    final DocumentStoreType docs = app.getDocumentStore();
-    final OptionType<HelpstackType> helpstack = app.getHelpStack();
+    final DocumentStoreType docs = Simplified.getDocumentStore();
+    final OptionType<HelpstackType> helpstack = getHelpStack();
 
     {
       final Preference preferences = findPreference(resources.getString(R.string.settings_accounts));
@@ -222,6 +223,10 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
           }
         });
     }
+  }
+
+  private static OptionType<HelpstackType> getHelpStack() {
+    throw new UnimplementedCodeException();
   }
 
   @Override

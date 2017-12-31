@@ -1,6 +1,8 @@
 package org.nypl.simplified.books.core;
 
 import com.io7m.jfunctional.OptionType;
+
+import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 
 import java.io.File;

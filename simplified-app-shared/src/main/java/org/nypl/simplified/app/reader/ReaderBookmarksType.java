@@ -4,7 +4,7 @@ import com.android.volley.RequestQueue;
 import com.io7m.jfunctional.OptionType;
 
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
-import org.nypl.simplified.books.core.BookID;
+import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 
 /**
