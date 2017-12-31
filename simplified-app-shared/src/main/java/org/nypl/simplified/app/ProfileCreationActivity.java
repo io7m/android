@@ -13,6 +13,7 @@ import android.widget.DatePicker;
 import android.widget.EditText;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.io7m.jfunctional.PartialFunctionType;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 import com.io7m.junreachable.UnreachableCodeException;
@@ -50,39 +51,34 @@ public final class ProfileCreationActivity extends Activity {
     super.onCreate(state);
     this.setContentView(R.layout.profiles_creation);
 
-    this.button = NullCheck.notNull((Button) this.findViewById(R.id.profileCreationCreate));
+    this.button = NullCheck.notNull(this.findViewById(R.id.profileCreationCreate));
     this.button.setEnabled(false);
-    this.button.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(final View view) {
-        view.setEnabled(false);
-        createProfile();
-      }
+    this.button.setOnClickListener(view -> {
+      view.setEnabled(false);
+      createProfile();
     });
 
-    this.date = NullCheck.notNull((DatePicker) this.findViewById(R.id.profileCreationDateSelection));
-    this.name = NullCheck.notNull((EditText) this.findViewById(R.id.profileCreationEditName));
+    this.date = NullCheck.notNull(this.findViewById(R.id.profileCreationDateSelection));
+    this.name = NullCheck.notNull(this.findViewById(R.id.profileCreationEditName));
     this.name.addTextChangedListener(new ButtonTextWatcher(button));
   }
 
-  private void onProfileEventCreationFailed(
+  private Unit onProfileEventCreationFailed(
       final ProfileEventCreationFailed e) {
 
     LOG.debug("onProfileEventCreationFailed: {}", e);
 
-    UIThread.runOnUIThread(new Runnable() {
-      @Override
-      public void run() {
-        button.setEnabled(true);
-        final AlertDialog.Builder alert_builder =
-            new AlertDialog.Builder(ProfileCreationActivity.this);
-        alert_builder.setMessage(messageForErrorCode(e.errorCode()));
-        alert_builder.setCancelable(true);
-
-        final AlertDialog alert = alert_builder.create();
-        alert.show();
-      }
+    UIThread.runOnUIThread(() -> {
+      button.setEnabled(true);
+      final AlertDialog.Builder alert_builder =
+          new AlertDialog.Builder(ProfileCreationActivity.this);
+      alert_builder.setMessage(messageForErrorCode(e.errorCode()));
+      alert_builder.setCancelable(true);
+      final AlertDialog alert = alert_builder.create();
+      alert.show();
     });
+
+    return Unit.unit();
   }
 
   private int messageForErrorCode(
@@ -96,41 +92,21 @@ public final class ProfileCreationActivity extends Activity {
     throw new UnreachableCodeException();
   }
 
-  private void onProfileEventCreated(
+  private Unit onProfileEventCreated(
       final ProfileEvent.ProfileEventCreated e) {
 
     LOG.debug("onProfileEventCreated: {}", e);
-
-    UIThread.runOnUIThread(new Runnable() {
-      @Override
-      public void run() {
-        openSelectionActivity();
-      }
-    });
+    UIThread.runOnUIThread(this::openSelectionActivity);
+    return Unit.unit();
   }
 
   private void onProfileEvent(
       final ProfileEvent e) {
 
     LOG.debug("onProfileEvent: {}", e);
-
-    e.matchEvent(new ProfileEvent.MatcherType<Unit, RuntimeException>() {
-      @Override
-      public Unit onProfileEventCreated(
-          final ProfileEvent.ProfileEventCreated e)
-          throws RuntimeException {
-        ProfileCreationActivity.this.onProfileEventCreated(e);
-        return Unit.unit();
-      }
-
-      @Override
-      public Unit onProfileEventCreationFailed(
-          final ProfileEventCreationFailed e)
-          throws RuntimeException {
-        ProfileCreationActivity.this.onProfileEventCreationFailed(e);
-        return Unit.unit();
-      }
-    });
+    e.matchEvent(
+        this::onProfileEventCreated,
+        this::onProfileEventCreationFailed);
   }
 
   private void openSelectionActivity() {
@@ -153,15 +129,12 @@ public final class ProfileCreationActivity extends Activity {
             name_text,
             new LocalDate(date.getYear(), date.getMonth(), date.getDayOfMonth()));
 
-    task.addListener(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          onProfileEvent(task.get());
-        } catch (final InterruptedException | ExecutionException e) {
-          LOG.error("profile creation failed: ", e);
-          onProfileEventCreationFailed(ProfileEventCreationFailed.of(name_text, ERROR_IO));
-        }
+    task.addListener(() -> {
+      try {
+        onProfileEvent(task.get());
+      } catch (final InterruptedException | ExecutionException e) {
+        LOG.error("profile creation failed: ", e);
+        onProfileEventCreationFailed(ProfileEventCreationFailed.of(name_text, ERROR_IO));
       }
     }, Simplified.getBackgroundTaskExecutor());
   }
@@ -197,8 +170,7 @@ public final class ProfileCreationActivity extends Activity {
     }
 
     @Override
-    public void afterTextChanged(
-        final Editable editable) {
+    public void afterTextChanged(final Editable editable) {
 
     }
   }
