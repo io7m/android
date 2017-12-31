@@ -3,7 +3,7 @@
     "id": "urn:provider:org.librarysimplified",
     "name" : "The New York Public Library",
     "subtitle" : "Inspiring lifelong learning, advancing knowledge, and strengthening our communities.",
-    "logo" : "LibraryLogoNYPL",
+    "logo" : "simplified-asset:account_logo_nypl.png",
     "authentication": {
       "passcodeLength" : 4,
       "passcodeAllowsLetters" : false
@@ -26,7 +26,7 @@
     "id": "urn:provider:org.bklynlibrary",
     "name" : "Brooklyn Public Library",
     "subtitle" : "Connecting people to resources to achieve their goals.",
-    "logo" : "LibraryLogoBrooklyn",
+    "logo" : "simplified-asset:account_logo_bpl.png",
     "authentication": {
       "passcodeLength" : 4,
       "passcodeAllowsLetters" : false
@@ -50,7 +50,7 @@
     "id": "urn:provider:org.librarysimplified.simplye",
     "name" : "SimplyE Collection",
     "subtitle" : "E-books free to download and read without a library card",
-    "logo" : "LibraryLogoMagic",
+    "logo" : "simplified-asset:account_logo_instant.png",
     "supportsSimplyESync" : false,
     "supportsBarcodeScanner" : false,
     "supportsBarcodeDisplay" : false,
@@ -68,7 +68,7 @@
     "id": "urn:provider:org.simplye-md.howard",
     "name" : "Howard County Library System",
     "subtitle" : "Public education for all",
-    "logo" : "LibraryLogoHoward",
+    "logo" : "simplified-asset:account_logo_hcls.png",
     "authentication": {
       "passcodeLength" : 0,
       "passcodeAllowsLetters" : false
@@ -90,7 +90,7 @@
     "id": "urn:provider:org.simplye-md.montgomery",
     "name" : "Montgomery County Public Libraries",
     "subtitle" : "Where the County Reads, Meets, Learns",
-    "logo" : "LibraryLogoMontgomery",
+    "logo" : "simplified-asset:account_logo_mcpl.png",
     "authentication": {
       "passcodeLength" : 0,
       "passcodeAllowsLetters" : false
@@ -111,7 +111,7 @@
     "id": "urn:provider:org.simplye-md.frederick",
     "name" : "Frederick County Public Libraries",
     "subtitle" : "Explore. Invent. Transform.",
-    "logo" : "LibraryLogoFrederick",
+    "logo" : "simplified-asset:account_logo_fcpl.png",
     "authentication": {
       "passcodeLength" : 0,
       "passcodeAllowsLetters" : false
@@ -133,7 +133,7 @@
     "id": "urn:provider:org.simplye-md.smrla",
     "name" : "St. Mary's County Library",
     "subtitle" : "Read, Learn, Discover",
-    "logo" : "LibraryLogoSMCL",
+    "logo" : "simplified-asset:account_logo_smcl.png",
     "authentication": {
       "passcodeLength" : 0,
       "passcodeAllowsLetters" : false
@@ -156,7 +156,7 @@
     "id": "urn:provider:org.simplye-md.smrla.mdcalv",
     "name" : "Calvert Library",
     "subtitle" : "Inspiring Possibility",
-    "logo" : "LibraryLogoCL",
+    "logo" : "simplified-asset:account_logo_cl.png",
     "authentication": {
       "passcodeLength" : 0,
       "passcodeAllowsLetters" : false
@@ -179,7 +179,7 @@
     "id": "urn:provider:org.simplye-md.smrla.mdchar",
     "name" : "Charles County Public Library",
     "subtitle" : "Engage, Discover and Learn",
-    "logo" : "LibraryLogoCCPL",
+    "logo" : "simplified-asset:account_logo_ccpl.png",
     "authentication": {
       "passcodeLength" : 0,
       "passcodeAllowsLetters" : false
@@ -202,7 +202,7 @@
     "id": "urn:provider:org.simplye-ca.bcl",
     "name": "Butte County Library",
     "subtitle": "Email: ebookrequest@buttecounty.net for questions",
-    "logo": "LibraryLogoButte",
+    "logo" : "simplified-asset:account_logo_bcl.png",
     "authentication": {
       "passcodeLength" : 0,
       "passcodeAllowsLetters" : false

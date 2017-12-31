@@ -5,8 +5,10 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.view.GravityCompat;
@@ -56,6 +58,8 @@ import org.nypl.simplified.multilibrary.Account;
 import org.nypl.simplified.stack.ImmutableStack;
 import org.slf4j.Logger;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -480,7 +484,8 @@ public abstract class SimplifiedActivity extends Activity
     this.adapter_accounts =
         new ArrayAdapterWithAccounts(this, drawer_item_accounts_untyped, inflater);
     this.adapter =
-        new ArrayAdapterWithoutAccounts(this, drawer_items, inflater, resources, drawer_list_view);
+        new ArrayAdapterWithoutAccounts(
+            this, this.getAssets(), drawer_items, inflater, resources, drawer_list_view);
 
     drawer_list_view.setAdapter(this.adapter);
 
@@ -693,9 +698,11 @@ public abstract class SimplifiedActivity extends Activity
     private final LayoutInflater inflater;
     private final Resources resources;
     private final ListView drawer_list_view;
+    private final AssetManager assets;
 
     ArrayAdapterWithoutAccounts(
         final SimplifiedActivity activity,
+        final AssetManager in_assets,
         final List<SimplifiedPart> drawer_items,
         final LayoutInflater inflater,
         final Resources resources,
@@ -703,6 +710,7 @@ public abstract class SimplifiedActivity extends Activity
 
       super(activity, R.layout.drawer_item, drawer_items);
       this.drawer_items = drawer_items;
+      this.assets = in_assets;
       this.inflater = inflater;
       this.resources = resources;
       this.drawer_list_view = drawer_list_view;
@@ -713,6 +721,7 @@ public abstract class SimplifiedActivity extends Activity
         final int position,
         final @Nullable View reuse,
         final @Nullable ViewGroup parent) {
+
       View v;
       if (reuse != null) {
         v = reuse;
@@ -738,7 +747,7 @@ public abstract class SimplifiedActivity extends Activity
 
         text_view.setText(account_provider.displayName());
         text_view.setTextColor(Color.parseColor(account_provider.mainColor()));
-        icon_view.setImageURI(Uri.parse(account_provider.logo().toString()));
+        configureLogo(this.assets, icon_view, account_provider.logo());
 
       } else {
         text_view.setText(part.getPartName(resources));
@@ -770,6 +779,24 @@ public abstract class SimplifiedActivity extends Activity
       }
 
       return v;
+    }
+  }
+
+  private static void configureLogo(
+      final AssetManager assets,
+      final ImageView icon_view,
+      final URI logo) {
+
+    if ("simplified-asset".equals(logo.getScheme())) {
+      final String path = logo.getSchemeSpecificPart();
+      LOG.debug("opening image asset: {}", path);
+      try (InputStream stream = assets.open(path)) {
+        icon_view.setImageDrawable(Drawable.createFromStream(stream, path));
+      } catch (final IOException e) {
+        LOG.error("could not open image asset: {}: ", logo, e);
+      }
+    } else {
+      icon_view.setImageURI(Uri.parse(logo.toString()));
     }
   }
 
