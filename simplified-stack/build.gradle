@@ -3,12 +3,16 @@ apply plugin: 'com.android.library'
 android {
   compileSdkVersion 26
   buildToolsVersion "26.0.2"
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
 }
 
 description = 'simplified-stack'
 
 dependencies {
-  compile group: 'com.io7m.jnull', name: 'io7m-jnull-core', version: '[1.0.0, 2.0.0)'
-  compile group: 'com.io7m.jfunctional', name: 'io7m-jfunctional-core', version: '[1.1.0, 2.0.0)'
-  testCompile group: 'junit', name: 'junit', version: '4.12'
+  compile 'com.io7m.jnull:io7m-jnull-core:[1.0.0, 2.0.0)'
+  compile 'com.io7m.jfunctional:io7m-jfunctional-core:[1.1.0, 2.0.0)'
+  testCompile 'junit:junit:4.12'
 }

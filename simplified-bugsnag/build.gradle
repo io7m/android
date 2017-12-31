@@ -3,21 +3,25 @@ apply plugin: 'com.android.library'
 android {
   compileSdkVersion 26
   buildToolsVersion "26.0.2"
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
 }
 
 description = 'simplified-bugsnag'
 
 dependencies {
   compile project(':simplified-books-core')
-  compile group: 'com.io7m.jnull', name: 'io7m-jnull-core', version: '[1.0.0, 2.0.0)'
+  compile 'com.io7m.jnull:io7m-jnull-core:[1.0.0, 2.0.0)'
   compile 'com.bugsnag:bugsnag-android:3.9.0'
   compile 'org.slf4j:slf4j-api:1.7.25'
-  compile(group: 'ch.qos.logback', name: 'logback-core', version: '1.1.3') {
+  compile('ch.qos.logback:logback-core:1.1.3') {
     /* This dependency was originally in the Maven provided scope, but the project was not of type war.
     This behavior is not yet supported by Gradle, so this dependency has been converted to a compile dependency.
     Please review and delete this closure when resolved. */
   }
-  compile(group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.3') {
+  compile('ch.qos.logback:logback-classic:1.1.3') {
     /* This dependency was originally in the Maven provided scope, but the project was not of type war.
     This behavior is not yet supported by Gradle, so this dependency has been converted to a compile dependency.
     Please review and delete this closure when resolved. */

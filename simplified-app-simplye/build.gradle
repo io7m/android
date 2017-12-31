@@ -22,15 +22,19 @@ android {
   lintOptions {
     checkReleaseBuilds false
   }
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
 }
 
 description = 'simplified-app-simplye'
 
 dependencies {
   compile project(':simplified-app-shared')
-  compile group: 'org.nypl.drm', name: 'nypl-drm-adobe-provider', version: '1.0.0'
-  compile group: 'org.nypl.drm', name: 'libnypl_adobe', version: '1.0.0'
-  compile group: 'org.nypl.drm', name: 'libnypl_adobe_filter', version: '1.0.0'
+  compile 'org.nypl.drm:nypl-drm-adobe-provider:1.0.0'
+  compile 'org.nypl.drm:libnypl_adobe:1.0.0'
+  compile 'org.nypl.drm:libnypl_adobe_filter:1.0.0'
 }
 
 apply plugin: 'android-native-dependencies'

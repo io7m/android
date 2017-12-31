@@ -4,6 +4,10 @@ apply plugin: 'net.ltgt.apt'
 android {
   compileSdkVersion 26
   buildToolsVersion "26.0.2"
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
 }
 
 description = 'simplified-http-core'
@@ -11,12 +15,10 @@ description = 'simplified-http-core'
 dependencies {
   compile project(':simplified-assert')
   compile project(':simplified-json-core')
-
-  compile group: 'com.io7m.jnull', name: 'io7m-jnull-core', version: '[1.0.0, 2.0.0)'
-  compile group: 'com.io7m.junreachable', name: 'io7m-junreachable-core', version: '[1.0.0, 2.0.0)'
-  compile group: 'com.io7m.jfunctional', name: 'io7m-jfunctional-core', version: '[1.1.0, 2.0.0)'
-  compile group: 'net.iharder', name: 'base64', version: '2.3.9'
-
-  compileOnly         'com.google.auto.value:auto-value:1.5'
+  compile 'com.io7m.jnull:io7m-jnull-core:[1.0.0, 2.0.0)'
+  compile 'com.io7m.junreachable:io7m-junreachable-core:[1.0.0, 2.0.0)'
+  compile 'com.io7m.jfunctional:io7m-jfunctional-core:[1.1.0, 2.0.0)'
+  compile 'net.iharder:base64:2.3.9'
+  compileOnly 'com.google.auto.value:auto-value:1.5'
   annotationProcessor 'com.google.auto.value:auto-value:1.5'
 }
