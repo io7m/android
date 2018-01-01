@@ -177,29 +177,22 @@ public abstract class CatalogFeedActivity extends CatalogActivity
 
   private static void onPossiblyReceivedEULALink(final OptionType<URI> latest) {
     latest.map_(
-        new ProcedureType<URI>() {
-          @Override
-          public void call(final URI latest_actual) {
-            final DocumentStoreType docs = Simplified.getDocumentStore();
+        latest_actual -> {
+          final DocumentStoreType docs = Simplified.getDocumentStore();
 
-            docs.getEULA().map_(
-                new ProcedureType<EULAType>() {
-                  @Override
-                  public void call(final EULAType eula) {
-                    try {
-                      eula.documentSetLatestURL(latest_actual.toURL());
-                    } catch (final MalformedURLException e) {
-                      LOG.error("could not use latest EULA link: ", e);
-                    }
-                  }
-                });
-          }
+          docs.getEULA().map_(
+              eula -> {
+                try {
+                  eula.documentSetLatestURL(latest_actual.toURL());
+                } catch (final MalformedURLException e) {
+                  LOG.error("could not use latest EULA link: ", e);
+                }
+              });
         });
   }
 
   @Override
   public void onBackPressed() {
-
     this.invalidateOptionsMenu();
     super.onBackPressed();
   }
@@ -258,12 +251,10 @@ public abstract class CatalogFeedActivity extends CatalogActivity
       final ScreenSizeInformationType screen,
       final Resources resources) {
 
-    final ViewGroup facets_view = NullCheck.notNull(
-        (ViewGroup) layout.findViewById(
-            R.id.catalog_feed_nogroups_facets));
-    final View facet_divider = NullCheck.notNull(
-        layout.findViewById(
-            R.id.catalog_feed_nogroups_facet_divider));
+    final ViewGroup facets_view =
+        NullCheck.notNull(layout.findViewById(R.id.catalog_feed_nogroups_facets));
+    final View facet_divider =
+        NullCheck.notNull(layout.findViewById(R.id.catalog_feed_nogroups_facet_divider));
 
     final Map<String, List<FeedFacetType>> facet_groups =
         feed.getFeedFacetsByGroup();
@@ -349,13 +340,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
             };
 
         final CatalogFacetSelectionListenerType facet_listener =
-            new CatalogFacetSelectionListenerType() {
-              @Override
-              public void onFacetSelected(
-                  final FeedFacetType in_selected) {
-                in_selected.matchFeedFacet(facet_feed_listener);
-              }
-            };
+            in_selected -> in_selected.matchFeedFacet(facet_feed_listener);
 
         final CatalogFacetButton fb = new CatalogFacetButton(
             this, NullCheck.notNull(group_name), group_copy, facet_listener);
@@ -450,25 +435,18 @@ public abstract class CatalogFeedActivity extends CatalogActivity
   }
 
   @Override
-  public void onBookFeedFailure(
-      final Throwable e) {
+  public void onBookFeedFailure(final Throwable e) {
+
     if (e instanceof CancellationException) {
       LOG.debug("Cancelled feed");
       return;
     }
 
-    UIThread.runOnUIThread(
-        new Runnable() {
-          @Override
-          public void run() {
-            onFeedLoadingFailureUI(e);
-          }
-        });
+    UIThread.runOnUIThread(() -> onFeedLoadingFailureUI(e));
   }
 
   @Override
-  public void onBookFeedSuccess(
-      final FeedWithoutGroups f) {
+  public void onBookFeedSuccess(final FeedWithoutGroups f) {
 
     LOG.debug("received locally generated feed: {}", f.getFeedID());
     this.feed = f;
@@ -476,8 +454,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
   }
 
   @Override
-  protected void onCreate(
-      final @Nullable Bundle state) {
+  protected void onCreate(final @Nullable Bundle state) {
     super.onCreate(state);
 
     this.navigationDrawerSetActionBarTitle();
@@ -595,8 +572,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     return true;
   }
 
-  private void onCreateOptionsMenuSearchItem(
-      final Menu menu_nn) {
+  private void onCreateOptionsMenuSearchItem(final Menu menu_nn) {
     final MenuItem search_item = menu_nn.findItem(R.id.catalog_action_search);
 
     /*
@@ -677,13 +653,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
       final URI u,
       final Throwable x) {
 
-    UIThread.runOnUIThread(
-        new Runnable() {
-          @Override
-          public void run() {
-            onFeedLoadingFailureUI(x);
-          }
-        });
+    UIThread.runOnUIThread(() -> onFeedLoadingFailureUI(x));
   }
 
   private void onFeedLoadingFailureUI(final Throwable e) {
@@ -699,22 +669,14 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     content_area.removeAllViews();
 
     final LayoutInflater inflater = this.getLayoutInflater();
-    final ViewGroup error = NullCheck.notNull(
-        (ViewGroup) inflater.inflate(
+    final ViewGroup error =
+        NullCheck.notNull((ViewGroup) inflater.inflate(
             R.layout.catalog_loading_error, content_area, false));
     content_area.addView(error);
     content_area.requestLayout();
 
-    final Button retry =
-        NullCheck.notNull((Button) error.findViewById(R.id.catalog_error_retry));
-    retry.setOnClickListener(
-        new OnClickListener() {
-          @Override
-          public void onClick(
-              final @Nullable View v) {
-            CatalogFeedActivity.this.retryFeed();
-          }
-        });
+    final Button retry = NullCheck.notNull(error.findViewById(R.id.catalog_error_retry));
+    retry.setOnClickListener(v -> this.retryFeed());
   }
 
   @Override
@@ -726,14 +688,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     this.feed = f;
 
     final CatalogFeedActivity cfa = this;
-    UIThread.runOnUIThread(
-        new Runnable() {
-          @Override
-          public void run() {
-            cfa.configureUpButton(cfa.getUpStack(), f.getFeedTitle());
-          }
-        });
-
+    UIThread.runOnUIThread(() -> cfa.configureUpButton(cfa.getUpStack(), f.getFeedTitle()));
     f.matchFeed(this);
   }
 
@@ -742,14 +697,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
 
     LOG.debug("received feed with blocks: {}", f.getFeedURI());
 
-    UIThread.runOnUIThread(
-        new Runnable() {
-          @Override
-          public void run() {
-            CatalogFeedActivity.this.onFeedWithGroupsUI(f);
-          }
-        });
-
+    UIThread.runOnUIThread(() -> CatalogFeedActivity.this.onFeedWithGroupsUI(f));
     onPossiblyReceivedEULALink(f.getFeedTermsOfService());
     return Unit.unit();
   }
@@ -778,25 +726,15 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     LOG.debug("restoring scroll position: {}", this.saved_scroll_pos);
 
     final ListView list = NullCheck.notNull(
-        (ListView) layout.findViewById(
+        layout.findViewById(
             R.id.catalog_feed_blocks_list));
 
     this.swipe_refresh_layout =
-        NullCheck.notNull((SwipeRefreshLayout) layout.findViewById(R.id.swipe_refresh_layout));
-    this.swipe_refresh_layout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-      @Override
-      public void onRefresh() {
-        retryFeed();
-      }
-    });
+        NullCheck.notNull(layout.findViewById(R.id.swipe_refresh_layout));
+    this.swipe_refresh_layout.setOnRefreshListener(() -> retryFeed());
 
     list.post(
-        new Runnable() {
-          @Override
-          public void run() {
-            list.setSelection(saved_scroll_pos);
-          }
-        });
+        () -> list.setSelection(saved_scroll_pos));
     list.setDividerHeight(0);
     this.list_view = list;
 
@@ -835,71 +773,10 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     LOG.debug("received feed without blocks: {}", f.getFeedURI());
 
     UIThread.runOnUIThread(
-        new Runnable() {
-          @Override
-          public void run() {
-            CatalogFeedActivity.this.onFeedWithoutGroupsUI(f);
-          }
-        });
+        () -> CatalogFeedActivity.this.onFeedWithoutGroupsUI(f));
 
     onPossiblyReceivedEULALink(f.getFeedTermsOfService());
     return Unit.unit();
-  }
-
-  /**
-   *
-   */
-
-  public void showAgeCheckAlert() {
-/*
-    if (!Simplified.getCurrentAccount().needsAuth() && !Simplified.getSharedPrefs().contains("age13")) {
-
-      final AlertDialog.Builder alert = new AlertDialog.Builder(CatalogFeedActivity.this);
-
-      // Setting Dialog Title
-      alert.setTitle(R.string.age_verification_title);
-
-      // Setting Dialog Message
-      alert.setMessage(R.string.age_verification_question);
-
-      // On pressing the under 13 button.
-      alert.setNeutralButton(R.string.age_verification_13_younger, new DialogInterface.OnClickListener() {
-            public void onClick(final DialogInterface dialog, final int which) {
-              Simplified.getSharedPrefs().putBoolean("age13", false);
-              //reload catalog
-              CatalogFeedActivity.this.reloadCatalogActivity(true);
-            }
-          }
-      );
-
-      // On pressing the 13 and over button
-      alert.setPositiveButton(R.string.age_verification_13_older, new DialogInterface.OnClickListener() {
-            public void onClick(final DialogInterface dialog, final int which) {
-              Simplified.getSharedPrefs().putBoolean("age13", true);
-              //reload catalog
-              CatalogFeedActivity.this.reloadCatalogActivity(false);
-            }
-          }
-      );
-
-      // Showing Alert Message
-      alert.show();
-    }*/
-  }
-
-  private void reloadCatalogActivity(
-      final boolean delete_books) {
-
-    final Intent i = new Intent(CatalogFeedActivity.this, MainCatalogActivity.class);
-    i.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-    i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-    i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    final Bundle b = new Bundle();
-    SimplifiedActivity.setActivityArguments(b, false);
-    i.putExtras(b);
-    startActivity(i);
-    overridePendingTransition(0, 0);
   }
 
   private void onFeedWithoutGroupsEmptyUI(final FeedWithoutGroups f) {
@@ -922,7 +799,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
             R.layout.catalog_feed_nogroups_empty, content_area, false));
 
     final TextView empty_text = NullCheck.notNull(
-        (TextView) layout.findViewById(
+        layout.findViewById(
             R.id.catalog_feed_nogroups_empty_text));
 
     if (this.getArguments().isSearching()) {
@@ -934,11 +811,6 @@ public abstract class CatalogFeedActivity extends CatalogActivity
 
     content_area.addView(layout);
     content_area.requestLayout();
-
-    if (!this.isFinishing()) {
-      this.showAgeCheckAlert();
-    }
-
   }
 
   private void onFeedWithoutGroupsNonEmptyUI(final FeedWithoutGroups feed_without_groups) {
@@ -970,42 +842,20 @@ public abstract class CatalogFeedActivity extends CatalogActivity
         NullCheck.notNull(this.getResources());
 
     final GridView grid_view = NullCheck.notNull(
-        (GridView) layout.findViewById(
+        layout.findViewById(
             R.id.catalog_feed_nogroups_grid));
 
     this.swipe_refresh_layout =
-        NullCheck.notNull((SwipeRefreshLayout) layout.findViewById(R.id.swipe_refresh_layout));
+        NullCheck.notNull(layout.findViewById(R.id.swipe_refresh_layout));
 
-    this.swipe_refresh_layout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-      @Override
-      public void onRefresh() {
-
-/*        final BooksType books = getBooksType();
-
-        books.accountSync(new SyncListener(), new DeviceActivationListenerType() {
-          @Override
-          public void onDeviceActivationFailure(final String message) {
-
-          }
-
-          @Override
-          public void onDeviceActivationSuccess() {
-
-          }
-        });
-        CatalogFeedActivity.this.retryFeed();*/
-      }
+    this.swipe_refresh_layout.setOnRefreshListener(() -> {
+      // XXX: Refresh the feed
     });
 
-    this.configureFacets(feed_without_groups, layout, Simplified.getScreenSizeInformation(), resources);
+    this.configureFacets(
+        feed_without_groups, layout, Simplified.getScreenSizeInformation(), resources);
 
-    grid_view.post(
-        new Runnable() {
-          @Override
-          public void run() {
-            grid_view.setSelection(CatalogFeedActivity.this.saved_scroll_pos);
-          }
-        });
+    grid_view.post(() -> grid_view.setSelection(CatalogFeedActivity.this.saved_scroll_pos));
     this.list_view = grid_view;
 
     final CatalogFeedArgumentsType args = this.getArguments();
@@ -1013,14 +863,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
         this.newUpStack(args);
 
     final CatalogBookSelectionListenerType book_select_listener =
-        new CatalogBookSelectionListenerType() {
-          @Override
-          public void onSelectBook(
-              final CatalogFeedBookCellView v,
-              final FeedEntryOPDS e) {
-            CatalogFeedActivity.this.onSelectedBook(new_up_stack, e);
-          }
-        };
+        (v, e) -> CatalogFeedActivity.this.onSelectedBook(new_up_stack, e);
 
     final CatalogFeedWithoutGroups without =
         new CatalogFeedWithoutGroups(
@@ -1072,16 +915,8 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     content_area.addView(error);
     content_area.requestLayout();
 
-    final Button retry =
-        NullCheck.notNull((Button) error.findViewById(R.id.catalog_error_retry));
-    retry.setOnClickListener(
-        new OnClickListener() {
-          @Override
-          public void onClick(
-              final @Nullable View v) {
-            CatalogFeedActivity.this.retryFeed();
-          }
-        });
+    final Button retry = NullCheck.notNull(error.findViewById(R.id.catalog_error_retry));
+    retry.setOnClickListener(v -> this.retryFeed());
   }
 
   @Override
@@ -1117,7 +952,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
 
     LOG.debug("onSelectedBook: {}", this);
     CatalogBookDetailActivity.startNewActivity(
-        CatalogFeedActivity.this,
+        this,
         new_up_stack,
         this.navigationDrawerGetPart(),
         e);
@@ -1199,7 +1034,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
 //        new CatalogFacetPseudoTitleProvider(resources),
 //        c.getSearchTerms(),
 //        selection,
-//        CatalogFeedActivity.this);
+//        this);
 
     throw new UnimplementedCodeException();
   }

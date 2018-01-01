@@ -131,82 +131,66 @@ public abstract class SimplifiedActivity extends Activity
         ImmutableMap.builder();
 
     drawer_actions.put(
-        PART_BOOKS, new FunctionType<Bundle, Unit>() {
-          @Override
-          public Unit call(final Bundle b) {
+        PART_BOOKS, b -> {
+          final OptionType<String> no_search = Option.none();
+          final ImmutableStack<CatalogFeedArgumentsType> empty_stack =
+              ImmutableStack.empty();
+          final CatalogFeedArgumentsLocalBooks local =
+              new CatalogFeedArgumentsLocalBooks(
+                  empty_stack,
+                  PART_BOOKS.getPartName(resources),
+                  FeedFacetPseudo.FacetType.SORT_BY_TITLE,
+                  no_search,
+                  BooksFeedSelection.BOOKS_FEED_LOANED);
+          CatalogFeedActivity.setActivityArguments(b, local);
+          return Unit.unit();
+        });
+
+    drawer_actions.put(
+        PART_CATALOG, b -> {
+          final AccountProvider account_provider =
+              Simplified.getProfilesController().profileAccountProviderCurrent();
+          final ImmutableStack<CatalogFeedArgumentsType> empty =
+              ImmutableStack.empty();
+          final CatalogFeedArgumentsRemote remote =
+              new CatalogFeedArgumentsRemote(
+                  false,
+                  NullCheck.notNull(empty),
+                  NullCheck.notNull(resources.getString(R.string.feature_app_name)),
+                  account_provider.catalogURI(),
+                  false);
+          CatalogFeedActivity.setActivityArguments(b, remote);
+          return Unit.unit();
+        });
+
+    if (holds_enabled) {
+      drawer_actions.put(
+          PART_HOLDS, b -> {
             final OptionType<String> no_search = Option.none();
             final ImmutableStack<CatalogFeedArgumentsType> empty_stack =
                 ImmutableStack.empty();
             final CatalogFeedArgumentsLocalBooks local =
                 new CatalogFeedArgumentsLocalBooks(
                     empty_stack,
-                    PART_BOOKS.getPartName(resources),
+                    PART_HOLDS.getPartName(resources),
                     FeedFacetPseudo.FacetType.SORT_BY_TITLE,
                     no_search,
-                    BooksFeedSelection.BOOKS_FEED_LOANED);
+                    BooksFeedSelection.BOOKS_FEED_HOLDS);
             CatalogFeedActivity.setActivityArguments(b, local);
             return Unit.unit();
-          }
-        });
-
-    drawer_actions.put(
-        PART_CATALOG, new FunctionType<Bundle, Unit>() {
-          @Override
-          public Unit call(final Bundle b) {
-
-            final AccountProvider account_provider =
-                Simplified.getProfilesController().profileAccountProviderCurrent();
-            final ImmutableStack<CatalogFeedArgumentsType> empty =
-                ImmutableStack.empty();
-            final CatalogFeedArgumentsRemote remote =
-                new CatalogFeedArgumentsRemote(
-                    false,
-                    NullCheck.notNull(empty),
-                    NullCheck.notNull(resources.getString(R.string.feature_app_name)),
-                    account_provider.catalogURI(),
-                    false);
-            CatalogFeedActivity.setActivityArguments(b, remote);
-            return Unit.unit();
-          }
-        });
-
-    if (holds_enabled) {
-      drawer_actions.put(
-          PART_HOLDS, new FunctionType<Bundle, Unit>() {
-            @Override
-            public Unit call(final Bundle b) {
-              final OptionType<String> no_search = Option.none();
-              final ImmutableStack<CatalogFeedArgumentsType> empty_stack =
-                  ImmutableStack.empty();
-              final CatalogFeedArgumentsLocalBooks local =
-                  new CatalogFeedArgumentsLocalBooks(
-                      empty_stack,
-                      PART_HOLDS.getPartName(resources),
-                      FeedFacetPseudo.FacetType.SORT_BY_TITLE,
-                      no_search,
-                      BooksFeedSelection.BOOKS_FEED_HOLDS);
-              CatalogFeedActivity.setActivityArguments(b, local);
-              return Unit.unit();
-            }
           });
     }
 
     drawer_actions.put(
-        PART_SETTINGS, new FunctionType<Bundle, Unit>() {
-          @Override
-          public Unit call(final Bundle b) {
-            setActivityArguments(b, false);
-            return Unit.unit();
-          }
+        PART_SETTINGS, b -> {
+          setActivityArguments(b, false);
+          return Unit.unit();
         });
 
     drawer_actions.put(
-        PART_SWITCHER, new FunctionType<Bundle, Unit>() {
-          @Override
-          public Unit call(final Bundle b) {
-            setActivityArguments(b, false);
-            return Unit.unit();
-          }
+        PART_SWITCHER, b -> {
+          setActivityArguments(b, false);
+          return Unit.unit();
         });
 
     return drawer_actions.build();
@@ -261,8 +245,6 @@ public abstract class SimplifiedActivity extends Activity
    */
 
   protected abstract boolean navigationDrawerShouldShowIndicator();
-
-
 
   private void finishWithConditionalAnimationOverride() {
     this.finish();
@@ -417,6 +399,8 @@ public abstract class SimplifiedActivity extends Activity
      * the navigation drawer, then the user is assumed to understand how the
      * drawer works. Therefore, if it appears that the drawer should be
      * opened, check to see if it should actually be closed.
+     *
+     * XXX: Make this part of the profile preferences
      */
 
     final SharedPreferences in_drawer_settings =
