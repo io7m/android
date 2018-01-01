@@ -48,8 +48,7 @@ public final class ProfileSelectionActivity extends Activity {
   }
 
   @Override
-  protected void onCreate(
-      final @Nullable Bundle state) {
+  protected void onCreate(final @Nullable Bundle state) {
 
     this.setTheme(Simplified.getCurrentTheme());
     super.onCreate(state);
@@ -186,10 +185,13 @@ public final class ProfileSelectionActivity extends Activity {
   private void openCatalog() {
     final Intent i = new Intent(this, MainCatalogActivity.class);
     this.startActivity(i);
+    this.overridePendingTransition(0, 0);
+    this.finish();
   }
 
   private void openCreationDialog() {
     final Intent i = new Intent(this, ProfileCreationActivity.class);
     this.startActivity(i);
+    this.overridePendingTransition(0, 0);
   }
 }
