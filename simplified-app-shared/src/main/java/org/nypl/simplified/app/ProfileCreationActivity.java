@@ -32,6 +32,10 @@ import java.util.concurrent.ExecutionException;
 
 import static org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationFailed.ErrorCode.ERROR_IO;
 
+/**
+ * An activity that allows for the creation of profiles.
+ */
+
 public final class ProfileCreationActivity extends Activity {
 
   private static final Logger LOG = LogUtilities.getLog(ProfileCreationActivity.class);

@@ -33,6 +33,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+/**
+ * An activity that allows users to pick from a list of profiles, or to create a new profile.
+ */
+
 public final class ProfileSelectionActivity extends Activity {
 
   private static final Logger LOG = LogUtilities.getLog(ProfileSelectionActivity.class);
@@ -103,7 +107,8 @@ public final class ProfileSelectionActivity extends Activity {
     UIThread.runOnUIThread(() -> {
 
       /*
-       * XXX: What exactly can anyone do about this?
+       * XXX: What exactly can anyone do about this? It's made worse by the fact that if this
+       * happens here, the user can't even get into the program to report a bug directly...
        */
 
       final AlertDialog.Builder alert_builder =
