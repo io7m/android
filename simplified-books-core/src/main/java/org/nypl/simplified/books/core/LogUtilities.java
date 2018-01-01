@@ -29,7 +29,7 @@ public final class LogUtilities
   public static void errorWithOptionalException(
     final Logger log,
     final String message,
-    final OptionType<Throwable> error)
+    final OptionType<? extends Throwable> error)
   {
     if (error.isSome()) {
       final Some<Throwable> some = (Some<Throwable>) error;

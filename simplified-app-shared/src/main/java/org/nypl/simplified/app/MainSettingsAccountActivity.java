@@ -78,14 +78,11 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
   private @Nullable TextView account_name_text;
   private @Nullable TextView account_subtitle_text;
   private @Nullable ImageView account_icon;
-
   private @Nullable TextView barcode_text;
   private @Nullable TextView pin_text;
   private @Nullable TableLayout table_with_code;
   private @Nullable TableLayout table_signup;
-
   private @Nullable Button login;
-
   private Account account;
 
   /**
@@ -109,7 +106,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
   @Override
   public void onAccountIsLoggedIn(
     final AccountAuthenticationCredentials creds) {
-    MainSettingsAccountActivity.LOG.debug("account is logged in: {}", creds);
+    LOG.debug("account is logged in: {}", creds);
 
 
     final BooksType books = getBooksType();
@@ -186,9 +183,9 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
   public void onAccountLogoutFailure(
     final OptionType<Throwable> error,
     final String message) {
-    MainSettingsAccountActivity.LOG.debug("onAccountLogoutFailure");
+    LOG.debug("onAccountLogoutFailure");
     LogUtilities.errorWithOptionalException(
-      MainSettingsAccountActivity.LOG, message, error);
+      LOG, message, error);
 
     final Resources rr = NullCheck.notNull(this.getResources());
     final MainSettingsAccountActivity ctx = this;
@@ -208,7 +205,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
 
   @Override
   public void onAccountLogoutFailureServerError(final int code) {
-    MainSettingsAccountActivity.LOG.error(
+    LOG.error(
       "onAccountLoginFailureServerError: {}", code);
 
     final Resources rr = NullCheck.notNull(this.getResources());
@@ -220,7 +217,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
 
   @Override
   public void onAccountLogoutSuccess() {
-    MainSettingsAccountActivity.LOG.debug("onAccountLogoutSuccess");
+    LOG.debug("onAccountLogoutSuccess");
     this.onAccountIsNotLoggedIn();
 
     final Resources rr = NullCheck.notNull(this.getResources());
@@ -700,14 +697,14 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
       });
 
       if (eula.eulaHasAgreed()) {
-        MainSettingsAccountActivity.LOG.debug("EULA: agreed");
+        LOG.debug("EULA: agreed");
 
       } else {
-        MainSettingsAccountActivity.LOG.debug("EULA: not agreed");
+        LOG.debug("EULA: not agreed");
 
       }
     } else {
-      MainSettingsAccountActivity.LOG.debug("EULA: unavailable");
+      LOG.debug("EULA: unavailable");
     }
 
 
@@ -734,24 +731,22 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
     final LoginListenerType login_listener = new LoginListenerType() {
       @Override
       public void onLoginAborted() {
-        MainSettingsAccountActivity.LOG.trace("feed auth: aborted login");
+        LOG.trace("feed auth: aborted login");
 //        listener.onAuthenticationNotProvided();
       }
 
       @Override
       public void onLoginFailure(
-        final OptionType<Throwable> error,
+        final OptionType<? extends Throwable> error,
         final String message) {
-        LogUtilities.errorWithOptionalException(
-          MainSettingsAccountActivity.LOG, "failed login", error);
+        LogUtilities.errorWithOptionalException(LOG, "failed login", error);
 //        listener.onAuthenticationError(error, message);
       }
 
       @Override
       public void onLoginSuccess(
         final AccountAuthenticationCredentials creds) {
-        MainSettingsAccountActivity.LOG.trace(
-          "feed auth: login supplied new credentials");
+        LOG.trace("feed auth: login supplied new credentials");
 //        LoginActivity.this.openCatalog();
 
         finish();
@@ -773,14 +768,13 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity implem
 
           if (getCurrentAccount().getId() == MainSettingsAccountActivity.this.account.getId())
           {
-            final LoginDialog df =
-              LoginDialog.newDialog("Login required", barcode, pin);
+            final LoginDialog df = LoginDialog.newDialog(Simplified.getProfilesController(), "Login required", barcode, pin);
             df.setLoginListener(login_listener);
             df.show(fm, "login-dialog");
           }
           else {
             final LoginDialog df =
-              LoginDialog.newDialog("Login required", barcode, pin, MainSettingsAccountActivity.this.account);
+              LoginDialog.newDialog(Simplified.getProfilesController(), "Login required", barcode, pin, MainSettingsAccountActivity.this.account);
             df.setLoginListener(login_listener);
             df.show(fm, "login-dialog");
           }

@@ -24,26 +24,21 @@ import org.slf4j.Logger;
 /**
  *
  */
+
 public final class LoginActivity extends Activity {
 
   /**
    * Construct login activity
    */
 
-  public LoginActivity()
-  {
+  public LoginActivity() {
 
   }
 
-  private static final Logger LOG;
-
-  static {
-    LOG = LogUtilities.getLog(LoginActivity.class);
-  }
+  private static final Logger LOG = LogUtilities.getLog(LoginActivity.class);
 
   @Override
-  protected void onCreate(
-      final Bundle state) {
+  protected void onCreate(final Bundle state) {
 
     this.setTheme(Simplified.getCurrentTheme());
     super.onCreate(state);
@@ -52,26 +47,13 @@ public final class LoginActivity extends Activity {
     final Resources rr = NullCheck.notNull(this.getResources());
     final boolean clever_enabled = rr.getBoolean(R.bool.feature_auth_provider_clever);
 
-    final ImageButton barcode = NullCheck.notNull((ImageButton) findViewById(R.id.login_with_barcode));
+    final ImageButton barcode = NullCheck.notNull(findViewById(R.id.login_with_barcode));
+    barcode.setOnClickListener(view -> this.onLoginWithBarcode());
 
-    barcode.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(final View view) {
-        LoginActivity.this.onLoginWithBarcode();
-      }
-    });
-
-    final ImageButton clever = NullCheck.notNull((ImageButton) findViewById(R.id.login_with_clever));
-
+    final ImageButton clever = NullCheck.notNull(findViewById(R.id.login_with_clever));
     if (clever_enabled) {
-      clever.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(final View view) {
-          LoginActivity.this.onLoginWithClever();
-        }
-      });
+      clever.setOnClickListener(view -> this.onLoginWithClever());
       clever.setVisibility(View.VISIBLE);
-
     } else {
       clever.setVisibility(View.GONE);
     }
@@ -79,14 +61,11 @@ public final class LoginActivity extends Activity {
 
   private void openCatalog() {
     final Intent i = new Intent(this, MainCatalogActivity.class);
-
     i.putExtra("reload", true);
-
     this.startActivity(i);
     this.overridePendingTransition(0, 0);
     this.finish();
   }
-
 
   /**
    *
@@ -97,68 +76,59 @@ public final class LoginActivity extends Activity {
     final LoginListenerType login_listener = new LoginListenerType() {
       @Override
       public void onLoginAborted() {
-        LoginActivity.LOG.trace("feed auth: aborted login");
+        LOG.trace("feed auth: aborted login");
 //        listener.onAuthenticationNotProvided();
       }
 
       @Override
       public void onLoginFailure(
-        final OptionType<Throwable> error,
-        final String message) {
-        LogUtilities.errorWithOptionalException(
-          LoginActivity.LOG, "failed login", error);
+          final OptionType<? extends Throwable> error,
+          final String message) {
+        LogUtilities.errorWithOptionalException(LOG, "failed login", error);
 //        listener.onAuthenticationError(error, message);
       }
 
       @Override
       public void onLoginSuccess(
-        final AccountAuthenticationCredentials creds) {
-        LoginActivity.LOG.trace(
-          "feed auth: login supplied new credentials");
+          final AccountAuthenticationCredentials creds) {
+        LOG.trace("feed auth: login supplied new credentials");
         LoginActivity.this.openCatalog();
       }
     };
 
 
     final FragmentManager fm = this.getFragmentManager();
-    UIThread.runOnUIThread(
-      new Runnable() {
-        @Override
-        public void run() {
-          final AccountBarcode barcode = AccountBarcode.create("");
-          final AccountPIN pin = AccountPIN.create("");
-
-          final LoginDialog df =
-            LoginDialog.newDialog("Login required", barcode, pin);
-          df.setLoginListener(login_listener);
-          df.show(fm, "login-dialog");
-        }
-      });
-
+    UIThread.runOnUIThread(() -> {
+      final AccountBarcode barcode = AccountBarcode.create("");
+      final AccountPIN pin = AccountPIN.create("");
+      final LoginDialog dialog =
+          LoginDialog.newDialog(Simplified.getProfilesController(),"Login required", barcode, pin);
+      dialog.setLoginListener(login_listener);
+      dialog.show(fm, "login-dialog");
+    });
   }
 
   /**
    *
    */
+
   public void onLoginWithClever() {
-
     final Intent i = new Intent(this, CleverLoginActivity.class);
-
     this.startActivityForResult(i, 1);
-
     this.overridePendingTransition(0, 0);
-
   }
 
   @Override
-  protected void onActivityResult(final int request_code, final int result_code, final Intent data) {
-    super.onActivityResult(request_code, result_code, data);
+  protected void onActivityResult(
+      final int request_code,
+      final int result_code,
+      final Intent data) {
 
+    super.onActivityResult(request_code, result_code, data);
     if (result_code == 1) {
       this.openCatalog();
       final BooksType books = getBooks();
       books.fulfillExistingBooks();
-
     }
   }
 

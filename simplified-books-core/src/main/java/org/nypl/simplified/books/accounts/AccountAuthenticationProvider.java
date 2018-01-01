@@ -19,8 +19,7 @@ public abstract class AccountAuthenticationProvider {
    * @param in_value The raw provider name value
    */
 
-  public static AccountAuthenticationProvider create(
-      final String in_value) {
+  public static AccountAuthenticationProvider create(final String in_value) {
     return new AutoValue_AccountAuthenticationProvider(in_value);
   }
 

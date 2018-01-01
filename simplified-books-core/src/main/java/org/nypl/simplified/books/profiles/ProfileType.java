@@ -1,5 +1,11 @@
 package org.nypl.simplified.books.profiles;
 
+import org.nypl.simplified.books.accounts.AccountID;
+import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.accounts.AccountType;
+import org.nypl.simplified.books.accounts.AccountsDatabaseException;
+import org.nypl.simplified.books.accounts.AccountsDatabaseType;
+
 import java.io.IOException;
 
 /**
@@ -17,6 +23,12 @@ import java.io.IOException;
 public interface ProfileType extends ProfileReadableType {
 
   /**
+   * @return The accounts database for the profile
+   */
+
+  AccountsDatabaseType accountsDatabase();
+
+  /**
    * Set the profile's preferences to the given value.
    *
    * @param preferences The new preferences
@@ -24,4 +36,26 @@ public interface ProfileType extends ProfileReadableType {
 
   void preferencesUpdate(
       ProfilePreferences preferences) throws IOException;
+
+  /**
+   * Create an account using the given provider.
+   *
+   * @param account_provider The account provider
+   */
+
+  AccountType createAccount(
+      AccountProvider account_provider) throws AccountsDatabaseException;
+
+  /**
+   * Delete the account using the given provider.
+   *
+   * @param account_provider The account provider
+   * @return The ID of the deleted account
+   * @throws AccountsDatabaseException On accounts database problems
+   * @see AccountsDatabaseType#deleteAccountByProvider(AccountProvider)
+   */
+
+  AccountID deleteAccountByProvider(
+      AccountProvider account_provider)
+      throws AccountsDatabaseException;
 }

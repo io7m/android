@@ -2,6 +2,8 @@ package org.nypl.simplified.books.accounts;
 
 import com.google.auto.value.AutoValue;
 
+import java.net.URI;
+
 /**
  * <p>A description of the details of authentication.</p>
  */
@@ -26,6 +28,12 @@ public abstract class AccountProviderAuthenticationDescription {
   public abstract boolean passCodeMayContainLetters();
 
   /**
+   * @return The login URI
+   */
+
+  public abstract URI loginURI();
+
+  /**
    * The type of mutable builders for account providers.
    */
 
@@ -35,6 +43,14 @@ public abstract class AccountProviderAuthenticationDescription {
     Builder() {
 
     }
+
+    /**
+     * @see #loginURI()
+     * @param uri The default login URI
+     * @return The current builder
+     */
+
+    public abstract Builder setLoginURI(URI uri);
 
     /**
      * @param length The pass code length

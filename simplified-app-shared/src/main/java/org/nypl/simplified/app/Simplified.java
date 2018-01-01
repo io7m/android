@@ -35,7 +35,7 @@ import org.nypl.simplified.books.accounts.AccountsDatabases;
 import org.nypl.simplified.books.book_registry.BookRegistry;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
-import org.nypl.simplified.books.controller.BooksController;
+import org.nypl.simplified.books.controller.Controller;
 import org.nypl.simplified.books.controller.BooksControllerType;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.core.AuthenticationDocumentValuesType;
@@ -123,7 +123,7 @@ public final class Simplified extends Application {
   private AccountProviderCollection account_providers;
   private NetworkConnectivity network_connectivity;
   private BookRegistryType book_registry;
-  private BooksController book_controller;
+  private Controller book_controller;
   private ListeningExecutorService exec_background;
 
 
@@ -231,6 +231,15 @@ public final class Simplified extends Application {
   public static FeedLoaderType getFeedLoader() {
     final Simplified i = Simplified.checkInitialized();
     return i.feed_loader;
+  }
+
+  /**
+   * @return The Helpstack interface, if one is available
+   */
+
+  public static OptionType<HelpstackType> getHelpStack() {
+    final Simplified i = Simplified.checkInitialized();
+    return i.helpstack;
   }
 
   @NonNull
@@ -565,13 +574,12 @@ public final class Simplified extends Application {
     }
 
     LOG.debug("initializing book controller");
-    this.book_controller = BooksController.createBookController(
-        this.exec_books, this.profiles, this.book_registry, new FunctionType<Unit, AccountProviderCollection>() {
-          @Override
-          public AccountProviderCollection call(final Unit x) {
-            return account_providers;
-          }
-        });
+    this.book_controller = Controller.createBookController(
+        this.exec_books,
+        this.http,
+        this.profiles,
+        this.book_registry,
+        ignored -> this.account_providers);
 
     LOG.debug("initializing feed loader");
     this.feed_parser = createFeedParser();
@@ -600,7 +608,6 @@ public final class Simplified extends Application {
     LOG.debug("finished booting");
     Simplified.INSTANCE = this;
   }
-
 
   private static final class NetworkConnectivity implements NetworkConnectivityType {
 

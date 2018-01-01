@@ -254,7 +254,8 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
                     .setPatron(patron)
                     .build();
 
-            books.accountLogin(creds, CleverLoginActivity.this);
+            // books.accountLogin(creds, CleverLoginActivity.this);
+            throw new UnimplementedCodeException();
 
           } else {
             //error display problem.
@@ -431,6 +432,7 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
   public static String getDeviceActivationErrorMessage(
       final Resources rr,
       final String message) {
+
     /**
      * This is absolutely not the way to do this. The nypl-drm-adobe
      * interfaces should be expanded to return values of an enum type. For now,

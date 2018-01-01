@@ -1,5 +1,7 @@
 package org.nypl.simplified.books.accounts;
 
+import com.io7m.jfunctional.OptionType;
+
 import org.nypl.simplified.books.book_database.BookDatabaseType;
 
 import java.io.File;
@@ -14,29 +16,21 @@ import java.net.URI;
  * program logic.</p>
  */
 
-public interface AccountType {
-
-  /**
-   * @return The account ID
-   */
-
-  AccountID id();
-
-  /**
-   * @return The full path to the on-disk directory storing data for this account
-   */
-
-  File directory();
-
-  /**
-   * @return The URI of the account provider associated with this account
-   */
-
-  URI provider();
+public interface AccountType extends AccountReadableType {
 
   /**
    * @return The book database owned by this account
    */
 
   BookDatabaseType bookDatabase();
+
+  /**
+   * Update the account credentials.
+   *
+   * @param credentials The new credentials
+   * @throws AccountsDatabaseException On database errors
+   */
+
+  void setCredentials(OptionType<AccountAuthenticationCredentials> credentials)
+      throws AccountsDatabaseException;
 }

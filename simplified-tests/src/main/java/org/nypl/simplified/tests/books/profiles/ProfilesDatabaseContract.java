@@ -11,8 +11,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.nypl.simplified.books.accounts.AccountProvider;
-import org.nypl.simplified.books.accounts.AccountsDatabase;
+import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseFactoryType;
+import org.nypl.simplified.books.accounts.AccountsDatabaseLastAccountException;
+import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
 import org.nypl.simplified.books.accounts.AccountsDatabases;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.books.profiles.ProfileAnonymousDisabledException;
@@ -30,10 +32,6 @@ import org.slf4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
-import static org.nypl.simplified.books.profiles.ProfilesDatabaseType.AnonymousProfileEnabled.*;
 
 public abstract class ProfilesDatabaseContract {
 
@@ -384,6 +382,66 @@ public abstract class ProfilesDatabaseContract {
 
     expected.expect(ProfileAnonymousEnabledException.class);
     db0.setProfileCurrent(ProfileID.create(23));
+  }
+
+  @Test
+  public final void testCreateDelete()
+      throws Exception {
+    final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
+    final File f_pro = new File(f_tmp, "profiles");
+
+    final ProfilesDatabaseType db0 =
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+    final AccountProvider acc0 =
+        fakeProvider("http://example.com/accounts0/");
+    final AccountProvider acc1 =
+        fakeProvider("http://example.com/accounts1/");
+
+    final ProfileType p0 = db0.createProfile(acc0, "Kermit");
+    db0.setProfileCurrent(p0.id());
+
+    final AccountType a0 = p0.createAccount(acc1);
+    Assert.assertTrue("Account must exist", p0.accounts().containsKey(a0.id()));
+    p0.deleteAccountByProvider(acc1);
+    Assert.assertFalse("Account must not exist", p0.accounts().containsKey(a0.id()));
+  }
+
+  @Test
+  public final void testDeleteUnknownProvider()
+      throws Exception {
+    final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
+    final File f_pro = new File(f_tmp, "profiles");
+
+    final ProfilesDatabaseType db0 =
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+    final AccountProvider acc0 =
+        fakeProvider("http://example.com/accounts0/");
+    final AccountProvider acc1 =
+        fakeProvider("http://example.com/accounts1/");
+
+    final ProfileType p0 = db0.createProfile(acc0, "Kermit");
+    db0.setProfileCurrent(p0.id());
+
+    expected.expect(AccountsDatabaseNonexistentException.class);
+    p0.deleteAccountByProvider(acc1);
+  }
+
+  @Test
+  public final void testDeleteLastAccount()
+      throws Exception {
+    final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
+    final File f_pro = new File(f_tmp, "profiles");
+
+    final ProfilesDatabaseType db0 =
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+    final AccountProvider acc0 =
+        fakeProvider("http://example.com/accounts0/");
+
+    final ProfileType p0 = db0.createProfile(acc0, "Kermit");
+    db0.setProfileCurrent(p0.id());
+
+    expected.expect(AccountsDatabaseLastAccountException.class);
+    p0.deleteAccountByProvider(acc0);
   }
 
   private static AccountProvider exampleAccountProvider() {

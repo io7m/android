@@ -1,10 +1,8 @@
 package org.nypl.simplified.books.profiles;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.io7m.jfunctional.FunctionType;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
-import com.io7m.jfunctional.PartialFunctionType;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
@@ -16,6 +14,7 @@ import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseException;
 import org.nypl.simplified.books.accounts.AccountsDatabaseFactoryType;
+import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
 import org.nypl.simplified.books.accounts.AccountsDatabaseType;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.files.FileLocking;
@@ -115,7 +114,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
     profiles.remove(ANONYMOUS_PROFILE_ID);
 
     if (!errors.isEmpty()) {
-      throw new ProfileDatabaseException(
+      throw new ProfileDatabaseOpenException(
           "One or more errors occurred whilst trying to open the profile database.", errors);
     }
 
@@ -188,7 +187,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
     }
 
     if (!errors.isEmpty()) {
-      throw new ProfileDatabaseException(
+      throw new ProfileDatabaseOpenException(
           "One or more errors occurred whilst trying to open the profile database.", errors);
     }
 
@@ -278,16 +277,12 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
     NullCheck.notNull(display_name, "Display name");
 
     if (display_name.isEmpty()) {
-      throw new ProfileDatabaseException(
-          "Display name cannot be empty",
-          Collections.<Exception>emptyList());
+      throw new ProfileCreateInvalidException("Display name cannot be empty");
     }
 
     final OptionType<ProfileType> existing = findProfileWithDisplayName(display_name);
     if (existing.isSome()) {
-      throw new ProfileDatabaseException(
-          "Display name is already used by an existing profile",
-          Collections.<Exception>emptyList());
+      throw new ProfileCreateDuplicateException("Display name is already used by an existing profile");
     }
 
     final ProfileID next;
@@ -353,13 +348,10 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
         writeDescription(profile_dir, desc);
         return profile;
       } catch (final AccountsDatabaseException e) {
-        throw new ProfileDatabaseException(
-            "Could not initialize accounts database",
-            Collections.singletonList((Exception) e));
+        throw new ProfileDatabaseAccountsException("Could not initialize accounts database", e);
       }
     } catch (final IOException e) {
-      throw new ProfileDatabaseException(
-          "Could not write profile data", Collections.singletonList((Exception) e));
+      throw new ProfileDatabaseIOException("Could not write profile data", e);
     }
   }
 
@@ -371,7 +363,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
 
     for (final Profile profile : this.profiles.values()) {
       if (profile.displayName().equals(display_name)) {
-        return Option.some((ProfileType) profile);
+        return Option.some(profile);
       }
     }
     return Option.none();
@@ -419,13 +411,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
           }
         }
         case ANONYMOUS_PROFILE_DISABLED: {
-          return Option.of(this.profile_current)
-              .map(new FunctionType<ProfileID, ProfileType>() {
-                @Override
-                public ProfileType call(final ProfileID id) {
-                  return profiles.get(id);
-                }
-              });
+          return Option.of(this.profile_current).map(profiles::get);
         }
       }
 
@@ -435,6 +421,10 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
 
   @Override
   public ProfileType currentProfileUnsafe() throws ProfileNoneCurrentException {
+    return currentProfileGet();
+  }
+
+  private Profile currentProfileGet() throws ProfileNoneCurrentException {
     synchronized (this.profile_current_lock) {
       final ProfileID id = this.profile_current;
       if (id != null) {
@@ -444,14 +434,24 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
     }
   }
 
+  @Override
+  public void setAccountCurrent(final AccountID id)
+      throws ProfileNoneCurrentException, AccountsDatabaseNonexistentException {
+
+    final Profile profile = currentProfileGet();
+    profile.setAccountCurrent(id);
+  }
+
   private static final class Profile implements ProfileType {
 
     private final Object description_lock;
     private @GuardedBy("description_lock") ProfileDescription description;
 
+    private final Object account_current_lock;
+    private @GuardedBy("account_current_lock") AccountType account_current;
+
     private ProfilesDatabase owner;
     private final AccountsDatabaseType accounts;
-    private final AccountType account_current;
     private final ProfileID id;
     private final File directory;
 
@@ -474,6 +474,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
       this.account_current =
           NullCheck.notNull(in_account_current, "account_current");
 
+      this.account_current_lock = new Object();
       this.description_lock = new Object();
       this.owner = in_owner;
     }
@@ -513,7 +514,9 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
 
     @Override
     public AccountType accountCurrent() {
-      return this.account_current;
+      synchronized (this.account_current_lock) {
+        return this.account_current;
+      }
     }
 
     @Override
@@ -529,8 +532,12 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
     }
 
     @Override
-    public void preferencesUpdate(
-        final ProfilePreferences preferences)
+    public AccountsDatabaseType accountsDatabase() {
+      return this.accounts;
+    }
+
+    @Override
+    public void preferencesUpdate(final ProfilePreferences preferences)
         throws IOException {
 
       NullCheck.notNull(preferences, "Preferences");
@@ -539,20 +546,54 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
       synchronized (this.description_lock) {
         new_desc =
             this.description.toBuilder()
-            .setPreferences(preferences)
+                .setPreferences(preferences)
                 .build();
-      }
 
-      writeDescription(this.directory, new_desc);
-
-      synchronized (this.description_lock) {
+        writeDescription(this.directory, new_desc);
         this.description = new_desc;
+      }
+    }
+
+    @Override
+    public AccountType createAccount(final AccountProvider account_provider)
+        throws AccountsDatabaseException {
+
+      NullCheck.notNull(account_provider, "Account provider");
+      return this.accounts.createAccount(account_provider);
+    }
+
+    @Override
+    public AccountID deleteAccountByProvider(
+        final AccountProvider account_provider) throws AccountsDatabaseException {
+
+      NullCheck.notNull(account_provider, "Account provider");
+      final AccountID deleted = this.accounts.deleteAccountByProvider(account_provider);
+
+      synchronized (this.account_current_lock) {
+        if (this.account_current.id().equals(deleted)) {
+          this.account_current = NullCheck.notNull(this.accounts().get(accounts().firstKey()));
+        }
+        return deleted;
       }
     }
 
     @Override
     public int compareTo(final ProfileReadableType other) {
       return this.displayName().compareTo(NullCheck.notNull(other, "Other").displayName());
+    }
+
+    void setAccountCurrent(final AccountID id)
+        throws AccountsDatabaseNonexistentException {
+
+      NullCheck.notNull(id, "ID");
+      synchronized (this.account_current_lock) {
+        final AccountType account = this.accounts.accounts().get(id);
+        if (account != null) {
+          this.account_current = account;
+        } else {
+          throw new AccountsDatabaseNonexistentException("No such account: " + id.id());
+        }
+      }
     }
   }
 
@@ -571,23 +612,20 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
     FileLocking.withFileThreadLocked(
         profile_lock,
         1000L,
-        new PartialFunctionType<Unit, Unit, IOException>() {
-          @Override
-          public Unit call(final Unit ignored) throws IOException {
+        ignored -> {
 
-            /*
-             * Ignore the return value here; the write call will immediately fail if this
-             * call fails anyway.
-             */
+          /*
+           * Ignore the return value here; the write call will immediately fail if this
+           * call fails anyway.
+           */
 
-            directory.mkdirs();
+          directory.mkdirs();
 
-            FileUtilities.fileWriteUTF8Atomically(
-                profile_file,
-                profile_file_tmp,
-                ProfileDescriptionJSON.serializeToString(new ObjectMapper(), new_desc));
-            return Unit.unit();
-          }
+          FileUtilities.fileWriteUTF8Atomically(
+              profile_file,
+              profile_file_tmp,
+              ProfileDescriptionJSON.serializeToString(new ObjectMapper(), new_desc));
+          return Unit.unit();
         });
   }
 }

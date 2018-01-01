@@ -13,6 +13,7 @@ import com.io7m.junreachable.UnreachableCodeException;
 import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.controller.BooksControllerType;
+import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.core.FeedEntryOPDS;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.opds.core.OPDSAcquisition;
@@ -52,11 +53,14 @@ public final class CatalogAcquisitionButtons {
       final AccountProvider in_account_provider,
       final ViewGroup in_view_group,
       final BooksControllerType in_books,
+      final ProfilesControllerType in_profiles,
       final FeedEntryOPDS in_entry) {
+
     NullCheck.notNull(in_activity, "Activity");
     NullCheck.notNull(in_account_provider, "Account provider");
     NullCheck.notNull(in_view_group, "View group");
     NullCheck.notNull(in_books, "Book controller");
+    NullCheck.notNull(in_profiles, "Profiles controller");
     NullCheck.notNull(in_entry, "Entry");
 
     in_view_group.setVisibility(View.VISIBLE);
@@ -69,9 +73,16 @@ public final class CatalogAcquisitionButtons {
         CatalogAcquisitionButtons.getPreferredAcquisition(
             book_id, eo.getAcquisitions());
     if (a_opt.isSome()) {
-      final OPDSAcquisition a = ((Some<OPDSAcquisition>) a_opt).get();
-      final CatalogAcquisitionButton b = new CatalogAcquisitionButton(
-          in_activity, in_account_provider, in_books, book_id, a, in_entry);
+      final OPDSAcquisition acquisition = ((Some<OPDSAcquisition>) a_opt).get();
+      final CatalogAcquisitionButton b =
+          new CatalogAcquisitionButton(
+              in_activity,
+              in_account_provider,
+              in_books,
+              in_profiles,
+              book_id,
+              acquisition,
+              in_entry);
       in_view_group.addView(b);
     }
   }
@@ -87,6 +98,7 @@ public final class CatalogAcquisitionButtons {
   public static OptionType<OPDSAcquisition> getPreferredAcquisition(
       final BookID book_id,
       final List<OPDSAcquisition> acquisitions) {
+
     NullCheck.notNull(book_id, "Book ID");
     NullCheck.notNull(acquisitions, "Acquisitions");
 
@@ -108,8 +120,8 @@ public final class CatalogAcquisitionButtons {
     return Option.some(best);
   }
 
-  private static int priority(
-      final OPDSAcquisition a) {
+  private static int priority(final OPDSAcquisition a) {
+
     switch (a.getType()) {
       case ACQUISITION_BORROW:
         return 6;

@@ -2,7 +2,9 @@ package org.nypl.simplified.books.profiles;
 
 import com.io7m.jfunctional.OptionType;
 
+import org.nypl.simplified.books.accounts.AccountID;
 import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
 
 import java.io.File;
 import java.util.SortedMap;
@@ -130,5 +132,15 @@ public interface ProfilesDatabaseType {
    * @return The current profile
    */
 
-  ProfileType currentProfileUnsafe() throws ProfileNoneCurrentException;
+  ProfileType currentProfileUnsafe()
+      throws ProfileNoneCurrentException;
+
+  /**
+   * Set the current profile's current account to the account with the given ID.
+   * @param id The ID of the account
+   * @throws ProfileNoneCurrentException If no profile is current
+   */
+
+  void setAccountCurrent(AccountID id)
+      throws ProfileNoneCurrentException, AccountsDatabaseNonexistentException;
 }

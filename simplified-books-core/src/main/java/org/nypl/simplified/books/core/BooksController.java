@@ -209,37 +209,6 @@ public final class BooksController implements BooksType {
   }
 
   @Override
-  public void accountLogin(
-      final AccountAuthenticationCredentials account,
-      final AccountLoginListenerType listener) {
-    NullCheck.notNull(account);
-    NullCheck.notNull(listener);
-
-    final DeviceActivationListenerType device_listener = new DeviceActivationListenerType() {
-      @Override
-      public void onDeviceActivationFailure(final String message) {
-        // do nothing
-      }
-
-      @Override
-      public void onDeviceActivationSuccess() {
-        // do nothing
-      }
-    };
-
-    this.submitRunnable(
-        new BooksControllerLoginTask(
-            this,
-            this.book_database,
-            this.accounts_database,
-            this.http,
-            this.config,
-            account,
-            listener,
-            device_listener));
-  }
-
-  @Override
   public void accountLogout(
       final AccountAuthenticationCredentials account,
       final AccountLogoutListenerType listener,

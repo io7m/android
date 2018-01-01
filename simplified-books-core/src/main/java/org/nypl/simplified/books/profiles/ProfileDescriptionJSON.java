@@ -3,9 +3,6 @@ package org.nypl.simplified.books.profiles;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.io7m.jfunctional.OptionType;
-import com.io7m.jfunctional.PartialFunctionType;
-import com.io7m.jfunctional.ProcedureType;
 import com.io7m.jnull.NullCheck;
 import com.io7m.junreachable.UnreachableCodeException;
 

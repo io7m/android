@@ -5,6 +5,7 @@
     "subtitle" : "Inspiring lifelong learning, advancing knowledge, and strengthening our communities.",
     "logo" : "simplified-asset:account_logo_nypl.png",
     "authentication": {
+      "loginUrl" : "https://circulation.librarysimplified.org/loans/",
       "passcodeLength" : 4,
       "passcodeAllowsLetters" : false
     },
@@ -28,6 +29,7 @@
     "subtitle" : "Connecting people to resources to achieve their goals.",
     "logo" : "simplified-asset:account_logo_bpl.png",
     "authentication": {
+      "loginUrl" : "https://bplsimplye.bklynlibrary.org/loans/",
       "passcodeLength" : 4,
       "passcodeAllowsLetters" : false
     },
@@ -70,6 +72,7 @@
     "subtitle" : "Public education for all",
     "logo" : "simplified-asset:account_logo_hcls.png",
     "authentication": {
+      "loginUrl" : "http://howard.simplye-md.org/loans/",
       "passcodeLength" : 0,
       "passcodeAllowsLetters" : false
     },
@@ -92,6 +95,7 @@
     "subtitle" : "Where the County Reads, Meets, Learns",
     "logo" : "simplified-asset:account_logo_mcpl.png",
     "authentication": {
+      "loginUrl" : "http://montgomery.simplye-md.org/loans/",
       "passcodeLength" : 0,
       "passcodeAllowsLetters" : false
     },
@@ -113,6 +117,7 @@
     "subtitle" : "Explore. Invent. Transform.",
     "logo" : "simplified-asset:account_logo_fcpl.png",
     "authentication": {
+      "loginUrl" : "http://frederick.simplye-md.org/loans/",
       "passcodeLength" : 0,
       "passcodeAllowsLetters" : false
     },
@@ -135,6 +140,7 @@
     "subtitle" : "Read, Learn, Discover",
     "logo" : "simplified-asset:account_logo_smcl.png",
     "authentication": {
+      "loginUrl" : "http://smrla.simplye-md.org/MDMARY/loans/",
       "passcodeLength" : 0,
       "passcodeAllowsLetters" : false
     },
@@ -158,6 +164,7 @@
     "subtitle" : "Inspiring Possibility",
     "logo" : "simplified-asset:account_logo_cl.png",
     "authentication": {
+      "loginUrl" : "http://smrla.simplye-md.org/MDCALV/loans/",
       "passcodeLength" : 0,
       "passcodeAllowsLetters" : false
     },
@@ -181,6 +188,7 @@
     "subtitle" : "Engage, Discover and Learn",
     "logo" : "simplified-asset:account_logo_ccpl.png",
     "authentication": {
+      "loginUrl" : "http://smrla.simplye-md.org/MDCHAR/loans/",
       "passcodeLength" : 0,
       "passcodeAllowsLetters" : false
     },
@@ -204,6 +212,7 @@
     "subtitle": "Email: ebookrequest@buttecounty.net for questions",
     "logo" : "simplified-asset:account_logo_bcl.png",
     "authentication": {
+      "loginUrl" : "http://bcl.simplye-ca.org/CABTTE/loans/",
       "passcodeLength" : 0,
       "passcodeAllowsLetters" : false
     },

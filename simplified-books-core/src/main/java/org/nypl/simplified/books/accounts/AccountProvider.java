@@ -400,7 +400,7 @@ public abstract class AccountProvider implements Comparable<AccountProvider> {
    */
 
   public static Builder builder() {
-    Builder b = new AutoValue_AccountProvider.Builder();
+    final Builder b = new AutoValue_AccountProvider.Builder();
     b.setAuthentication(Option.<AccountProviderAuthenticationDescription>none());
     b.setSupportsSimplyESynchronization(false);
     b.setSupportsBarcodeDisplay(false);

@@ -1,6 +1,12 @@
 package org.nypl.simplified.books.profiles;
 
-public final class ProfileNonexistentException extends ProfileDatabaseUsageException {
+import java.util.Collections;
+
+/**
+ * An exception raised when the user tries to operate on a nonexistent profile.
+ */
+
+public final class ProfileNonexistentException extends ProfileDatabaseException {
 
   /**
    * Construct an exception.
@@ -9,6 +15,6 @@ public final class ProfileNonexistentException extends ProfileDatabaseUsageExcep
    */
 
   public ProfileNonexistentException(final String message) {
-    super(message);
+    super(message, Collections.emptyList());
   }
 }

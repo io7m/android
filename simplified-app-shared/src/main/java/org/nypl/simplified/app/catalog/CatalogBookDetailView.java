@@ -41,6 +41,7 @@ import org.nypl.simplified.books.book_registry.BookEvent;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
 import org.nypl.simplified.books.book_registry.BookWithStatus;
 import org.nypl.simplified.books.controller.BooksControllerType;
+import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.core.BookDatabaseEntrySnapshot;
 import org.nypl.simplified.books.core.BookDatabaseReadableType;
 import org.nypl.simplified.books.book_database.BookID;
@@ -132,6 +133,7 @@ public final class CatalogBookDetailView
   private final BooksControllerType books_controller;
   private final BookRegistryReadableType books_registry;
   private final AccountProvider account_provider;
+  private final ProfilesControllerType profiles_controller;
 
   /**
    * Construct a detail view.
@@ -148,6 +150,7 @@ public final class CatalogBookDetailView
       final AccountProvider in_account_provider,
       final BookCoverProviderType in_cover_provider,
       final BookRegistryReadableType in_books_registry,
+      final ProfilesControllerType in_profiles_controller,
       final BooksControllerType in_books_controller,
       final FeedEntryOPDS in_entry) {
 
@@ -155,6 +158,8 @@ public final class CatalogBookDetailView
         NullCheck.notNull(in_activity, "Activity");
     this.account_provider =
         NullCheck.notNull(in_account_provider, "Account provider");
+    this.profiles_controller =
+        NullCheck.notNull(in_profiles_controller, "Profiles controller");
     this.books_controller =
         NullCheck.notNull(in_books_controller, "Books controller");
     this.books_registry =
@@ -615,6 +620,7 @@ public final class CatalogBookDetailView
     final CatalogAcquisitionButtonController retry_ctl =
         new CatalogAcquisitionButtonController(
             this.activity,
+            this.profiles_controller,
             this.books_controller,
             current_entry.getBookID(),
             a,
@@ -727,6 +733,7 @@ public final class CatalogBookDetailView
         this.account_provider,
         this.book_download_buttons,
         this.books_controller,
+        this.profiles_controller,
         NullCheck.notNull(this.entry.get()));
 
     if (s.isRevocable()) {
@@ -768,6 +775,7 @@ public final class CatalogBookDetailView
         this.account_provider,
         this.book_download_buttons,
         this.books_controller,
+        this.profiles_controller,
         NullCheck.notNull(this.entry.get()));
 
     CatalogBookDetailView.configureButtonsHeight(
@@ -888,6 +896,7 @@ public final class CatalogBookDetailView
         this.account_provider,
         this.book_download_buttons,
         this.books_controller,
+        this.profiles_controller,
         NullCheck.notNull(this.entry.get()));
 
     if (o.isReturnable()) {
@@ -911,8 +920,7 @@ public final class CatalogBookDetailView
     return o.matchBookLoanedStatus(this);
   }
 
-  private void onBookStatusNone(
-      final FeedEntryOPDS e) {
+  private void onBookStatusNone(final FeedEntryOPDS e) {
     this.book_debug_status.setText("none");
 
     this.book_download_buttons.removeAllViews();
@@ -935,14 +943,14 @@ public final class CatalogBookDetailView
         this.account_provider,
         this.book_download_buttons,
         this.books_controller,
+        this.profiles_controller,
         e);
 
     CatalogBookDetailView.configureButtonsHeight(rr, this.book_download_buttons);
   }
 
   @Override
-  public Unit onBookStatusRequestingDownload(
-      final BookStatusRequestingDownload d) {
+  public Unit onBookStatusRequestingDownload(final BookStatusRequestingDownload d) {
     this.book_debug_status.setText("requesting download");
 
     this.book_download.setVisibility(View.INVISIBLE);
@@ -968,8 +976,7 @@ public final class CatalogBookDetailView
   }
 
   @Override
-  public Unit onBookStatusRequestingLoan(
-      final BookStatusRequestingLoan s) {
+  public Unit onBookStatusRequestingLoan(final BookStatusRequestingLoan s) {
     this.book_debug_status.setText("requesting loan");
 
     this.book_download.setVisibility(View.INVISIBLE);
@@ -995,8 +1002,7 @@ public final class CatalogBookDetailView
   }
 
   @Override
-  public Unit onBookStatusRequestingRevoke(
-      final BookStatusRequestingRevoke s) {
+  public Unit onBookStatusRequestingRevoke(final BookStatusRequestingRevoke s) {
     this.book_debug_status.setText("requesting revoke");
 
     this.book_download.setVisibility(View.INVISIBLE);

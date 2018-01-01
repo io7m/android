@@ -11,6 +11,7 @@ import org.nypl.simplified.app.R;
 import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.controller.BooksControllerType;
+import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.core.FeedEntryOPDS;
 import org.nypl.simplified.opds.core.OPDSAcquisition;
 import org.nypl.simplified.opds.core.OPDSAvailabilityHoldable;
@@ -29,6 +30,7 @@ public final class CatalogAcquisitionButton
    * @param in_activity         The host activity
    * @param in_account_provider The current account provider
    * @param in_books            The books controller
+   * @param in_profiles         The profiles controller
    * @param in_book_id          The ID of the book to be acquired
    * @param in_acquisition      The acquisition
    * @param in_entry            The associated feed entry
@@ -38,6 +40,7 @@ public final class CatalogAcquisitionButton
       final Activity in_activity,
       final AccountProvider in_account_provider,
       final BooksControllerType in_books,
+      final ProfilesControllerType in_profiles,
       final BookID in_book_id,
       final OPDSAcquisition in_acquisition,
       final FeedEntryOPDS in_entry) {
@@ -86,6 +89,6 @@ public final class CatalogAcquisitionButton
 
     this.setOnClickListener(
         new CatalogAcquisitionButtonController(
-            in_activity, in_books, in_book_id, in_acquisition, in_entry));
+            in_activity, in_profiles, in_books, in_book_id, in_acquisition, in_entry));
   }
 }

@@ -144,6 +144,7 @@ public final class CatalogBookDetailActivity extends CatalogActivity {
             Simplified.getProfilesController().profileAccountProviderCurrent(),
             Simplified.getCoverProvider(),
             Simplified.getBooksRegistry(),
+            Simplified.getProfilesController(),
             Simplified.getBooksController(),
             this.getFeedEntry());
 

@@ -376,85 +376,12 @@ public abstract class CatalogFeedActivity extends CatalogActivity
       final int attempts,
       final FeedLoaderAuthenticationListenerType listener) {
 
-    /*
-     * The feed requires authentication. If an attempt hasn't been made
-     * to fetch it with the current cached credentials (if any), then try
-     * to authenticate with those credentials.
-     */
-
-    final AccountsControllerType accounts =
-        (AccountsControllerType) (Object) new UnimplementedCodeException();
-
-    /*
-     * An adapter that will receive cached credentials and forward them
-     * on to the listener.
-     */
-
-    LOG.trace("feed auth: attempt {}", attempts);
-    if (attempts == 0) {
-      if (accounts.accountIsLoggedIn()) {
-        LOG.trace("feed auth: using cached credentials");
-
-        accounts.accountGetCachedLoginDetails(
-            new AccountGetCachedCredentialsListenerType() {
-              @Override
-              public void onAccountIsNotLoggedIn() {
-                throw new UnreachableCodeException();
-              }
-
-              @Override
-              public void onAccountIsLoggedIn(final AccountAuthenticationCredentials creds) {
-                listener.onAuthenticationProvided(creds);
-              }
-            });
-      }
-    }
-
-    if (attempts > 0 || !accounts.accountIsLoggedIn()) {
-      LOG.trace("feed auth: login required");
-
-      /*
-       * Otherwise, this is a new attempt and the current credentials
-       * are assumed to be stale. Ask the user for new ones.
-       */
-
-      final LoginListenerType login_listener = new LoginListenerType() {
-        @Override
-        public void onLoginAborted() {
-          LOG.trace("feed auth: aborted login");
-          listener.onAuthenticationNotProvided();
-        }
-
-        @Override
-        public void onLoginFailure(
-            final OptionType<Throwable> error,
-            final String message) {
-          LogUtilities.errorWithOptionalException(LOG, "failed login", error);
-          listener.onAuthenticationError(error, message);
-        }
-
-        @Override
-        public void onLoginSuccess(
-            final AccountAuthenticationCredentials creds) {
-          LOG.trace("feed auth: login supplied new credentials");
-          listener.onAuthenticationProvided(creds);
-        }
-      };
-
-      // replace with login activity
-      UIThread.runOnUIThread(
-          new Runnable() {
-            @Override
-            public void run() {
-
-              final Intent i = new Intent(CatalogFeedActivity.this, LoginActivity.class);
-              CatalogFeedActivity.this.startActivity(i);
-              CatalogFeedActivity.this.overridePendingTransition(0, 0);
-              CatalogFeedActivity.this.finish();
-
-            }
-          });
-    }
+    UIThread.runOnUIThread(() -> {
+      final Intent i = new Intent(CatalogFeedActivity.this, LoginActivity.class);
+      this.startActivity(i);
+      this.overridePendingTransition(0, 0);
+      this.finish();
+    });
   }
 
   private void configureUpButton(
@@ -1067,6 +994,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
             book_select_listener,
             Simplified.getBooksRegistry(),
             Simplified.getBooksController(),
+            Simplified.getProfilesController(),
             Simplified.getFeedLoader(),
             feed_without_groups);
 
@@ -1349,60 +1277,6 @@ public abstract class CatalogFeedActivity extends CatalogActivity
         cfa.catalogActivityForkNew(new_args);
       }
       return true;
-    }
-  }
-
-  private final class SyncListener implements AccountSyncListenerType {
-
-    SyncListener() {
-
-    }
-
-    @Override
-    public void onAccountSyncAuthenticationFailure(final String message) {
-      LOG.debug("account syncing failed: {}", message);
-
-      final boolean clever_enabled = getResources().getBoolean(R.bool.feature_auth_provider_clever);
-
-      if (clever_enabled) {
-        final Intent account =
-            new Intent(CatalogFeedActivity.this, LoginActivity.class);
-        startActivityForResult(account, 1);
-        overridePendingTransition(0, 0);
-
-      } else {
-        final AccountBarcode barcode = AccountBarcode.create("");
-        final AccountPIN pin = AccountPIN.create("");
-
-        final LoginDialog df =
-            LoginDialog.newDialog("Login required", barcode, pin);
-
-        final FragmentManager fm = getFragmentManager();
-        df.show(fm, "login-dialog");
-      }
-    }
-
-    @Override
-    public void onAccountSyncBook(final BookID book) {
-      LOG.debug("synced: {}", book);
-    }
-
-    @Override
-    public void onAccountSyncFailure(
-        final OptionType<Throwable> error,
-        final String message) {
-      LogUtilities.errorWithOptionalException(
-          LOG, message, error);
-    }
-
-    @Override
-    public void onAccountSyncSuccess() {
-      LOG.debug("account syncing finished");
-    }
-
-    @Override
-    public void onAccountSyncBookDeleted(final BookID book) {
-      LOG.debug("book deleted: {}", book);
     }
   }
 }

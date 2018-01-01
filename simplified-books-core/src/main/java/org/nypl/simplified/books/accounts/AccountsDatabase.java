@@ -1,6 +1,9 @@
 package org.nypl.simplified.books.accounts;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.io7m.jfunctional.OptionType;
+import com.io7m.jfunctional.PartialFunctionType;
+import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 
 import org.nypl.simplified.assertions.Assertions;
@@ -8,6 +11,8 @@ import org.nypl.simplified.books.book_database.BookDatabaseException;
 import org.nypl.simplified.books.book_database.BookDatabaseFactoryType;
 import org.nypl.simplified.books.book_database.BookDatabaseType;
 import org.nypl.simplified.books.core.LogUtilities;
+import org.nypl.simplified.files.DirectoryUtilities;
+import org.nypl.simplified.files.FileLocking;
 import org.nypl.simplified.files.FileUtilities;
 import org.slf4j.Logger;
 
@@ -20,6 +25,8 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
+import javax.annotation.concurrent.GuardedBy;
+
 /**
  * The default implementation of the {@link AccountsDatabaseType} interface.
  */
@@ -29,10 +36,11 @@ public final class AccountsDatabase implements AccountsDatabaseType {
   private static final Logger LOG = LogUtilities.getLog(AccountsDatabase.class);
 
   private final File directory;
-  private final SortedMap<AccountID, Account> accounts;
-  private final SortedMap<URI, Account> accounts_by_provider;
-  private final SortedMap<AccountID, AccountType> accounts_read;
-  private final SortedMap<URI, AccountType> accounts_by_provider_read;
+  private final Object accounts_lock;
+  private final @GuardedBy("accounts_lock") SortedMap<AccountID, Account> accounts;
+  private final @GuardedBy("accounts_lock") SortedMap<URI, Account> accounts_by_provider;
+  private final @GuardedBy("accounts_lock") SortedMap<AccountID, AccountType> accounts_read;
+  private final @GuardedBy("accounts_lock") SortedMap<URI, AccountType> accounts_by_provider_read;
   private final BookDatabaseFactoryType book_databases;
 
   private AccountsDatabase(
@@ -49,11 +57,11 @@ public final class AccountsDatabase implements AccountsDatabaseType {
         NullCheck.notNull(accounts_by_provider, "accounts_by_provider");
     this.book_databases =
         NullCheck.notNull(book_databases, "book databases");
-
     this.accounts_read =
         castMap(Collections.unmodifiableSortedMap(accounts));
     this.accounts_by_provider_read =
         castMap(Collections.unmodifiableSortedMap(accounts_by_provider));
+    this.accounts_lock = new Object();
   }
 
   /**
@@ -90,7 +98,7 @@ public final class AccountsDatabase implements AccountsDatabaseType {
     openAllAccounts(book_databases, directory, accounts, accounts_by_provider, jom, errors);
 
     if (!errors.isEmpty()) {
-      throw new AccountsDatabaseException(
+      throw new AccountsDatabaseOpenException(
           "One or more errors occurred whilst trying to open the account database.", errors);
     }
 
@@ -116,9 +124,8 @@ public final class AccountsDatabase implements AccountsDatabaseType {
 
         if (account != null) {
           if (accounts_by_provider.containsKey(account.provider())) {
-            errors.add(new AccountsDatabaseException(
-                "Multiple accounts using the same provider: " + account.provider(),
-                Collections.<Exception>emptyList()));
+            errors.add(new AccountsDatabaseDuplicateProviderException(
+                "Multiple accounts using the same provider: " + account.provider()));
           }
 
           accounts.put(account.id, account);
@@ -181,37 +188,45 @@ public final class AccountsDatabase implements AccountsDatabaseType {
 
   @Override
   public SortedMap<AccountID, AccountType> accounts() {
-    return this.accounts_read;
+    synchronized (this.accounts_lock) {
+      return this.accounts_read;
+    }
   }
 
   @Override
-  public SortedMap<URI, AccountType> accountsByProvider() {
-    return this.accounts_by_provider_read;
+  public SortedMap<URI, AccountType> accountsByProvider()
+  {
+    synchronized (this.accounts_lock) {
+      return this.accounts_by_provider_read;
+    }
   }
 
   @Override
-  public AccountType createAccount(
-      final AccountProvider account_provider)
+  public AccountType createAccount(final AccountProvider account_provider)
       throws AccountsDatabaseException {
 
     NullCheck.notNull(account_provider, "Account provider");
 
     final AccountID next;
-    if (!this.accounts.isEmpty()) {
-      next = AccountID.create(this.accounts.lastKey().id() + 1);
-    } else {
-      next = AccountID.create(0);
+    synchronized (this.accounts_lock) {
+      if (!this.accounts.isEmpty()) {
+        next = AccountID.create(this.accounts.lastKey().id() + 1);
+      } else {
+        next = AccountID.create(0);
+      }
+
+      LOG.debug("creating account {} (provider {})", next.id(), account_provider.id());
+
+      Assertions.checkInvariant(
+          !this.accounts.containsKey(next),
+          "Account ID %s cannot have been used", next);
     }
-
-    LOG.debug("creating account {} (provider {})", next.id(), account_provider.id());
-
-    Assertions.checkInvariant(
-        !this.accounts.containsKey(next),
-        "Account ID %s cannot have been used", next);
 
     try {
       final File account_dir =
           new File(this.directory, Integer.toString(next.id()));
+      final File account_lock =
+          new File(account_dir, "lock");
       final File account_file =
           new File(account_dir, "account.json");
       final File account_file_tmp =
@@ -224,29 +239,79 @@ public final class AccountsDatabase implements AccountsDatabaseType {
       final BookDatabaseType book_database =
           this.book_databases.openDatabase(next, books_dir);
 
-      final AccountDescription desc = AccountDescription.create(account_provider.id());
-      FileUtilities.fileWriteUTF8Atomically(
-          account_file,
-          account_file_tmp,
-          AccountDescriptionJSON.serializeToString(new ObjectMapper(), desc));
+      final AccountDescription desc =
+          AccountDescription.builder(account_provider.id())
+              .build();
 
-      final Account account = new Account(next, account_dir, desc, book_database);
-      this.accounts.put(next, account);
-      return account;
+      writeDescription(account_lock, account_file, account_file_tmp, desc);
+
+      synchronized (this.accounts_lock) {
+        final Account account = new Account(next, account_dir, desc, book_database);
+        this.accounts.put(next, account);
+        this.accounts_by_provider.put(account_provider.id(), account);
+        return account;
+      }
     } catch (final IOException e) {
-      throw new AccountsDatabaseException(
-          "Could not write account data", Collections.singletonList((Exception) e));
+      throw new AccountsDatabaseIOException("Could not write account data", e);
     } catch (final BookDatabaseException e) {
-      throw new AccountsDatabaseException(
-          "Could not create book database", Collections.singletonList((Exception) e));
+      throw new AccountsDatabaseBooksException("Could not create book database", e);
     }
+  }
+
+  @Override
+  public AccountID deleteAccountByProvider(final AccountProvider account_provider)
+      throws AccountsDatabaseException {
+
+    NullCheck.notNull(account_provider, "Account provider");
+
+    LOG.debug("delete account by provider: {}", account_provider.id());
+
+    synchronized (this.accounts_lock) {
+      if (!this.accounts_by_provider.containsKey(account_provider.id())) {
+        throw new AccountsDatabaseNonexistentException(
+            "No account with the given provider");
+      }
+      if (this.accounts.size() == 1) {
+        throw new AccountsDatabaseLastAccountException(
+            "At most one account must exist at any given time");
+      }
+
+      final Account account = this.accounts_by_provider.get(account_provider.id());
+      this.accounts.remove(account.id());
+      this.accounts_by_provider.remove(account_provider.id());
+
+      try {
+        DirectoryUtilities.directoryDelete(account.directory());
+        return account.id();
+      } catch (final IOException e) {
+        throw new AccountsDatabaseIOException(e.getMessage(), e);
+      }
+    }
+  }
+
+  private static void writeDescription(
+      final File account_lock,
+      final File account_file,
+      final File account_file_tmp,
+      final AccountDescription desc)
+      throws IOException {
+
+    FileLocking.withFileThreadLocked(
+        account_lock, 1000L, ignored -> {
+          FileUtilities.fileWriteUTF8Atomically(
+              account_file,
+              account_file_tmp,
+              AccountDescriptionJSON.serializeToString(new ObjectMapper(), desc));
+          return Unit.unit();
+        });
   }
 
   private static final class Account implements AccountType {
 
     private final AccountID id;
     private final File directory;
-    private final AccountDescription description;
+    private final Object description_lock;
+    private @GuardedBy("description_lock") AccountDescription description;
     private final BookDatabaseType book_database;
 
     Account(
@@ -259,6 +324,7 @@ public final class AccountsDatabase implements AccountsDatabaseType {
       this.directory = NullCheck.notNull(directory, "directory");
       this.description = NullCheck.notNull(description, "description");
       this.book_database = NullCheck.notNull(book_database, "book database");
+      this.description_lock = new Object();
     }
 
     @Override
@@ -273,12 +339,49 @@ public final class AccountsDatabase implements AccountsDatabaseType {
 
     @Override
     public URI provider() {
-      return this.description.provider();
+      synchronized (this.description_lock) {
+        return this.description.provider();
+      }
+    }
+
+    @Override
+    public OptionType<AccountAuthenticationCredentials> credentials() {
+      synchronized (this.description_lock) {
+        return this.description.credentials();
+      }
     }
 
     @Override
     public BookDatabaseType bookDatabase() {
       return this.book_database;
+    }
+
+    @Override
+    public void setCredentials(
+        final OptionType<AccountAuthenticationCredentials> credentials)
+        throws AccountsDatabaseException {
+
+      try {
+        final AccountDescription new_description;
+        synchronized (this.description_lock) {
+          new_description =
+              this.description.toBuilder()
+                  .setCredentials(credentials)
+                  .build();
+
+          final File account_lock =
+              new File(this.directory, "lock");
+          final File account_file =
+              new File(this.directory, "account.json");
+          final File account_file_tmp =
+              new File(this.directory, "account.json.tmp");
+
+          writeDescription(account_lock, account_file, account_file_tmp, new_description);
+          this.description = new_description;
+        }
+      } catch (final IOException e) {
+        throw new AccountsDatabaseIOException("Could not write account data", e);
+      }
     }
   }
 }

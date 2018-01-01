@@ -24,7 +24,7 @@ public interface LoginListenerType {
    */
 
   void onLoginFailure(
-      OptionType<Throwable> error,
+      OptionType<? extends Throwable> error,
       String message);
 
   /**

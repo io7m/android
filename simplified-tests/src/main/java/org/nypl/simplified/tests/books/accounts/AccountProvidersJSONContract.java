@@ -9,6 +9,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.accounts.AccountProviderAuthenticationDescription;
 import org.nypl.simplified.books.accounts.AccountProviderCollection;
 import org.nypl.simplified.books.accounts.AccountProvidersJSON;
 import org.nypl.simplified.json.core.JSONParseException;
@@ -86,9 +87,17 @@ public abstract class AccountProvidersJSONContract {
 
     Assert.assertEquals(1L, c.providers().size());
 
+    final AccountProviderAuthenticationDescription auth =
+        AccountProviderAuthenticationDescription.builder()
+        .setLoginURI(URI.create("https://circulation.librarysimplified.org/loans/"))
+        .setPassCodeMayContainLetters(false)
+        .setPassCodeLength(4)
+        .build();
+
     final AccountProvider p = c.providerDefault();
     Assert.assertTrue(c.providers().containsKey(p.id()));
     Assert.assertTrue(c.providers().containsValue(p));
+    Assert.assertEquals(Option.some(auth), p.authentication());
     Assert.assertEquals("http://www.librarysimplified.org", p.id().toString());
     Assert.assertEquals("The New York Public Library", p.displayName());
     Assert.assertEquals("Inspiring lifelong learning, advancing knowledge, and strengthening our communities.", p.subtitle());

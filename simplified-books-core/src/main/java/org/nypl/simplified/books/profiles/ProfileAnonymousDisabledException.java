@@ -1,6 +1,13 @@
 package org.nypl.simplified.books.profiles;
 
-public final class ProfileAnonymousDisabledException extends ProfileDatabaseUsageException {
+import java.util.Collections;
+
+/**
+ * An exception raised when the user tries to do something with the anonymous profile despite
+ * it not being enabled.
+ */
+
+public final class ProfileAnonymousDisabledException extends ProfileDatabaseException {
 
   /**
    * Construct an exception.
@@ -9,6 +16,6 @@ public final class ProfileAnonymousDisabledException extends ProfileDatabaseUsag
    */
 
   public ProfileAnonymousDisabledException(final String message) {
-    super(message);
+    super(message, Collections.emptyList());
   }
 }

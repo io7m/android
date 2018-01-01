@@ -33,6 +33,7 @@ import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookEvent;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
 import org.nypl.simplified.books.book_registry.BookWithStatus;
+import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.core.BookStatusDownloadFailed;
 import org.nypl.simplified.books.core.BookStatusDownloadInProgress;
 import org.nypl.simplified.books.core.BookStatusDownloaded;
@@ -109,6 +110,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
   private final ObservableSubscriptionType<BookEvent> book_status_subscription;
   private final BooksControllerType books_controller;
   private final AccountProvider account_provider;
+  private final ProfilesControllerType profiles_controller;
   private CatalogBookSelectionListenerType book_selection_listener;
 
   /**
@@ -124,6 +126,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
       final AccountProvider in_account_provider,
       final BookCoverProviderType in_cover_provider,
       final BooksControllerType in_books_controller,
+      final ProfilesControllerType in_profiles_controller,
       final BookRegistryReadableType in_books_registry) {
 
     super(in_activity.getApplicationContext(), null);
@@ -138,6 +141,8 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
         NullCheck.notNull(in_books_registry, "Book registry");
     this.books_controller =
         NullCheck.notNull(in_books_controller, "Books controller");
+    this.profiles_controller =
+        NullCheck.notNull(in_profiles_controller, "Profiles controller");
 
     this.book_selection_listener = new CatalogBookSelectionListenerType() {
       @Override
@@ -402,10 +407,15 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
       throw new UnreachableCodeException();
     }
 
-    final OPDSAcquisition a = ((Some<OPDSAcquisition>) a_opt).get();
+    final OPDSAcquisition acquisition = ((Some<OPDSAcquisition>) a_opt).get();
     final CatalogAcquisitionButtonController retry_ctl =
         new CatalogAcquisitionButtonController(
-            this.activity, this.books_controller, fe.getBookID(), a, fe);
+            this.activity,
+            this.profiles_controller,
+            this.books_controller,
+            fe.getBookID(),
+            acquisition,
+            fe);
 
     this.cell_downloading_failed_retry.setVisibility(View.VISIBLE);
     this.cell_downloading_failed_retry.setEnabled(true);
@@ -507,6 +517,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
         this.account_provider,
         this.cell_buttons,
         this.books_controller,
+        this.profiles_controller,
         feed_entry);
 
     if (s.isRevocable()) {
@@ -544,6 +555,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
         this.account_provider,
         this.cell_buttons,
         this.books_controller,
+        this.profiles_controller,
         feed_entry);
 
     return Unit.unit();
@@ -622,6 +634,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
         this.account_provider,
         this.cell_buttons,
         this.books_controller,
+        this.profiles_controller,
         feed_entry);
 
     return Unit.unit();
@@ -654,6 +667,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
         this.account_provider,
         this.cell_buttons,
         this.books_controller,
+        this.profiles_controller,
         in_entry);
   }
 

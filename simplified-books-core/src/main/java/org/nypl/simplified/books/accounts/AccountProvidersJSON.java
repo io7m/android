@@ -34,6 +34,7 @@ public final class AccountProvidersJSON {
       final ObjectMapper jom,
       final JsonNode node)
       throws JSONParseException {
+
     NullCheck.notNull(jom, "Object mapper");
     NullCheck.notNull(node, "JSON");
 
@@ -56,19 +57,12 @@ public final class AccountProvidersJSON {
         JSONParserUtilities.getURI(obj, "logo"));
 
     b.setAuthentication(JSONParserUtilities.getObjectOptional(obj, "authentication")
-        .mapPartial(new PartialFunctionType<
-            ObjectNode, AccountProviderAuthenticationDescription, JSONParseException>() {
-          @Override
-          public AccountProviderAuthenticationDescription call(final ObjectNode sub)
-              throws JSONParseException {
-            return AccountProviderAuthenticationDescription.builder()
-                .setPassCodeLength(
-                    JSONParserUtilities.getInteger(sub, "passcodeLength"))
-                .setPassCodeMayContainLetters(
-                    JSONParserUtilities.getBoolean(sub, "passcodeAllowsLetters"))
-                .build();
-          }
-        }));
+        .mapPartial(sub ->
+            AccountProviderAuthenticationDescription.builder()
+                .setLoginURI(JSONParserUtilities.getURI(sub, "loginUrl"))
+                .setPassCodeLength(JSONParserUtilities.getInteger(sub, "passcodeLength"))
+                .setPassCodeMayContainLetters(JSONParserUtilities.getBoolean(sub, "passcodeAllowsLetters"))
+                .build()));
 
     b.setSupportsSimplyESynchronization(
         JSONParserUtilities.getBooleanDefault(obj, "supportsSimplyESync", false));
@@ -98,7 +92,6 @@ public final class AccountProvidersJSON {
 
     return b.build();
   }
-
 
   /**
    * Deserialize a set of account providers from the given JSON array node.

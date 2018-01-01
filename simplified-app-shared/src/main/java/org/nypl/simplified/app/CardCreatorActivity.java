@@ -788,10 +788,10 @@ public class CardCreatorActivity extends FragmentActivity implements
         .setAuthenticationProvider(auth_provider)
         .build();
 
-    books.accountLogin(creds, CardCreatorActivity.this);
+    // books.accountLogin(creds, CardCreatorActivity.this);
 
     this.showProgress(false);
-
+    throw new UnimplementedCodeException();
   }
 
   private BooksType getBooksType() {

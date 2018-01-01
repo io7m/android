@@ -1,8 +1,6 @@
 package org.nypl.simplified.books.profiles;
 
 import com.google.auto.value.AutoValue;
-import com.io7m.jfunctional.Option;
-import com.io7m.jfunctional.OptionType;
 
 /**
  * A description of a profile.

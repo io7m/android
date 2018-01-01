@@ -1,7 +1,5 @@
 package org.nypl.simplified.books.accounts;
 
-import org.nypl.simplified.books.profiles.ProfileType;
-
 import java.io.File;
 import java.net.URI;
 import java.util.SortedMap;
@@ -34,7 +32,8 @@ public interface AccountsDatabaseType {
   SortedMap<URI, AccountType> accountsByProvider();
 
   /**
-   * Create an account using the given account provider.
+   * Create an account using the given account provider. The call will fail if an account
+   * already exists using the given provider.
    *
    * @param account_provider The account provider for the default account
    * @return A newly created account
@@ -42,6 +41,20 @@ public interface AccountsDatabaseType {
    */
 
   AccountType createAccount(
+      AccountProvider account_provider)
+      throws AccountsDatabaseException;
+
+  /**
+   * Delete an account using the given account provider. The call will fail if no account
+   * exists with the given provider, or if deleting the account would leave the accounts
+   * database empty.
+   *
+   * @return The ID of the account that was deleted
+   * @param account_provider The account provider for the account
+   * @throws AccountsDatabaseException On account deletion errors
+   */
+
+  AccountID deleteAccountByProvider(
       AccountProvider account_provider)
       throws AccountsDatabaseException;
 }

@@ -3,6 +3,8 @@ package org.nypl.simplified.books.accounts;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.io7m.jfunctional.PartialFunctionType;
+import com.io7m.jfunctional.ProcedureType;
 import com.io7m.jnull.NullCheck;
 import com.io7m.junreachable.UnreachableCodeException;
 
@@ -77,9 +79,17 @@ public final class AccountDescriptionJSON {
     NullCheck.notNull(jom, "Object mapper");
     NullCheck.notNull(node, "JSON");
 
-    ObjectNode obj = JSONParserUtilities.checkObject(null, node);
-    URI provider = JSONParserUtilities.getURI(obj, "provider");
-    return AccountDescription.create(provider);
+    final ObjectNode obj =
+        JSONParserUtilities.checkObject(null, node);
+
+    final AccountDescription.Builder builder =
+        AccountDescription.builder(JSONParserUtilities.getURI(obj, "provider"));
+
+    builder.setCredentials(
+        JSONParserUtilities.getObjectOptional(obj, "credentials")
+            .mapPartial(AccountAuthenticationCredentialsJSON::deserializeFromJSON));
+
+    return builder.build();
   }
 
   /**
@@ -97,6 +107,9 @@ public final class AccountDescriptionJSON {
 
     final ObjectNode jo = jom.createObjectNode();
     jo.put("provider", description.provider().toString());
+
+    description.credentials().map_(
+        creds -> jo.set("credentials", AccountAuthenticationCredentialsJSON.serializeToJSON(creds)));
     return jo;
   }
 
@@ -112,7 +125,7 @@ public final class AccountDescriptionJSON {
       final ObjectMapper jom,
       final AccountDescription description)
       throws IOException {
-    ObjectNode jo = serializeToJSON(jom, description);
+    final ObjectNode jo = serializeToJSON(jom, description);
     final ByteArrayOutputStream bao = new ByteArrayOutputStream(1024);
     JSONSerializerUtilities.serialize(jo, bao);
     return bao.toString("UTF-8");

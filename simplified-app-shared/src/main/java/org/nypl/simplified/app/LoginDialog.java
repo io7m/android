@@ -14,81 +14,73 @@ import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.Some;
+import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 import com.io7m.junreachable.UnimplementedCodeException;
+import com.io7m.junreachable.UnreachableCodeException;
 
-import org.nypl.drm.core.AdobeVendorID;
 import org.nypl.simplified.app.utilities.UIThread;
+import org.nypl.simplified.assertions.Assertions;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountAuthenticationProvider;
 import org.nypl.simplified.books.accounts.AccountBarcode;
-import org.nypl.simplified.books.core.AccountLoginListenerType;
+import org.nypl.simplified.books.accounts.AccountEvent;
+import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.core.AuthenticationDocumentType;
-import org.nypl.simplified.books.book_database.BookID;
-import org.nypl.simplified.books.core.BooksType;
-import org.nypl.simplified.books.core.DeviceActivationListenerType;
 import org.nypl.simplified.books.core.DocumentStoreType;
 import org.nypl.simplified.books.core.EULAType;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.multilibrary.Account;
-import org.nypl.simplified.multilibrary.AccountsRegistry;
 import org.slf4j.Logger;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.nypl.simplified.books.accounts.AccountEvent.AccountLoginEvent.*;
 
 /**
  * A reusable login dialog.
  */
 
-public final class LoginDialog extends DialogFragment
-    implements AccountLoginListenerType, DeviceActivationListenerType {
+public final class LoginDialog extends DialogFragment {
+
   private static final String BARCODE_ID;
   private static final Logger LOG;
   private static final String PIN_ID;
   private static final String TEXT_ID;
-  private static final String ACCOUNT_ID;
   private static final String PIN_ALLOWS_LETTERS;
   private static final String PIN_LENGTH;
 
   static {
     LOG = LogUtilities.getLog(LoginDialog.class);
-  }
-
-  static {
     BARCODE_ID = "org.nypl.simplified.app.LoginDialog.barcode";
     PIN_ID = "org.nypl.simplified.app.LoginDialog.pin";
     TEXT_ID = "org.nypl.simplified.app.LoginDialog.text";
-    ACCOUNT_ID = "org.nypl.simplified.app.LoginDialog.accountid";
     PIN_ALLOWS_LETTERS = "org.nypl.simplified.app.LoginDialog.pinAllowsLetters";
     PIN_LENGTH = "org.nypl.simplified.app.LoginDialog.pinLength";
   }
 
-  private @Nullable
-  EditText barcode_edit;
-  private @Nullable
-  LoginListenerType listener;
-  private @Nullable
-  Button login;
-  private @Nullable
-  EditText pin_edit;
-  private @Nullable
-  TextView text;
-  private @Nullable
-  Button cancel;
+  private EditText barcode_edit;
+  private LoginListenerType listener;
+  private Button login;
+  private EditText pin_edit;
+  private TextView text;
+  private Button cancel;
+  private ProfilesControllerType controller;
+  private ListenableFuture<AccountEvent.AccountLoginEvent> login_task;
 
   /**
    * Construct a new dialog.
@@ -99,15 +91,16 @@ public final class LoginDialog extends DialogFragment
   }
 
   /**
-   * @param rr      The application resources
-   * @param message The error message returned by the device activation code
+   * @param resources The application resources
+   * @param message   The error message returned by the device activation code
    * @return An appropriate humanly-readable error message
    */
 
   public static String getDeviceActivationErrorMessage(
-      final Resources rr,
+      final Resources resources,
       final String message) {
-    /**
+
+    /*
      * This is absolutely not the way to do this. The nypl-drm-adobe
      * interfaces should be expanded to return values of an enum type. For now,
      * however, these are the only error codes that can be assigned useful
@@ -115,12 +108,12 @@ public final class LoginDialog extends DialogFragment
      */
 
     if (message.startsWith("E_ACT_TOO_MANY_ACTIVATIONS")) {
-      return rr.getString(R.string.settings_login_failed_adobe_device_limit);
+      return resources.getString(R.string.settings_login_failed_adobe_device_limit);
     } else if (message.startsWith("E_ADEPT_REQUEST_EXPIRED")) {
-      return rr.getString(
+      return resources.getString(
           R.string.settings_login_failed_adobe_device_bad_clock);
     } else {
-      return rr.getString(R.string.settings_login_failed_device);
+      return resources.getString(R.string.settings_login_failed_device);
     }
   }
 
@@ -134,9 +127,12 @@ public final class LoginDialog extends DialogFragment
    */
 
   public static LoginDialog newDialog(
+      final ProfilesControllerType controller,
       final String text,
       final AccountBarcode barcode,
       final AccountPIN pin) {
+
+    NullCheck.notNull(controller, "Controller");
     NullCheck.notNull(text);
     NullCheck.notNull(barcode);
     NullCheck.notNull(pin);
@@ -152,6 +148,7 @@ public final class LoginDialog extends DialogFragment
 
     final LoginDialog d = new LoginDialog();
     d.setArguments(b);
+    d.setController(controller);
     return d;
   }
 
@@ -168,11 +165,13 @@ public final class LoginDialog extends DialogFragment
    */
 
   public static LoginDialog newDialog(
+      final ProfilesControllerType controller,
       final String text,
       final AccountBarcode barcode,
       final AccountPIN pin,
       final Account account) {
 
+    NullCheck.notNull(controller, "Controller");
     NullCheck.notNull(text);
     NullCheck.notNull(barcode);
     NullCheck.notNull(pin);
@@ -182,24 +181,21 @@ public final class LoginDialog extends DialogFragment
     b.putSerializable(LoginDialog.TEXT_ID, text);
     b.putSerializable(LoginDialog.PIN_ID, pin.value());
     b.putSerializable(LoginDialog.BARCODE_ID, barcode.value());
-    b.putSerializable(LoginDialog.ACCOUNT_ID, account.getPathComponent());
     b.putSerializable(LoginDialog.PIN_ALLOWS_LETTERS, account.pinAllowsLetters());
     b.putSerializable(LoginDialog.PIN_LENGTH, account.getPinLength());
 
     final LoginDialog d = new LoginDialog();
     d.setArguments(b);
+    d.setController(controller);
     return d;
-
   }
 
   private void onAccountLoginFailure(
-      final OptionType<Throwable> error,
+      final OptionType<Exception> error,
       final String message) {
-    final String s = NullCheck.notNull(
-        String.format(
-            "login failed: %s", message));
 
-    LogUtilities.errorWithOptionalException(LoginDialog.LOG, s, error);
+    final String s = NullCheck.notNull(String.format("login failed: %s", message));
+    LogUtilities.errorWithOptionalException(LOG, s, error);
 
     final TextView in_text = NullCheck.notNull(this.text);
     final EditText in_barcode_edit = NullCheck.notNull(this.barcode_edit);
@@ -207,92 +203,22 @@ public final class LoginDialog extends DialogFragment
     final Button in_login = NullCheck.notNull(this.login);
     final Button in_cancel = NullCheck.notNull(this.cancel);
 
-    UIThread.runOnUIThread(
-        new Runnable() {
-          @Override
-          public void run() {
-            in_text.setText(message);
-            in_barcode_edit.setEnabled(true);
-            in_pin_edit.setEnabled(true);
-            in_login.setEnabled(true);
-            in_cancel.setEnabled(true);
-          }
-        });
+    UIThread.runOnUIThread(() -> {
+      in_text.setText(message);
+      in_barcode_edit.setEnabled(true);
+      in_pin_edit.setEnabled(true);
+      in_login.setEnabled(true);
+      in_cancel.setEnabled(true);
+    });
 
     final LoginListenerType ls = this.listener;
     if (ls != null) {
       try {
         ls.onLoginFailure(error, message);
       } catch (final Throwable e) {
-        LoginDialog.LOG.debug("{}", e.getMessage(), e);
+        LOG.debug("{}", e.getMessage(), e);
       }
     }
-  }
-
-  @Override
-  public void onAccountLoginFailureCredentialsIncorrect() {
-    LoginDialog.LOG.error("onAccountLoginFailureCredentialsIncorrect");
-
-    final Resources rr = NullCheck.notNull(this.getResources());
-    final OptionType<Throwable> none = Option.none();
-    this.onAccountLoginFailure(
-        none, rr.getString(R.string.settings_login_failed_credentials));
-  }
-
-  @Override
-  public void onAccountLoginFailureServerError(final int code) {
-    LoginDialog.LOG.error(
-        "onAccountLoginFailureServerError: {}", code);
-
-    final Resources rr = NullCheck.notNull(this.getResources());
-    final OptionType<Throwable> none = Option.none();
-    this.onAccountLoginFailure(
-        none, rr.getString(R.string.settings_login_failed_server));
-  }
-
-  @Override
-  public void onAccountLoginFailureLocalError(
-      final OptionType<Throwable> error,
-      final String message) {
-    LoginDialog.LOG.error("onAccountLoginFailureLocalError: {}", message);
-
-    final Resources rr = NullCheck.notNull(this.getResources());
-    this.onAccountLoginFailure(
-        error, rr.getString(R.string.settings_login_failed_server));
-  }
-
-  @Override
-  public void onAccountLoginSuccess(
-      final AccountAuthenticationCredentials creds) {
-    LoginDialog.LOG.debug("login succeeded");
-
-    UIThread.runOnUIThread(
-        new Runnable() {
-          @Override
-          public void run() {
-            LoginDialog.this.dismiss();
-          }
-        });
-
-    final LoginListenerType ls = this.listener;
-    if (ls != null) {
-      try {
-        ls.onLoginSuccess(creds);
-      } catch (final Throwable e) {
-        LoginDialog.LOG.debug("{}", e.getMessage(), e);
-      }
-    }
-  }
-
-  @Override
-  public void onAccountLoginFailureDeviceActivationError(final String message) {
-    LoginDialog.LOG.error(
-        "onAccountLoginFailureDeviceActivationError: {}", message);
-
-    final OptionType<Throwable> none = Option.none();
-    this.onAccountLoginFailure(
-        none, LoginDialog.getDeviceActivationErrorMessage(
-            this.getResources(), message));
   }
 
   @Override
@@ -310,23 +236,21 @@ public final class LoginDialog extends DialogFragment
   }
 
   @Override
-  public void onCancel(
-      final @Nullable DialogInterface dialog) {
-    LoginDialog.LOG.debug("login aborted");
+  public void onCancel(final @Nullable DialogInterface dialog) {
+    LOG.debug("login aborted");
 
     final LoginListenerType ls = this.listener;
     if (ls != null) {
       try {
         ls.onLoginAborted();
       } catch (final Throwable e) {
-        LoginDialog.LOG.debug("{}", e.getMessage(), e);
+        LOG.debug("{}", e.getMessage(), e);
       }
     }
   }
 
   @Override
-  public void onCreate(
-      final @Nullable Bundle state) {
+  public void onCreate(final @Nullable Bundle state) {
     super.onCreate(state);
     this.setStyle(DialogFragment.STYLE_NORMAL, R.style.SimplifiedLoginDialog);
   }
@@ -336,6 +260,7 @@ public final class LoginDialog extends DialogFragment
       final @Nullable LayoutInflater inflater_mn,
       final @Nullable ViewGroup container,
       final @Nullable Bundle state) {
+
     final LayoutInflater inflater = NullCheck.notNull(inflater_mn);
     final Bundle b = this.getArguments();
     final AccountPIN initial_pin =
@@ -345,7 +270,6 @@ public final class LoginDialog extends DialogFragment
     final String initial_txt =
         NullCheck.notNull(b.getString(LoginDialog.TEXT_ID));
 
-    final String account_id = b.getString(LoginDialog.ACCOUNT_ID);
     final int pin_length = b.getInt(LoginDialog.PIN_LENGTH);
     final boolean pin_allows_letters = b.getBoolean(LoginDialog.PIN_ALLOWS_LETTERS);
 
@@ -353,19 +277,17 @@ public final class LoginDialog extends DialogFragment
         (ViewGroup) inflater.inflate(
             R.layout.login_dialog, container, false));
 
-    final TextView in_text = NullCheck.notNull(
-        (TextView) in_layout.findViewById(R.id.login_dialog_text));
+    final TextView in_text =
+        NullCheck.notNull(in_layout.findViewById(R.id.login_dialog_text));
+    final TextView in_barcode_label =
+        NullCheck.notNull(in_layout.findViewById(R.id.login_dialog_barcode_text_view));
+    final EditText in_barcode_edit =
+        NullCheck.notNull(in_layout.findViewById(R.id.login_dialog_barcode_text_edit));
+    final TextView in_pin_label =
+        NullCheck.notNull(in_layout.findViewById(R.id.login_dialog_pin_text_view));
+    final EditText in_pin_edit =
+        NullCheck.notNull(in_layout.findViewById(R.id.login_dialog_pin_text_edit));
 
-    final TextView in_barcode_label = NullCheck.notNull(
-        (TextView) in_layout.findViewById(R.id.login_dialog_barcode_text_view));
-    final EditText in_barcode_edit = NullCheck.notNull(
-        (EditText) in_layout.findViewById(R.id.login_dialog_barcode_text_edit));
-
-    final TextView in_pin_label = NullCheck.notNull(
-        (TextView) in_layout.findViewById(R.id.login_dialog_pin_text_view));
-
-    final EditText in_pin_edit = NullCheck.notNull(
-        (EditText) in_layout.findViewById(R.id.login_dialog_pin_text_edit));
     if (!pin_allows_letters) {
       in_pin_edit.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
     }
@@ -376,140 +298,99 @@ public final class LoginDialog extends DialogFragment
     }
 
     final Button in_login_button =
-        NullCheck.notNull((Button) in_layout.findViewById(R.id.login_dialog_ok));
-    final Button in_login_cancel_button = NullCheck.notNull(
-        (Button) in_layout.findViewById(R.id.login_dialog_cancel));
-
+        NullCheck.notNull(in_layout.findViewById(R.id.login_dialog_ok));
+    final Button in_login_cancel_button =
+        NullCheck.notNull(in_layout.findViewById(R.id.login_dialog_cancel));
     final CheckBox in_eula_checkbox =
-        NullCheck.notNull((CheckBox) in_layout.findViewById(R.id.eula_checkbox));
+        NullCheck.notNull(in_layout.findViewById(R.id.eula_checkbox));
+    final Button in_login_request_new_code =
+        NullCheck.notNull(in_layout.findViewById(R.id.request_new_codes));
 
-    final Button in_login_request_new_code = NullCheck.notNull(
-        (Button) in_layout.findViewById(R.id.request_new_codes));
-
-    DocumentStoreType docs = Simplified.getDocumentStore();
-
-    final AuthenticationDocumentType auth_doc =
-        docs.getAuthenticationDocument();
+    final DocumentStoreType docs = Simplified.getDocumentStore();
+    final AuthenticationDocumentType auth_doc = docs.getAuthenticationDocument();
     in_barcode_label.setText(auth_doc.getLabelLoginUserID());
     in_pin_label.setText(auth_doc.getLabelLoginPassword());
 
-    final Resources rr = NullCheck.notNull(this.getResources());
-    final OptionType<AdobeVendorID> adobe_vendor = Option.some(new AdobeVendorID(rr.getString(R.string.feature_adobe_vendor_id)));
-
-    BooksType books = getBooksType();
-
-    if (account_id != null) {
-      final Account account = new AccountsRegistry(getActivity()).getAccount(Integer.valueOf(account_id));
-      books = getBooksType();
-      docs = Simplified.getDocumentStore();
-    }
-
+    final Resources resources = NullCheck.notNull(this.getResources());
     in_text.setText(initial_txt);
     in_barcode_edit.setText(initial_bar.toString());
     in_pin_edit.setText(initial_pin.toString());
 
     in_login_button.setEnabled(false);
-    final BooksType final_books = books;
     in_login_button.setOnClickListener(
-        new OnClickListener() {
-          @Override
-          public void onClick(
-              final @Nullable View button) {
-            in_barcode_edit.setEnabled(false);
-            in_pin_edit.setEnabled(false);
-            in_login_button.setEnabled(false);
-            in_login_cancel_button.setEnabled(false);
+        button -> {
+          in_barcode_edit.setEnabled(false);
+          in_pin_edit.setEnabled(false);
+          in_login_button.setEnabled(false);
+          in_login_cancel_button.setEnabled(false);
 
-            final Editable barcode_edit_text = in_barcode_edit.getText();
-            final Editable pin_edit_text = in_pin_edit.getText();
+          final Editable barcode_edit_text = in_barcode_edit.getText();
+          final Editable pin_edit_text = in_pin_edit.getText();
 
-            final AccountBarcode barcode =
-                AccountBarcode.create(NullCheck.notNull(barcode_edit_text.toString()));
-            final AccountPIN pin =
-                AccountPIN.create(NullCheck.notNull(pin_edit_text.toString()));
-            final AccountAuthenticationProvider provider =
-                AccountAuthenticationProvider.create(rr.getString(R.string.feature_default_auth_provider_name));
+          final AccountBarcode barcode =
+              AccountBarcode.create(NullCheck.notNull(barcode_edit_text.toString()));
+          final AccountPIN pin =
+              AccountPIN.create(NullCheck.notNull(pin_edit_text.toString()));
+          final AccountAuthenticationProvider provider =
+              AccountAuthenticationProvider.create(
+                  resources.getString(R.string.feature_default_auth_provider_name));
 
-            final AccountAuthenticationCredentials creds =
-                AccountAuthenticationCredentials.builder(pin, barcode)
-                    .setAuthenticationProvider(provider)
-                    .build();
+          final AccountAuthenticationCredentials creds =
+              AccountAuthenticationCredentials.builder(pin, barcode)
+                  .setAuthenticationProvider(provider)
+                  .build();
 
-            final_books.accountLogin(creds, LoginDialog.this);
-          }
+          this.login_task = this.controller.profileAccountLogin(creds);
+          this.login_task.addListener(
+              () -> onLoginTaskFinished(login_task),
+              Simplified.getBackgroundTaskExecutor());
         });
 
     in_login_cancel_button.setOnClickListener(
-        new OnClickListener() {
-          @Override
-          public void onClick(
-              final @Nullable View v) {
-            LoginDialog.this.onCancel(null);
-            LoginDialog.this.dismiss();
-          }
+        v -> {
+          LoginDialog.this.onCancel(null);
+          LoginDialog.this.dismiss();
         });
 
-    final boolean request_new_code = rr.getBoolean(R.bool.feature_default_auth_provider_request_new_code);
+    final boolean request_new_code =
+        resources.getBoolean(R.bool.feature_default_auth_provider_request_new_code);
 
     if (request_new_code) {
       in_login_request_new_code.setOnClickListener(
-          new OnClickListener() {
-            @Override
-            public void onClick(
-                final @Nullable View v) {
-              final Intent browser_intent = new Intent(Intent.ACTION_VIEW, Uri.parse(rr.getString(R.string.feature_default_auth_provider_request_new_code_uri)));
-              startActivity(browser_intent);
-            }
+          v -> {
+            final Intent browser_intent = new Intent(Intent.ACTION_VIEW, Uri.parse(resources.getString(R.string.feature_default_auth_provider_request_new_code_uri)));
+            startActivity(browser_intent);
           });
     } else {
-      // card creator (currently deactivated)
-//      in_login_request_new_code.setOnClickListener(
-//        new OnClickListener() {
-//          @Override
-//          public void onClick(
-//            final @Nullable View v) {
-//            final Intent cardcreator = new Intent(LoginDialog.this.getActivity(), CardCreatorActivity.class);
-//            startActivity(cardcreator);
-//          }
-//        });
-//      in_login_request_new_code.setText("Sign Up");
       in_login_request_new_code.setVisibility(View.GONE);
     }
-
 
     final AtomicBoolean in_barcode_empty = new AtomicBoolean(true);
     final AtomicBoolean in_pin_empty = new AtomicBoolean(true);
 
-
     final OptionType<EULAType> eula_opt = docs.getEULA();
-
     if (eula_opt.isSome()) {
       final Some<EULAType> some_eula = (Some<EULAType>) eula_opt;
       final EULAType eula = some_eula.get();
 
-
       in_eula_checkbox.setChecked(eula.eulaHasAgreed());
+      in_eula_checkbox.setOnCheckedChangeListener((button, checked) -> {
 
-      in_eula_checkbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-        @Override
-        public void onCheckedChanged(final CompoundButton button, final boolean checked) {
+        final boolean barcode_not_empty = !in_barcode_empty.get();
+        final boolean pin_not_empty = !in_pin_empty.get();
+        final boolean eula_checked = in_eula_checkbox.isChecked();
 
-          eula.eulaSetHasAgreed(checked);
-          in_login_button.setEnabled(
-              (!in_barcode_empty.get()) && (!in_pin_empty.get()) && in_eula_checkbox.isChecked());
-
-        }
+        eula.eulaSetHasAgreed(checked);
+        in_login_button.setEnabled(barcode_not_empty && pin_not_empty && eula_checked);
       });
 
       if (eula.eulaHasAgreed()) {
-        LoginDialog.LOG.debug("EULA: agreed");
-
+        LOG.debug("EULA: agreed");
       } else {
-        LoginDialog.LOG.debug("EULA: not agreed");
-
+        LOG.debug("EULA: not agreed");
       }
     } else {
-      LoginDialog.LOG.debug("EULA: unavailable");
+      LOG.debug("EULA: unavailable");
     }
 
     in_barcode_edit.addTextChangedListener(
@@ -535,9 +416,13 @@ public final class LoginDialog extends DialogFragment
               final int start,
               final int before,
               final int count) {
+
+            final boolean barcode_not_empty = !in_barcode_empty.get();
+            final boolean pin_not_empty = !in_pin_empty.get();
+            final boolean eula_checked = in_eula_checkbox.isChecked();
+
             in_barcode_empty.set(NullCheck.notNull(s).length() == 0);
-            in_login_button.setEnabled(
-                (!in_barcode_empty.get()) && (!in_pin_empty.get()) && in_eula_checkbox.isChecked());
+            in_login_button.setEnabled(barcode_not_empty && pin_not_empty && eula_checked);
           }
         });
 
@@ -564,9 +449,13 @@ public final class LoginDialog extends DialogFragment
               final int start,
               final int before,
               final int count) {
+
+            final boolean barcode_not_empty = !in_barcode_empty.get();
+            final boolean pin_not_empty = !in_pin_empty.get();
+            final boolean eula_checked = in_eula_checkbox.isChecked();
+
             in_pin_empty.set(NullCheck.notNull(s).length() == 0);
-            in_login_button.setEnabled(
-                (!in_barcode_empty.get()) && (!in_pin_empty.get()) && in_eula_checkbox.isChecked());
+            in_login_button.setEnabled(barcode_not_empty && pin_not_empty && eula_checked);
           }
         });
 
@@ -584,8 +473,69 @@ public final class LoginDialog extends DialogFragment
     return in_layout;
   }
 
-  private static BooksType getBooksType() {
-    throw new UnimplementedCodeException();
+  private void onLoginTaskFinished(final ListenableFuture<AccountEvent.AccountLoginEvent> login_task) {
+
+    Assertions.checkPrecondition(
+        login_task.isDone() || login_task.isCancelled(),
+        "Login task is completed");
+
+    final Resources resources = NullCheck.notNull(this.getResources());
+
+    try {
+      final AccountEvent.AccountLoginEvent event = login_task.get();
+      event.matchLogin(this::onLoginTaskSucceeded, this::onLoginTaskFailed);
+    } catch (final InterruptedException | ExecutionException e) {
+      /// XXX: This is not correct, need a new translation string for local device errors
+      this.onAccountLoginFailure(
+          Option.some(e), resources.getString(R.string.settings_login_failed_server));
+    }
+  }
+
+  private Unit onLoginTaskFailed(final AccountLoginFailed failed) {
+    final Resources resources = NullCheck.notNull(this.getResources());
+
+    switch (failed.errorCode()) {
+      case ERROR_PROFILE_CONFIGURATION: {
+        /// XXX: This is not correct, need a new translation string for local device errors
+        this.onAccountLoginFailure(
+            failed.exception(), resources.getString(R.string.settings_login_failed_server));
+        return Unit.unit();
+      }
+      case ERROR_NETWORK_EXCEPTION: {
+        /// XXX: This is not correct, need a new translation string for network errors
+        this.onAccountLoginFailure(
+            failed.exception(), resources.getString(R.string.settings_login_failed_server));
+        return Unit.unit();
+      }
+      case ERROR_CREDENTIALS_INCORRECT: {
+        this.onAccountLoginFailure(
+            failed.exception(), resources.getString(R.string.settings_login_failed_credentials));
+        return Unit.unit();
+      }
+      case ERROR_SERVER_ERROR: {
+        this.onAccountLoginFailure(
+            failed.exception(), resources.getString(R.string.settings_login_failed_server));
+        return Unit.unit();
+      }
+    }
+
+    throw new UnreachableCodeException();
+  }
+
+  private Unit onLoginTaskSucceeded(final AccountLoginSucceeded succeeded) {
+
+    UIThread.runOnUIThread(LoginDialog.this::dismiss);
+
+    final LoginListenerType ls = this.listener;
+    if (ls != null) {
+      try {
+        ls.onLoginSuccess(succeeded.credentials());
+      } catch (final Throwable e) {
+        LOG.debug("{}", e.getMessage(), e);
+      }
+    }
+
+    return Unit.unit();
   }
 
   /**
@@ -595,46 +545,11 @@ public final class LoginDialog extends DialogFragment
    * @param in_listener The listener
    */
 
-  public void setLoginListener(
-      final LoginListenerType in_listener) {
+  public void setLoginListener(final LoginListenerType in_listener) {
     this.listener = NullCheck.notNull(in_listener);
   }
 
-  @Override
-  public void onAccountSyncAuthenticationFailure(final String message) {
-    // Nothing
-  }
-
-  @Override
-  public void onAccountSyncBook(final BookID book) {
-    // Nothing
-  }
-
-  @Override
-  public void onAccountSyncFailure(
-      final OptionType<Throwable> error,
-      final String message) {
-    LogUtilities.errorWithOptionalException(LoginDialog.LOG, message, error);
-  }
-
-  @Override
-  public void onAccountSyncSuccess() {
-    // Nothing
-  }
-
-  @Override
-  public void onAccountSyncBookDeleted(final BookID book) {
-    // Nothing
-  }
-
-
-  @Override
-  public void onDeviceActivationFailure(final String message) {
-    // Nothing
-  }
-
-  @Override
-  public void onDeviceActivationSuccess() {
-    // Nothing
+  private void setController(final ProfilesControllerType controller) {
+    this.controller = NullCheck.notNull(controller, "Controller");
   }
 }

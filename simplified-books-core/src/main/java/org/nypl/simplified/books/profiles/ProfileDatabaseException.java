@@ -8,7 +8,7 @@ import java.util.List;
  * An exception that indicates that an operation on the profiles database failed.
  */
 
-public final class ProfileDatabaseException extends RuntimeException {
+public abstract class ProfileDatabaseException extends Exception {
 
   private final List<Exception> causes;
 
@@ -30,7 +30,7 @@ public final class ProfileDatabaseException extends RuntimeException {
    * @return The list of exceptions raised that caused this exception
    */
 
-  public List<Exception> causes() {
+  public final List<Exception> causes() {
     return this.causes;
   }
 }

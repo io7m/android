@@ -39,17 +39,6 @@ public interface AccountsControllerType {
       boolean needs_auch);
 
   /**
-   * Log in, delivering results to the given {@code listener}.
-   *
-   * @param credentials The account credentials
-   * @param listener    The listener
-   */
-
-  void accountLogin(
-      AccountAuthenticationCredentials credentials,
-      AccountLoginListenerType listener);
-
-  /**
    * Log out, delivering results to the given {@code listener}.
    *
    * @param credentials     account credentials

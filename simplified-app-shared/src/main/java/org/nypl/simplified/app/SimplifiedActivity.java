@@ -245,29 +245,6 @@ public abstract class SimplifiedActivity extends Activity
     return drawer_items.build();
   }
 
-  /**
-   * @return A list of the account providers used by the current profile
-   */
-
-  private static ImmutableList<AccountProvider> calculateCurrentlyUsedAccountProviders() {
-
-    final ArrayList<AccountProvider> drawer_items_accounts = new ArrayList<>();
-    final AccountProviderCollection account_providers =
-        Simplified.getAccountProviders();
-    final ProfileReadableType profile =
-        Simplified.getProfilesController().profileCurrent();
-
-    for (final AccountType account : profile.accounts().values()) {
-      if (account_providers.providers().containsKey(account.provider())) {
-        final AccountProvider account_provider =
-            account_providers.providers().get(account.provider());
-        drawer_items_accounts.add(account_provider);
-      }
-    }
-
-    return ImmutableList.sortedCopyOf(drawer_items_accounts);
-  }
-
   private void finishWithConditionalAnimationOverride() {
     this.finish();
 
@@ -385,7 +362,7 @@ public abstract class SimplifiedActivity extends Activity
       } else {
         // replace drawer with selection of libraries
         final ListView dl =
-            NullCheck.notNull((ListView) this.findViewById(R.id.left_drawer));
+            NullCheck.notNull(this.findViewById(R.id.left_drawer));
 
         dl.setOnItemClickListener(this);
         dl.setAdapter(this.adapter_accounts);
@@ -458,11 +435,11 @@ public abstract class SimplifiedActivity extends Activity
      */
 
     final DrawerLayout drawer_layout =
-        NullCheck.notNull((DrawerLayout) this.findViewById(R.id.drawer_layout));
+        NullCheck.notNull(this.findViewById(R.id.drawer_layout));
     final ListView drawer_list_view =
-        NullCheck.notNull((ListView) this.findViewById(R.id.left_drawer));
+        NullCheck.notNull(this.findViewById(R.id.left_drawer));
     final FrameLayout frame_layout =
-        NullCheck.notNull((FrameLayout) this.findViewById(R.id.content_frame));
+        NullCheck.notNull(this.findViewById(R.id.content_frame));
 
     drawer_layout.setDrawerListener(this);
     drawer_layout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
@@ -472,7 +449,7 @@ public abstract class SimplifiedActivity extends Activity
     final List<SimplifiedPart> drawer_items =
         calculateDrawerItems(holds_enabled);
     final ImmutableList<AccountProvider> drawer_item_accounts =
-        calculateCurrentlyUsedAccountProviders();
+        Simplified.getProfilesController().profileCurrentlyUsedAccountProviders();
     final ImmutableList<Object> drawer_item_accounts_untyped =
         ImmutableList.builder()
             .addAll(drawer_item_accounts)
@@ -482,7 +459,7 @@ public abstract class SimplifiedActivity extends Activity
     final LayoutInflater inflater = NullCheck.notNull(this.getLayoutInflater());
 
     this.adapter_accounts =
-        new ArrayAdapterWithAccounts(this, drawer_item_accounts_untyped, inflater);
+        new ArrayAdapterWithAccounts(this, this.getAssets(), drawer_item_accounts_untyped, inflater);
     this.adapter =
         new ArrayAdapterWithoutAccounts(
             this, this.getAssets(), drawer_items, inflater, resources, drawer_list_view);
@@ -599,7 +576,7 @@ public abstract class SimplifiedActivity extends Activity
       final long id) {
 
     final ListView drawer_list =
-        NullCheck.notNull((ListView) this.findViewById(R.id.left_drawer));
+        NullCheck.notNull(this.findViewById(R.id.left_drawer));
 
     if (drawer_list.getAdapter().equals(this.adapter)) {
       LOG.debug("onItemClick: {}", position);
@@ -735,9 +712,9 @@ public abstract class SimplifiedActivity extends Activity
       }
 
       final TextView text_view =
-          NullCheck.notNull((TextView) v.findViewById(android.R.id.text1));
+          NullCheck.notNull(v.findViewById(android.R.id.text1));
       final ImageView icon_view =
-          NullCheck.notNull((ImageView) v.findViewById(R.id.cellIcon));
+          NullCheck.notNull(v.findViewById(R.id.cellIcon));
 
       if (part.equals(PART_SWITCHER)) {
         v.setBackgroundResource(R.drawable.textview_underline);
@@ -747,7 +724,8 @@ public abstract class SimplifiedActivity extends Activity
 
         text_view.setText(account_provider.displayName());
         text_view.setTextColor(Color.parseColor(account_provider.mainColor()));
-        configureLogo(this.assets, icon_view, account_provider.logo());
+        SimplifiedIconViews.configureIconViewFromURI(
+            this.assets, icon_view, account_provider.logo());
 
       } else {
         text_view.setText(part.getPartName(resources));
@@ -782,24 +760,6 @@ public abstract class SimplifiedActivity extends Activity
     }
   }
 
-  private static void configureLogo(
-      final AssetManager assets,
-      final ImageView icon_view,
-      final URI logo) {
-
-    if ("simplified-asset".equals(logo.getScheme())) {
-      final String path = logo.getSchemeSpecificPart();
-      LOG.debug("opening image asset: {}", path);
-      try (InputStream stream = assets.open(path)) {
-        icon_view.setImageDrawable(Drawable.createFromStream(stream, path));
-      } catch (final IOException e) {
-        LOG.error("could not open image asset: {}: ", logo, e);
-      }
-    } else {
-      icon_view.setImageURI(Uri.parse(logo.toString()));
-    }
-  }
-
   /**
    * An array adapter that shows both application parts and account providers.
    */
@@ -808,14 +768,17 @@ public abstract class SimplifiedActivity extends Activity
 
     private final ImmutableList<Object> drawer_item_accounts_untyped;
     private final LayoutInflater inflater;
+    private final AssetManager assets;
 
     ArrayAdapterWithAccounts(
         final SimplifiedActivity activity,
+        final AssetManager in_assets,
         final ImmutableList<Object> drawer_item_accounts_untyped,
         final LayoutInflater inflater) {
 
       super(activity, R.layout.drawer_item_account, drawer_item_accounts_untyped);
       this.drawer_item_accounts_untyped = drawer_item_accounts_untyped;
+      this.assets = in_assets;
       this.inflater = inflater;
     }
 
@@ -833,14 +796,17 @@ public abstract class SimplifiedActivity extends Activity
       }
 
       final TextView text_view =
-          NullCheck.notNull((TextView) v.findViewById(android.R.id.text1));
+          NullCheck.notNull(v.findViewById(android.R.id.text1));
       final ImageView icon_view =
-          NullCheck.notNull((ImageView) v.findViewById(R.id.cellIcon));
+          NullCheck.notNull(v.findViewById(R.id.cellIcon));
 
       final Object object = NullCheck.notNull(drawer_item_accounts_untyped.get(position));
       if (object instanceof AccountProvider) {
         final AccountProvider account_provider = (AccountProvider) object;
         text_view.setText(account_provider.displayName());
+        SimplifiedIconViews.configureIconViewFromURI(
+            this.assets, icon_view, account_provider.logo());
+
         icon_view.setImageURI(Uri.parse(account_provider.logo().toString()));
         return v;
       }

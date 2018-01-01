@@ -3,7 +3,9 @@ package org.nypl.simplified.books.controller;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 
+import org.nypl.simplified.books.profiles.ProfileAnonymousEnabledException;
 import org.nypl.simplified.books.profiles.ProfileID;
+import org.nypl.simplified.books.profiles.ProfileNonexistentException;
 import org.nypl.simplified.books.profiles.ProfilesDatabaseType;
 
 import java.util.concurrent.Callable;
@@ -24,7 +26,7 @@ final class ProfileSelectionTask implements Callable<Unit> {
   }
 
   @Override
-  public Unit call() {
+  public Unit call() throws ProfileNonexistentException, ProfileAnonymousEnabledException {
     this.profiles.setProfileCurrent(this.profile_id);
     return Unit.unit();
   }

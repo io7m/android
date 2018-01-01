@@ -1,11 +1,16 @@
 package org.nypl.simplified.tests.books.accounts;
 
+import com.io7m.jfunctional.Option;
+
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
+import org.nypl.simplified.books.accounts.AccountBarcode;
+import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabase;
@@ -80,7 +85,6 @@ public abstract class AccountsDatabaseContract {
     f_p.mkdirs();
     final File f_acc = new File(f_p, "accounts");
 
-    final FakeProfile owner = new FakeProfile(ProfileID.create(0), f_pro, "Kermit");
     FileUtilities.fileWriteUTF8(f_acc, "Hello!");
 
     expected.expect(AccountsDatabaseException.class);
@@ -106,8 +110,6 @@ public abstract class AccountsDatabaseContract {
     final File f_a = new File(f_acc, "xyz");
     f_a.mkdirs();
 
-    final FakeProfile owner = new FakeProfile(ProfileID.create(0), f_pro, "Kermit");
-
     expected.expect(AccountsDatabaseException.class);
     expected.expect(new CausesContains<>(
         IOException.class, "Could not parse directory name as an account ID"));
@@ -128,8 +130,6 @@ public abstract class AccountsDatabaseContract {
     final File f_a = new File(f_acc, "0");
     f_a.mkdirs();
 
-    final FakeProfile owner = new FakeProfile(ProfileID.create(0), f_pro, "Kermit");
-
     expected.expect(AccountsDatabaseException.class);
     expected.expect(new CausesContains<>(IOException.class, "Could not parse account: "));
     AccountsDatabase.open(bookDatabases(), f_acc);
@@ -148,8 +148,6 @@ public abstract class AccountsDatabaseContract {
     f_acc.mkdirs();
     final File f_a = new File(f_acc, "0");
     f_a.mkdirs();
-
-    final FakeProfile owner = new FakeProfile(ProfileID.create(0), f_pro, "Kermit");
 
     final File f_f = new File(f_a, "account.json");
     FileUtilities.fileWriteUTF8(f_f, "} { this is not JSON { } { }");
@@ -170,8 +168,6 @@ public abstract class AccountsDatabaseContract {
     f_p.mkdirs();
     final File f_acc = new File(f_p, "accounts");
 
-    final FakeProfile owner = new FakeProfile(ProfileID.create(0), f_pro, "Kermit");
-
     final AccountsDatabaseType db = AccountsDatabase.open(bookDatabases(), f_acc);
     Assert.assertEquals(0, db.accounts().size());
     Assert.assertEquals(f_acc, db.directory());
@@ -187,8 +183,6 @@ public abstract class AccountsDatabaseContract {
     final File f_p = new File(f_pro, "0");
     f_p.mkdirs();
     final File f_acc = new File(f_p, "accounts");
-
-    final FakeProfile owner = new FakeProfile(ProfileID.create(0), f_pro, "Kermit");
 
     final AccountsDatabaseType db =
         AccountsDatabase.open(bookDatabases(), f_acc);
@@ -216,6 +210,9 @@ public abstract class AccountsDatabaseContract {
 
     Assert.assertNotEquals(acc0.id(), acc1.id());
     Assert.assertNotEquals(acc0.directory(), acc1.directory());
+
+    Assert.assertEquals(Option.none(), acc0.credentials());
+    Assert.assertEquals(Option.none(), acc1.credentials());
   }
 
   @Test
@@ -228,8 +225,6 @@ public abstract class AccountsDatabaseContract {
     final File f_p = new File(f_pro, "0");
     f_p.mkdirs();
     final File f_acc = new File(f_p, "accounts");
-
-    final FakeProfile owner = new FakeProfile(ProfileID.create(0), f_pro, "Kermit");
 
     final AccountsDatabaseType db0 = AccountsDatabase.open(bookDatabases(), f_acc);
 
@@ -252,6 +247,31 @@ public abstract class AccountsDatabaseContract {
     Assert.assertEquals(acc1.directory(), acr1.directory());
     Assert.assertEquals(acc0.provider(), acr0.provider());
     Assert.assertEquals(acc1.provider(), acr1.provider());
+  }
+
+  @Test
+  public final void testSetCredentials()
+      throws Exception {
+
+    final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
+    final File f_pro = new File(f_tmp, "profiles");
+    f_pro.mkdirs();
+    final File f_p = new File(f_pro, "0");
+    f_p.mkdirs();
+    final File f_acc = new File(f_p, "accounts");
+
+    final AccountsDatabaseType db0 = AccountsDatabase.open(bookDatabases(), f_acc);
+    final AccountProvider provider0 = fakeProvider("http://www.example.com/accounts0/");
+    final AccountType acc0 = db0.createAccount(provider0);
+
+    final AccountAuthenticationCredentials creds =
+        AccountAuthenticationCredentials.builder(
+            AccountPIN.create("1234"),
+            AccountBarcode.create("1234"))
+            .build();
+
+    acc0.setCredentials(Option.some(creds));
+    Assert.assertEquals(Option.some(creds), acc0.credentials());
   }
 
   private static AccountProvider fakeProvider(final String provider_id) {

@@ -27,6 +27,7 @@ import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookEvent;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
 import org.nypl.simplified.books.controller.BooksControllerType;
+import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.core.BookDatabaseEntrySnapshot;
 import org.nypl.simplified.books.core.BookDatabaseReadableType;
 import org.nypl.simplified.books.core.BooksStatusCacheType;
@@ -77,6 +78,7 @@ public final class CatalogFeedWithoutGroups
   private final BookRegistryReadableType books_registry;
   private final BooksControllerType books_controller;
   private final AccountProvider account_provider;
+  private final ProfilesControllerType profiles_controller;
 
   /**
    * Construct a view.
@@ -84,7 +86,9 @@ public final class CatalogFeedWithoutGroups
    * @param in_activity                The host activity
    * @param in_book_cover_provider     A cover provider
    * @param in_book_selection_listener A book selection listener
-   * @param in_book_registry                   The books registry
+   * @param in_book_registry           The books registry
+   * @param in_book_controller         The books controller
+   * @param in_profiles_controller     The profiles controller
    * @param in_feed_loader             An asynchronous feed loader
    * @param in_feed                    The current feed
    */
@@ -96,6 +100,7 @@ public final class CatalogFeedWithoutGroups
       final CatalogBookSelectionListenerType in_book_selection_listener,
       final BookRegistryReadableType in_book_registry,
       final BooksControllerType in_book_controller,
+      final ProfilesControllerType in_profiles_controller,
       final FeedLoaderType in_feed_loader,
       final FeedWithoutGroups in_feed) {
 
@@ -111,6 +116,8 @@ public final class CatalogFeedWithoutGroups
         NullCheck.notNull(in_book_registry, "Books registry");
     this.books_controller =
         NullCheck.notNull(in_book_controller, "Books controller");
+    this.profiles_controller =
+        NullCheck.notNull(in_profiles_controller, "Profiles controller");
     this.feed =
         NullCheck.notNull(in_feed, "Feed");
     this.feed_loader =
@@ -194,6 +201,7 @@ public final class CatalogFeedWithoutGroups
           this.account_provider,
           this.book_cover_provider,
           this.books_controller,
+          this.profiles_controller,
           this.books_registry);
     }
 

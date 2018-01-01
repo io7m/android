@@ -10,7 +10,6 @@ import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 import com.io7m.junreachable.UnimplementedCodeException;
-import com.io7m.junreachable.UnreachableCodeException;
 
 import org.nypl.simplified.app.LoginActivity;
 import org.nypl.simplified.app.LoginDialog;
@@ -21,8 +20,7 @@ import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.controller.BooksControllerType;
-import org.nypl.simplified.books.core.AccountGetCachedCredentialsListenerType;
-import org.nypl.simplified.books.core.BooksType;
+import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.core.FeedEntryOPDS;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.opds.core.OPDSAcquisition;
@@ -36,19 +34,17 @@ import org.slf4j.Logger;
  * borrow of a given book.
  */
 
-public final class CatalogAcquisitionButtonController
-    implements OnClickListener, LoginListenerType {
-  private static final Logger LOG;
+public final class CatalogAcquisitionButtonController implements OnClickListener, LoginListenerType {
 
-  static {
-    LOG = LogUtilities.getLog(CatalogAcquisitionButtonController.class);
-  }
+  private static final Logger LOG  =
+      LogUtilities.getLog(CatalogAcquisitionButtonController.class);
 
-  private final OPDSAcquisition acq;
+  private final OPDSAcquisition acquisition;
   private final Activity activity;
   private final BooksControllerType books;
   private final FeedEntryOPDS entry;
   private final BookID id;
+  private final ProfilesControllerType profiles;
 
   /**
    * Construct a button controller.
@@ -62,15 +58,24 @@ public final class CatalogAcquisitionButtonController
 
   public CatalogAcquisitionButtonController(
       final Activity in_activity,
+      final ProfilesControllerType in_profiles,
       final BooksControllerType in_books,
       final BookID in_id,
       final OPDSAcquisition in_acq,
       final FeedEntryOPDS in_entry) {
-    this.activity = NullCheck.notNull(in_activity, "Activity");
-    this.acq = NullCheck.notNull(in_acq, "OPDS Acquisition");
-    this.id = NullCheck.notNull(in_id, "Book ID");
-    this.books = NullCheck.notNull(in_books);
-    this.entry = NullCheck.notNull(in_entry);
+
+    this.activity =
+        NullCheck.notNull(in_activity, "Activity");
+    this.acquisition =
+        NullCheck.notNull(in_acq, "OPDS Acquisition");
+    this.id =
+        NullCheck.notNull(in_id, "Book ID");
+    this.profiles =
+        NullCheck.notNull(in_profiles, "Profiles controller");
+    this.books =
+        NullCheck.notNull(in_books, "Books controller");
+    this.entry =
+        NullCheck.notNull(in_entry, "Feed entry");
   }
 
   @Override
@@ -79,7 +84,7 @@ public final class CatalogAcquisitionButtonController
 
     throw new UnimplementedCodeException();
 
-/*    if (this.books.accountIsLoggedIn() && isNeedsAuth() && this.acq.getType() != OPDSAcquisition.Type.ACQUISITION_OPEN_ACCESS) {
+/*    if (this.books.accountIsLoggedIn() && isNeedsAuth() && this.acquisition.getType() != OPDSAcquisition.Type.ACQUISITION_OPEN_ACCESS) {
       this.books.accountGetCachedLoginDetails(
           new AccountGetCachedCredentialsListenerType() {
             @Override
@@ -93,7 +98,7 @@ public final class CatalogAcquisitionButtonController
               CatalogAcquisitionButtonController.this.onLoginSuccess(creds);
             }
           });
-    } else if (!isNeedsAuth() || this.acq.getType() == OPDSAcquisition.Type.ACQUISITION_OPEN_ACCESS) {
+    } else if (!isNeedsAuth() || this.acquisition.getType() == OPDSAcquisition.Type.ACQUISITION_OPEN_ACCESS) {
       this.getBook();
     } else {
       this.tryLogin();
@@ -109,21 +114,15 @@ public final class CatalogAcquisitionButtonController
     final boolean clever_enabled = this.activity.getResources().getBoolean(R.bool.feature_auth_provider_clever);
 
     if (clever_enabled) {
-
-      final Intent account =
-          new Intent(this.activity, LoginActivity.class);
-
+      final Intent account = new Intent(this.activity, LoginActivity.class);
       this.activity.startActivityForResult(account, 1);
-
       this.activity.overridePendingTransition(0, 0);
-
     } else {
 
       final AccountBarcode barcode = AccountBarcode.create("");
       final AccountPIN pin = AccountPIN.create("");
 
-      final LoginDialog df =
-          LoginDialog.newDialog("Login required", barcode, pin);
+      final LoginDialog df = LoginDialog.newDialog(this.profiles, "Login required", barcode, pin);
       df.setLoginListener(this);
 
       final FragmentManager fm = this.activity.getFragmentManager();
@@ -138,23 +137,21 @@ public final class CatalogAcquisitionButtonController
 
   @Override
   public void onLoginFailure(
-      final OptionType<Throwable> error,
+      final OptionType<? extends Throwable> error,
       final String message) {
     // Nothing
   }
 
   @Override
-  public void onLoginSuccess(
-      final AccountAuthenticationCredentials creds) {
-    CatalogAcquisitionButtonController.LOG.debug("login succeeded");
+  public void onLoginSuccess(final AccountAuthenticationCredentials creds) {
+    LOG.debug("login succeeded");
     this.getBook();
   }
 
   private void getBook() {
-    CatalogAcquisitionButtonController.LOG.debug(
-        "attempting borrow of {} acquisition", this.acq.getType());
+    LOG.debug("attempting borrow of {} acquisition", this.acquisition.getType());
 
-    switch (this.acq.getType()) {
+    switch (this.acquisition.getType()) {
       case ACQUISITION_BORROW:
       case ACQUISITION_GENERIC:
       case ACQUISITION_OPEN_ACCESS: {

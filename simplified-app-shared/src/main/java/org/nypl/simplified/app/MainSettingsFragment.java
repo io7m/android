@@ -1,110 +1,30 @@
 package org.nypl.simplified.app;
 
-
 import android.content.Intent;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.view.View;
-import android.widget.Toast;
 
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.ProcedureType;
 import com.io7m.jnull.NullCheck;
-import com.io7m.junreachable.UnimplementedCodeException;
 import com.tenmiles.helpstack.HSHelpStack;
 import com.tenmiles.helpstack.gears.HSDeskGear;
 
-import org.nypl.simplified.app.testing.AlternateFeedURIsActivity;
-import org.nypl.simplified.app.testing.OnMultipleClickListener;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
-import org.nypl.simplified.books.core.BooksControllerConfigurationType;
 import org.nypl.simplified.books.core.DocumentStoreType;
-import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.books.core.SyncedDocumentType;
-import org.slf4j.Logger;
 
 class MainSettingsFragment extends PreferenceFragment implements LoginListenerType {
 
-
-  private static final Logger LOG;
-
-
-  static {
-    LOG = LogUtilities.getLog(MainSettingsFragment.class);
-  }
   /**
    * Construct an Fragment.
    */
+
   MainSettingsFragment() {
 
-  }
-
-  @Override
-  public void onResume() {
-    super.onResume();
-
-    final Resources resources = NullCheck.notNull(this.getResources());
-    final Preference secret = findPreference(resources.getString(R.string.settings_alt_uris));
-
-    try {
-      final PackageInfo p_info = MainSettingsFragment.this.getActivity().getPackageManager().getPackageInfo(MainSettingsFragment.this.getActivity().getPackageName(), 0);
-      final String version = p_info.versionName;
-      secret.setTitle("Version: " + version + " (" + p_info.versionCode + ")");
-
-    } catch (PackageManager.NameNotFoundException e) {
-      e.printStackTrace();
-    }
-
-    final BooksControllerConfigurationType books_config =
-        getBooksGetConfiguration();
-
-    if (books_config.getAlternateRootFeedURI() != null) {
-      final Bundle b = new Bundle();
-      SimplifiedActivity.setActivityArguments(b, false);
-      final Intent intent = new Intent();
-      intent.setClass(
-        MainSettingsFragment.this.getActivity(), AlternateFeedURIsActivity.class);
-      intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-      intent.putExtras(b);
-
-      secret.setTitle(resources.getString(R.string.settings_alt_uris));
-      secret.setIntent(intent);
-      secret.setOnPreferenceClickListener(null);
-
-    } else {
-      secret.setIntent(null);
-      secret.setOnPreferenceClickListener(new OnMultipleClickListener() {
-
-        @Override
-        public boolean onMultipleClick(final Preference v) {
-
-
-          final Bundle b = new Bundle();
-          SimplifiedActivity.setActivityArguments(b, false);
-          final Intent intent = new Intent();
-          intent.setClass(
-            MainSettingsFragment.this.getActivity(), AlternateFeedURIsActivity.class);
-          intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-          intent.putExtras(b);
-
-          secret.setTitle(resources.getString(R.string.settings_alt_uris));
-          secret.setIntent(intent);
-
-          final Toast toast = Toast.makeText(MainSettingsFragment.this.getActivity(), resources.getString(R.string.settings_alt_uris) + " activated", Toast.LENGTH_SHORT);
-          toast.show();
-          return true;
-        }
-      });
-
-    }
-  }
-
-  private static BooksControllerConfigurationType getBooksGetConfiguration() {
-    throw new UnimplementedCodeException();
   }
 
   @Override
@@ -121,7 +41,7 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
 
     final Resources resources = NullCheck.notNull(this.getResources());
     final DocumentStoreType docs = Simplified.getDocumentStore();
-    final OptionType<HelpstackType> helpstack = getHelpStack();
+    final OptionType<HelpstackType> helpstack = Simplified.getHelpStack();
 
     {
       final Preference preferences = findPreference(resources.getString(R.string.settings_accounts));
@@ -133,13 +53,11 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
           final Bundle b = new Bundle();
           SimplifiedActivity.setActivityArguments(b, false);
           final Intent intent = new Intent();
-          intent.setClass(
-            MainSettingsFragment.this.getActivity(), MainSettingsAccountsActivity.class);
+          intent.setClass(getActivity(), MainSettingsAccountsActivity.class);
           intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
           intent.putExtras(b);
 
           preferences.setIntent(intent);
-
           return false;
         }
       });
@@ -153,15 +71,12 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
         preference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
           @Override
           public boolean onPreferenceClick(final Preference preference) {
-
-            final HSHelpStack stack = HSHelpStack.getInstance(getActivity());
-
+            final HSHelpStack stack =
+                HSHelpStack.getInstance(getActivity());
             final HSDeskGear gear =
               new HSDeskGear("https://nypl.desk.com/", "4GBRmMv8ZKG8fGehhA", "12060");
             stack.setGear(gear);
-
             stack.showHelp(getActivity());
-
             return false;
           }
         });
@@ -225,23 +140,19 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
     }
   }
 
-  private static OptionType<HelpstackType> getHelpStack() {
-    throw new UnimplementedCodeException();
-  }
-
   @Override
   public void onLoginAborted() {
     // do nothing
   }
 
   @Override
-  public void onLoginFailure(final OptionType<Throwable> error, final String message) {
+  public void onLoginFailure(final OptionType<? extends Throwable> error, final String message) {
     // do nothing
   }
 
   @Override
   public void onLoginSuccess(final AccountAuthenticationCredentials creds) {
     final Intent account = new Intent(this.getActivity(), MainSettingsAccountActivity.class);
-    MainSettingsFragment.this.startActivity(account);
+    this.startActivity(account);
   }
 }
