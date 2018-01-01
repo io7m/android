@@ -23,7 +23,6 @@ import com.squareup.picasso.Callback;
 import org.nypl.simplified.app.BookCoverProviderType;
 import org.nypl.simplified.app.R;
 import org.nypl.simplified.app.ScreenSizeInformationType;
-import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.app.utilities.FadeUtilities;
 import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.core.FeedEntryCorrupt;
@@ -32,7 +31,6 @@ import org.nypl.simplified.books.core.FeedEntryOPDS;
 import org.nypl.simplified.books.core.FeedEntryType;
 import org.nypl.simplified.books.core.FeedGroup;
 import org.nypl.simplified.books.core.LogUtilities;
-import org.nypl.simplified.multilibrary.Account;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 import org.slf4j.Logger;
 
