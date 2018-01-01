@@ -21,7 +21,9 @@ import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountProviderCollection;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
+import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent;
 import org.nypl.simplified.books.profiles.ProfileEvent;
+import org.nypl.simplified.books.profiles.ProfileCreationEvent;
 import org.nypl.simplified.books.profiles.ProfileID;
 import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
 import org.nypl.simplified.books.profiles.ProfileReadableType;
@@ -106,7 +108,7 @@ public final class Controller implements BooksControllerType, ProfilesController
   public ProfileReadableType profileCurrent() throws ProfileNoProfileIsCurrentException {
     try {
       return this.profiles.currentProfileUnsafe();
-    } catch (ProfileNoneCurrentException e) {
+    } catch (final ProfileNoneCurrentException e) {
       throw new ProfileNoProfileIsCurrentException(e.getMessage(), e);
     }
   }
@@ -133,7 +135,7 @@ public final class Controller implements BooksControllerType, ProfilesController
   }
 
   @Override
-  public ListenableFuture<ProfileEvent> profileCreate(
+  public ListenableFuture<ProfileCreationEvent> profileCreate(
       final AccountProvider account_provider,
       final String display_name,
       final LocalDate date) {
@@ -195,10 +197,18 @@ public final class Controller implements BooksControllerType, ProfilesController
   }
 
   @Override
-  public ListenableFuture<AccountDeletionEvent> profileAccountDelete(final URI provider) {
+  public ListenableFuture<AccountDeletionEvent> profileAccountDeleteByProvider(final URI provider) {
     NullCheck.notNull(provider, "Provider");
     return exec.submit(new ProfileAccountDeleteTask(
-        this.profiles, this.account_events, this.account_providers, provider));
+        this.profiles, this.account_events, this.profile_events, this.account_providers, provider));
+  }
+
+  @Override
+  public ListenableFuture<ProfileAccountSelectEvent> profileAccountSelectByProvider(
+      final URI provider) {
+    NullCheck.notNull(provider, "Provider");
+    return exec.submit(new ProfileAccountSelectionTask(
+        this.profiles, this.profile_events, this.account_providers, provider));
   }
 
   @Override
@@ -208,9 +218,10 @@ public final class Controller implements BooksControllerType, ProfilesController
 
   @Override
   public ImmutableList<AccountProvider> profileCurrentlyUsedAccountProviders()
+
       throws ProfileNoProfileIsCurrentException, ProfileUnknownAccountProviderException {
 
-    final ArrayList<AccountProvider> drawer_items_accounts = new ArrayList<>();
+    final ArrayList<AccountProvider> accounts = new ArrayList<>();
     final AccountProviderCollection account_providers =
         this.account_providers.call(Unit.unit());
     final ProfileReadableType profile =
@@ -220,10 +231,10 @@ public final class Controller implements BooksControllerType, ProfilesController
       if (account_providers.providers().containsKey(account.provider())) {
         final AccountProvider account_provider =
             account_providers.providers().get(account.provider());
-        drawer_items_accounts.add(account_provider);
+        accounts.add(account_provider);
       }
     }
 
-    return ImmutableList.sortedCopyOf(drawer_items_accounts);
+    return ImmutableList.sortedCopyOf(accounts);
   }
 }

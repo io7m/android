@@ -24,7 +24,6 @@ import com.io7m.jnull.Nullable;
 
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.accounts.AccountEvent;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountChanged;
 import org.nypl.simplified.books.accounts.AccountEvent.AccountCreationEvent;
 import org.nypl.simplified.books.accounts.AccountEvent.AccountCreationEvent.AccountCreationFailed;
 import org.nypl.simplified.books.accounts.AccountEvent.AccountCreationEvent.AccountCreationSucceeded;
@@ -33,6 +32,10 @@ import org.nypl.simplified.books.accounts.AccountEvent.AccountDeletionEvent.Acco
 import org.nypl.simplified.books.accounts.AccountEvent.AccountLoginEvent;
 import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.core.LogUtilities;
+import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent;
+import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent.ProfileAccountSelectFailed;
+import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent.ProfileAccountSelectSucceeded;
+import org.nypl.simplified.books.profiles.ProfileEvent;
 import org.nypl.simplified.observable.ObservableSubscriptionType;
 import org.slf4j.Logger;
 
@@ -49,6 +52,7 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
 
   private ArrayAdapter<AccountProvider> adapter_accounts;
   private ObservableSubscriptionType<AccountEvent> accounts_subscription;
+  private ObservableSubscriptionType<ProfileEvent> profiles_subscription;
   private ArrayList<AccountProvider> adapter_accounts_array;
   private ListView account_list_view;
   private LinearLayout account_current_view;
@@ -145,7 +149,7 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
       final AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
       builder.setItems(items, (dialog, item) -> {
-        Simplified.getProfilesController().profileAccountDelete(selected_provider.id());
+        Simplified.getProfilesController().profileAccountDeleteByProvider(selected_provider.id());
       });
 
       builder.create().show();
@@ -153,10 +157,16 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
     });
 
     this.populateAccountsArray();
+
     this.accounts_subscription =
         Simplified.getProfilesController()
             .accountEvents()
             .subscribe(this::onAccountEvent);
+
+    this.profiles_subscription =
+        Simplified.getProfilesController()
+            .profileEvents()
+            .subscribe(this::onProfileEvent);
   }
 
   private void updateCurrentAccountView(final LinearLayout current_account_view) {
@@ -195,6 +205,7 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
   protected void onDestroy() {
     super.onDestroy();
     this.accounts_subscription.unsubscribe();
+    this.profiles_subscription.unsubscribe();
   }
 
   private void onAccountEvent(final AccountEvent event) {
@@ -202,15 +213,7 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
     event.match(
         this::onAccountCreationEvent,
         this::onAccountDeletionEvent,
-        this::onAccountLoginEvent,
-        this::onAccountChangedEvent);
-  }
-
-  private Unit onAccountChangedEvent(final AccountChanged event) {
-    LOG.debug("onAccountChangedEvent: {}", event);
-
-    UIThread.runOnUIThread(() -> this.updateCurrentAccountView(this.account_current_view));
-    return Unit.unit();
+        this::onAccountLoginEvent);
   }
 
   private Unit onAccountLoginEvent(final AccountLoginEvent event) {
@@ -228,6 +231,10 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
 
   private Unit onAccountDeletionFailed(final AccountDeletionFailed event) {
     LOG.debug("onAccountDeletionFailed: {}", event);
+
+    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    builder.setMessage(R.string.profiles_account_deletion_error_general);
+    builder.create().show();
     return Unit.unit();
   }
 
@@ -243,6 +250,10 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
 
   private Unit onAccountCreationFailed(final AccountCreationFailed event) {
     LOG.debug("onAccountCreationFailed: {}", event);
+
+    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    builder.setMessage(R.string.profiles_account_creation_error_general);
+    builder.create().show();
     return Unit.unit();
   }
 
@@ -253,6 +264,32 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
       this.populateAccountsArray();
       this.invalidateOptionsMenu();
     });
+    return Unit.unit();
+  }
+
+  private void onProfileEvent(final ProfileEvent event) {
+    if (event instanceof ProfileAccountSelectEvent) {
+      final ProfileAccountSelectEvent event_select = (ProfileAccountSelectEvent) event;
+      event_select.matchSelect(
+          this::onProfileAccountSelectSucceeded,
+          this::onProfileAccountSelectFailed);
+      return;
+    }
+  }
+
+  private Unit onProfileAccountSelectFailed(final ProfileAccountSelectFailed event) {
+    LOG.debug("onProfileAccountSelectFailed: {}", event);
+
+    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    builder.setMessage(R.string.profiles_account_selection_error_general);
+    builder.create().show();
+    return Unit.unit();
+  }
+
+  private Unit onProfileAccountSelectSucceeded(final ProfileAccountSelectSucceeded event) {
+    LOG.debug("onProfileAccountSelectSucceeded: {}", event);
+
+    UIThread.runOnUIThread(() -> this.updateCurrentAccountView(this.account_current_view));
     return Unit.unit();
   }
 

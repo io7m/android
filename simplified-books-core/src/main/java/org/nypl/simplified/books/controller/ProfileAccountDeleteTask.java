@@ -6,18 +6,18 @@ import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 
 import org.nypl.simplified.books.accounts.AccountEvent;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountChanged;
 import org.nypl.simplified.books.accounts.AccountEvent.AccountDeletionEvent;
 import org.nypl.simplified.books.accounts.AccountEvent.AccountDeletionEvent.AccountDeletionFailed;
 import org.nypl.simplified.books.accounts.AccountEvent.AccountDeletionEvent.AccountDeletionSucceeded;
-import org.nypl.simplified.books.accounts.AccountID;
 import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountProviderCollection;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseException;
 import org.nypl.simplified.books.accounts.AccountsDatabaseLastAccountException;
-import org.nypl.simplified.books.accounts.AccountsDatabaseType;
+import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent;
+import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent.ProfileAccountSelectSucceeded;
 import org.nypl.simplified.books.profiles.ProfileDatabaseException;
+import org.nypl.simplified.books.profiles.ProfileEvent;
 import org.nypl.simplified.books.profiles.ProfileType;
 import org.nypl.simplified.books.profiles.ProfilesDatabaseType;
 import org.nypl.simplified.observable.ObservableType;
@@ -35,10 +35,12 @@ final class ProfileAccountDeleteTask implements Callable<AccountDeletionEvent> {
   private final FunctionType<Unit, AccountProviderCollection> account_providers;
   private final URI provider_id;
   private final ObservableType<AccountEvent> account_events;
+  private final ObservableType<ProfileEvent> profile_events;
 
   ProfileAccountDeleteTask(
       final ProfilesDatabaseType profiles,
       final ObservableType<AccountEvent> account_events,
+      final ObservableType<ProfileEvent> profile_events,
       final FunctionType<Unit, AccountProviderCollection> account_providers,
       final URI provider) {
 
@@ -46,6 +48,8 @@ final class ProfileAccountDeleteTask implements Callable<AccountDeletionEvent> {
         NullCheck.notNull(profiles, "Profiles");
     this.account_events =
         NullCheck.notNull(account_events, "Account events");
+    this.profile_events =
+        NullCheck.notNull(profile_events, "Profile events");
     this.account_providers =
         NullCheck.notNull(account_providers, "Account providers");
     this.provider_id =
@@ -71,7 +75,8 @@ final class ProfileAccountDeleteTask implements Callable<AccountDeletionEvent> {
         profile.deleteAccountByProvider(provider);
         final AccountType account_now = profile.accountCurrent();
         if (!account_now.id().equals(account_then.id())) {
-          this.account_events.send(AccountChanged.of(account_now.id()));
+          this.profile_events.send(ProfileAccountSelectSucceeded.of(
+              account_then.id(), account_now.id()));
         }
         return AccountDeletionSucceeded.of(provider);
       }

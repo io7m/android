@@ -4,8 +4,6 @@ import com.google.auto.value.AutoValue;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.PartialFunctionType;
 
-import org.nypl.simplified.books.profiles.ProfileReadableType;
-
 /**
  * The type of account events.
  */
@@ -20,7 +18,6 @@ public abstract class AccountEvent {
    * @param on_creation Called for {@code AccountCreationEvent} values
    * @param on_deletion Called for {@code AccountDeletionEvent} values
    * @param on_login    Called for {@code AccountLoginEvent} values
-   * @param on_changed  Called for {@code AccountChanged} values
    * @return The value returned by the matcher
    * @throws E If the matcher raises {@code E}
    */
@@ -28,41 +25,8 @@ public abstract class AccountEvent {
   public abstract <A, E extends Exception> A match(
       PartialFunctionType<AccountCreationEvent, A, E> on_creation,
       PartialFunctionType<AccountDeletionEvent, A, E> on_deletion,
-      PartialFunctionType<AccountLoginEvent, A, E> on_login,
-      PartialFunctionType<AccountChanged, A, E> on_changed)
+      PartialFunctionType<AccountLoginEvent, A, E> on_login)
       throws E;
-
-  /**
-   * Creating an account succeeded.
-   */
-
-  @AutoValue
-  public abstract static class AccountChanged extends AccountEvent {
-
-    @Override
-    public final <A, E extends Exception> A match(
-        final PartialFunctionType<AccountCreationEvent, A, E> on_creation,
-        final PartialFunctionType<AccountDeletionEvent, A, E> on_deletion,
-        final PartialFunctionType<AccountLoginEvent, A, E> on_login,
-        final PartialFunctionType<AccountChanged, A, E> on_changed)
-        throws E {
-      return on_changed.call(this);
-    }
-
-    /**
-     * @return The current account
-     */
-
-    public abstract AccountID account();
-
-    /**
-     * @return An event
-     */
-
-    public static AccountChanged of(final AccountID account) {
-      return new AutoValue_AccountEvent_AccountChanged(account);
-    }
-  }
 
   /**
    * The type of account creation events.
@@ -74,8 +38,7 @@ public abstract class AccountEvent {
     public final <A, E extends Exception> A match(
         final PartialFunctionType<AccountCreationEvent, A, E> on_creation,
         final PartialFunctionType<AccountDeletionEvent, A, E> on_deletion,
-        final PartialFunctionType<AccountLoginEvent, A, E> on_login,
-        final PartialFunctionType<AccountChanged, A, E> on_changed)
+        final PartialFunctionType<AccountLoginEvent, A, E> on_login)
         throws E {
       return on_creation.call(this);
     }
@@ -188,7 +151,6 @@ public abstract class AccountEvent {
     }
   }
 
-
   /**
    * The type of account deletion events.
    */
@@ -199,8 +161,7 @@ public abstract class AccountEvent {
     public final <A, E extends Exception> A match(
         final PartialFunctionType<AccountCreationEvent, A, E> on_creation,
         final PartialFunctionType<AccountDeletionEvent, A, E> on_deletion,
-        final PartialFunctionType<AccountLoginEvent, A, E> on_login,
-        final PartialFunctionType<AccountChanged, A, E> on_changed)
+        final PartialFunctionType<AccountLoginEvent, A, E> on_login)
         throws E {
       return on_deletion.call(this);
     }
@@ -329,8 +290,7 @@ public abstract class AccountEvent {
     public final <A, E extends Exception> A match(
         final PartialFunctionType<AccountCreationEvent, A, E> on_creation,
         final PartialFunctionType<AccountDeletionEvent, A, E> on_deletion,
-        final PartialFunctionType<AccountLoginEvent, A, E> on_login,
-        final PartialFunctionType<AccountChanged, A, E> on_changed)
+        final PartialFunctionType<AccountLoginEvent, A, E> on_login)
         throws E {
       return on_login.call(this);
     }

@@ -434,14 +434,6 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
     }
   }
 
-  @Override
-  public void setAccountCurrent(final AccountID id)
-      throws ProfileNoneCurrentException, AccountsDatabaseNonexistentException {
-
-    final Profile profile = currentProfileGet();
-    profile.setAccountCurrent(id);
-  }
-
   private static final class Profile implements ProfileType {
 
     private final Object description_lock;
@@ -563,8 +555,8 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
     }
 
     @Override
-    public AccountID deleteAccountByProvider(
-        final AccountProvider account_provider) throws AccountsDatabaseException {
+    public AccountID deleteAccountByProvider(final AccountProvider account_provider)
+        throws AccountsDatabaseException {
 
       NullCheck.notNull(account_provider, "Account provider");
       final AccountID deleted = this.accounts.deleteAccountByProvider(account_provider);
@@ -575,6 +567,21 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
         }
         return deleted;
       }
+    }
+
+    @Override
+    public AccountType selectAccount(final AccountProvider account_provider)
+        throws AccountsDatabaseNonexistentException {
+
+      NullCheck.notNull(account_provider, "Account provider");
+      final AccountType account = this.accounts.accountsByProvider().get(account_provider.id());
+      if (account != null) {
+        setAccountCurrent(account.id());
+        return account;
+      }
+
+      throw new AccountsDatabaseNonexistentException(
+          "No account with provider: " + account_provider.id());
     }
 
     @Override

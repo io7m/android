@@ -7,13 +7,12 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.View;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import com.io7m.jfunctional.PartialFunctionType;
+import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 import com.io7m.junreachable.UnreachableCodeException;
@@ -23,13 +22,15 @@ import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.accounts.AccountProviderCollection;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.core.LogUtilities;
+import org.nypl.simplified.books.profiles.ProfileCreationEvent;
+import org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationFailed;
+import org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationSucceeded;
 import org.nypl.simplified.books.profiles.ProfileEvent;
-import org.nypl.simplified.books.profiles.ProfileEvent.ProfileEventCreationFailed;
 import org.slf4j.Logger;
 
 import java.util.concurrent.ExecutionException;
 
-import static org.nypl.simplified.books.profiles.ProfileEvent.ProfileEventCreationFailed.ErrorCode.ERROR_IO;
+import static org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationFailed.ErrorCode.ERROR_IO;
 
 public final class ProfileCreationActivity extends Activity {
 
@@ -63,10 +64,10 @@ public final class ProfileCreationActivity extends Activity {
     this.name.addTextChangedListener(new ButtonTextWatcher(button));
   }
 
-  private Unit onProfileEventCreationFailed(
-      final ProfileEventCreationFailed e) {
+  private Unit onProfileCreationFailed(
+      final ProfileCreationFailed e) {
 
-    LOG.debug("onProfileEventCreationFailed: {}", e);
+    LOG.debug("onProfileCreationFailed: {}", e);
 
     UIThread.runOnUIThread(() -> {
       button.setEnabled(true);
@@ -82,31 +83,34 @@ public final class ProfileCreationActivity extends Activity {
   }
 
   private int messageForErrorCode(
-      final ProfileEventCreationFailed.ErrorCode code) {
+      final ProfileCreationFailed.ErrorCode code) {
     switch (code) {
       case ERROR_DISPLAY_NAME_ALREADY_USED:
-        return R.string.profiles_error_name_already_used;
+        return R.string.profiles_creation_error_name_already_used;
       case ERROR_IO:
-        return R.string.profiles_error_io;
+        return R.string.profiles_creation_error_general;
     }
     throw new UnreachableCodeException();
   }
 
-  private Unit onProfileEventCreated(
-      final ProfileEvent.ProfileEventCreated e) {
+  private Unit onProfileCreationSucceeded(
+      final ProfileCreationSucceeded e) {
 
-    LOG.debug("onProfileEventCreated: {}", e);
+    LOG.debug("onProfileCreationSucceeded: {}", e);
     UIThread.runOnUIThread(this::openSelectionActivity);
     return Unit.unit();
   }
 
   private void onProfileEvent(
-      final ProfileEvent e) {
+      final ProfileEvent event) {
 
-    LOG.debug("onProfileEvent: {}", e);
-    e.matchEvent(
-        this::onProfileEventCreated,
-        this::onProfileEventCreationFailed);
+    LOG.debug("onProfileEvent: {}", event);
+    if (event instanceof ProfileCreationEvent) {
+      final ProfileCreationEvent event_create = (ProfileCreationEvent) event;
+      event_create.matchCreation(
+          this::onProfileCreationSucceeded,
+          this::onProfileCreationFailed);
+    }
   }
 
   private void openSelectionActivity() {
@@ -123,7 +127,7 @@ public final class ProfileCreationActivity extends Activity {
     final AccountProviderCollection providers = Simplified.getAccountProviders();
     final ProfilesControllerType profiles = Simplified.getProfilesController();
 
-    final ListenableFuture<ProfileEvent> task =
+    final ListenableFuture<ProfileCreationEvent> task =
         profiles.profileCreate(
             providers.providerDefault(),
             name_text,
@@ -134,7 +138,7 @@ public final class ProfileCreationActivity extends Activity {
         onProfileEvent(task.get());
       } catch (final InterruptedException | ExecutionException e) {
         LOG.error("profile creation failed: ", e);
-        onProfileEventCreationFailed(ProfileEventCreationFailed.of(name_text, ERROR_IO));
+        onProfileCreationFailed(ProfileCreationFailed.of(name_text, ERROR_IO, Option.some(e)));
       }
     }, Simplified.getBackgroundTaskExecutor());
   }

@@ -11,9 +11,10 @@ import org.nypl.simplified.books.accounts.AccountEvent.AccountCreationEvent;
 import org.nypl.simplified.books.accounts.AccountEvent.AccountDeletionEvent;
 import org.nypl.simplified.books.accounts.AccountEvent.AccountLoginEvent;
 import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent;
 import org.nypl.simplified.books.profiles.ProfileEvent;
+import org.nypl.simplified.books.profiles.ProfileCreationEvent;
 import org.nypl.simplified.books.profiles.ProfileID;
-import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
 import org.nypl.simplified.books.profiles.ProfileReadableType;
 import org.nypl.simplified.books.profiles.ProfilesDatabaseType;
 import org.nypl.simplified.observable.ObservableReadableType;
@@ -76,7 +77,7 @@ public interface ProfilesControllerType {
    * @return A future that returns a status value
    */
 
-  ListenableFuture<ProfileEvent> profileCreate(
+  ListenableFuture<ProfileCreationEvent> profileCreate(
       AccountProvider account_provider,
       String display_name,
       LocalDate date);
@@ -139,7 +140,16 @@ public interface ProfilesControllerType {
    * @return A future that returns a login event
    */
 
-  ListenableFuture<AccountDeletionEvent> profileAccountDelete(
+  ListenableFuture<AccountDeletionEvent> profileAccountDeleteByProvider(
+      URI provider);
+
+  /**
+   * Switch the current account of the current profile to the one created by the given provider.
+   *
+   * @param provider The account provider ID
+   */
+
+  ListenableFuture<ProfileAccountSelectEvent> profileAccountSelectByProvider(
       URI provider);
 
   /**

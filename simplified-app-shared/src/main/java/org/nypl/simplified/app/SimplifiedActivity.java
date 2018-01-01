@@ -2,14 +2,13 @@ package org.nypl.simplified.app;
 
 import android.app.ActionBar;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -36,7 +35,6 @@ import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
-import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.simplified.app.catalog.CatalogFeedActivity;
 import org.nypl.simplified.app.catalog.CatalogFeedArgumentsLocalBooks;
@@ -45,27 +43,31 @@ import org.nypl.simplified.app.catalog.CatalogFeedArgumentsType;
 import org.nypl.simplified.app.catalog.MainBooksActivity;
 import org.nypl.simplified.app.catalog.MainCatalogActivity;
 import org.nypl.simplified.app.catalog.MainHoldsActivity;
+import org.nypl.simplified.app.utilities.UIThread;
+import org.nypl.simplified.books.accounts.AccountEvent;
+import org.nypl.simplified.books.accounts.AccountEvent.AccountCreationEvent;
+import org.nypl.simplified.books.accounts.AccountEvent.AccountDeletionEvent;
+import org.nypl.simplified.books.accounts.AccountEvent.AccountLoginEvent;
 import org.nypl.simplified.books.accounts.AccountProvider;
-import org.nypl.simplified.books.accounts.AccountProviderCollection;
-import org.nypl.simplified.books.accounts.AccountType;
-import org.nypl.simplified.books.controller.ProfileUnknownAccountProviderException;
 import org.nypl.simplified.books.core.BooksFeedSelection;
 import org.nypl.simplified.books.core.FeedFacetPseudo;
 import org.nypl.simplified.books.core.LogUtilities;
-import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
-import org.nypl.simplified.books.profiles.ProfileReadableType;
-import org.nypl.simplified.multilibrary.Account;
+import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent;
+import org.nypl.simplified.books.profiles.ProfileEvent;
+import org.nypl.simplified.observable.ObservableSubscriptionType;
 import org.nypl.simplified.stack.ImmutableStack;
 import org.slf4j.Logger;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.nypl.simplified.app.SimplifiedPart.*;
+import static org.nypl.simplified.app.SimplifiedPart.PART_BOOKS;
+import static org.nypl.simplified.app.SimplifiedPart.PART_CATALOG;
+import static org.nypl.simplified.app.SimplifiedPart.PART_HOLDS;
+import static org.nypl.simplified.app.SimplifiedPart.PART_MANAGE_ACCOUNTS;
+import static org.nypl.simplified.app.SimplifiedPart.PART_SETTINGS;
+import static org.nypl.simplified.app.SimplifiedPart.PART_SWITCHER;
 
 /**
  * The type of non-reader activities in the app.
@@ -86,17 +88,20 @@ public abstract class SimplifiedActivity extends Activity
     NAVIGATION_DRAWER_OPEN_ID = "org.nypl.simplified.app.SimplifiedActivity.drawer_open";
   }
 
-  private @Nullable ArrayAdapter<SimplifiedPart> adapter;
-  private @Nullable ArrayAdapter<Object> adapter_accounts;
-  private @Nullable FrameLayout content_frame;
-  private @Nullable DrawerLayout drawer;
-  private @Nullable Map<SimplifiedPart, FunctionType<Bundle, Unit>> drawer_arg_funcs;
-  private @Nullable Map<SimplifiedPart, Class<? extends Activity>> drawer_classes_by_name;
-  private @Nullable List<SimplifiedPart> drawer_items;
-  private @Nullable ListView drawer_list;
-  private @Nullable SharedPreferences drawer_settings;
+  private ArrayAdapter<SimplifiedPart> adapter;
+  private ArrayAdapter<Object> adapter_accounts;
+  private FrameLayout content_frame;
+  private DrawerLayout drawer;
+  private Map<SimplifiedPart, FunctionType<Bundle, Unit>> drawer_arg_funcs;
+  private Map<SimplifiedPart, Class<? extends Activity>> drawer_classes_by_name;
+  private List<SimplifiedPart> drawer_items;
+  private ListView drawer_list;
+  private SharedPreferences drawer_settings;
   private boolean finishing;
   private int selected;
+  private ObservableSubscriptionType<AccountEvent> account_event_subscription;
+  private ObservableSubscriptionType<ProfileEvent> profile_event_subscription;
+  private ArrayList<Object> adapter_account_array;
 
   /**
    * Set the arguments for the activity that will be created.
@@ -245,6 +250,20 @@ public abstract class SimplifiedActivity extends Activity
     return drawer_items.build();
   }
 
+  /**
+   * @return The application part to which this activity belongs
+   */
+
+  protected abstract SimplifiedPart navigationDrawerGetPart();
+
+  /**
+   * @return {@code true} iff the navigation drawer should show an indicator
+   */
+
+  protected abstract boolean navigationDrawerShouldShowIndicator();
+
+
+
   private void finishWithConditionalAnimationOverride() {
     this.finish();
 
@@ -273,24 +292,12 @@ public abstract class SimplifiedActivity extends Activity
     }
   }
 
-  /**
-   * @return The application part to which this activity belongs
-   */
-
-  protected abstract SimplifiedPart navigationDrawerGetPart();
-
   protected final void navigationDrawerSetActionBarTitle() {
     final ActionBar bar = NullCheck.notNull(this.getActionBar());
     final Resources rr = NullCheck.notNull(this.getResources());
     final SimplifiedPart part = this.navigationDrawerGetPart();
     bar.setTitle(part.getPartName(rr));
   }
-
-  /**
-   * @return {@code true} iff the navigation drawer should show an indicator
-   */
-
-  protected abstract boolean navigationDrawerShouldShowIndicator();
 
   @Override
   public void onBackPressed() {
@@ -350,7 +357,6 @@ public abstract class SimplifiedActivity extends Activity
         final Intent i = new Intent();
         i.setClass(this, c);
         i.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -387,7 +393,6 @@ public abstract class SimplifiedActivity extends Activity
     this.setContentView(R.layout.main);
 
     boolean open_drawer = true;
-
     final Intent i = NullCheck.notNull(this.getIntent());
     LOG.debug("non-null intent");
     final Bundle a = i.getExtras();
@@ -446,23 +451,24 @@ public abstract class SimplifiedActivity extends Activity
     drawer_list_view.setOnItemClickListener(this);
     drawer_layout.setDrawerTitle(Gravity.LEFT, resources.getString(R.string.navigation_accessibility));
 
-    final List<SimplifiedPart> drawer_items =
-        calculateDrawerItems(holds_enabled);
-    final ImmutableList<AccountProvider> drawer_item_accounts =
-        Simplified.getProfilesController().profileCurrentlyUsedAccountProviders();
-    final ImmutableList<Object> drawer_item_accounts_untyped =
-        ImmutableList.builder()
-            .addAll(drawer_item_accounts)
-            .add(PART_MANAGE_ACCOUNTS)
-            .build();
-
     final LayoutInflater inflater = NullCheck.notNull(this.getLayoutInflater());
 
+    this.adapter_account_array =
+        new ArrayList<>();
     this.adapter_accounts =
-        new ArrayAdapterWithAccounts(this, this.getAssets(), drawer_item_accounts_untyped, inflater);
+        new ArrayAdapterWithAccounts(
+            this,
+            this.getAssets(),
+            this.adapter_account_array,
+            inflater);
     this.adapter =
         new ArrayAdapterWithoutAccounts(
-            this, this.getAssets(), drawer_items, inflater, resources, drawer_list_view);
+            this,
+            this.getAssets(),
+            calculateDrawerItems(holds_enabled),
+            inflater,
+            resources,
+            drawer_list_view);
 
     drawer_list_view.setAdapter(this.adapter);
 
@@ -493,7 +499,7 @@ public abstract class SimplifiedActivity extends Activity
       bar.setHomeActionContentDescription(resources.getString(R.string.navigation_accessibility_drawer_hide));
     }
 
-    this.drawer_items = drawer_items;
+    this.drawer_items = calculateDrawerItems(holds_enabled);
     this.drawer_classes_by_name = classes_by_name;
     this.drawer_arg_funcs = drawer_actions;
     this.drawer = drawer_layout;
@@ -503,6 +509,18 @@ public abstract class SimplifiedActivity extends Activity
     ACTIVITY_COUNT = ACTIVITY_COUNT + 1;
 
     LOG.debug("activity count: {}", ACTIVITY_COUNT);
+
+    this.account_event_subscription =
+        Simplified.getProfilesController()
+            .accountEvents()
+            .subscribe(this::onAccountEvent);
+
+    this.profile_event_subscription =
+        Simplified.getProfilesController()
+            .profileEvents()
+            .subscribe(this::onProfileEvent);
+
+    this.populateSidebar();
   }
 
   @Override
@@ -510,6 +528,75 @@ public abstract class SimplifiedActivity extends Activity
     super.onDestroy();
     LOG.debug("onDestroy: {}", this);
     ACTIVITY_COUNT = ACTIVITY_COUNT - 1;
+    this.account_event_subscription.unsubscribe();
+    this.profile_event_subscription.unsubscribe();
+  }
+
+  private void onProfileEvent(final ProfileEvent event) {
+    if (event instanceof ProfileAccountSelectEvent) {
+      final ProfileAccountSelectEvent event_select = (ProfileAccountSelectEvent) event;
+      event_select.matchSelect(
+          this::onProfileAccountSelectSucceeded,
+          this::onProfileAccountSelectFailed);
+      return;
+    }
+  }
+
+  private Unit onProfileAccountSelectFailed(
+      final ProfileAccountSelectEvent.ProfileAccountSelectFailed event) {
+
+    LOG.debug("onProfileAccountSelectFailed: {}", event);
+    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    builder.setMessage(R.string.profiles_account_selection_error_general);
+    builder.create().show();
+    return Unit.unit();
+  }
+
+  private Unit onProfileAccountSelectSucceeded(
+      final ProfileAccountSelectEvent.ProfileAccountSelectSucceeded event) {
+
+    LOG.debug("onProfileAccountSelectSucceeded: {}", event);
+    return Unit.unit();
+  }
+
+  private void populateSidebar() {
+    UIThread.checkIsUIThread();
+
+    final ImmutableList<AccountProvider> drawer_item_accounts =
+        Simplified.getProfilesController().profileCurrentlyUsedAccountProviders();
+
+    final ImmutableList<Object> drawer_item_accounts_untyped =
+        ImmutableList.builder()
+            .addAll(drawer_item_accounts)
+            .add(PART_MANAGE_ACCOUNTS)
+            .build();
+
+    this.adapter_account_array.clear();
+    this.adapter_account_array.addAll(drawer_item_accounts_untyped);
+    this.adapter_accounts.notifyDataSetChanged();
+  }
+
+  private void onAccountEvent(final AccountEvent event) {
+    LOG.debug("onAccountEvent: {}", event);
+    event.match(
+        this::onAccountEventCreation,
+        this::onAccountEventDeletion,
+        this::onAccountEventLogin);
+  }
+
+  private Unit onAccountEventLogin(final AccountLoginEvent event) {
+    LOG.debug("onAccountEventLogin: {}", event);
+    return Unit.unit();
+  }
+
+  private Unit onAccountEventDeletion(final AccountDeletionEvent event) {
+    LOG.debug("onAccountEventDeletion: {}", event);
+    return Unit.unit();
+  }
+
+  private Unit onAccountEventCreation(final AccountCreationEvent event) {
+    LOG.debug("onAccountEventCreation: {}", event);
+    return Unit.unit();
   }
 
   @Override
@@ -565,23 +652,24 @@ public abstract class SimplifiedActivity extends Activity
     if (drawer_list.getAdapter().equals(this.adapter)) {
       LOG.debug("onItemClick: {}", position);
       final Resources rr = NullCheck.notNull(this.getResources());
-
       final ActionBar bar = this.getActionBar();
       bar.setHomeActionContentDescription(rr.getString(R.string.navigation_accessibility_drawer_show));
       this.selected = position;
       this.startSideBarActivity();
-    } else {
-      // select library
-
-      final Object object = this.adapter_accounts.getItem(position);
-
-      if (object instanceof Account) {
-        throw new UnimplementedCodeException();
-      } else {
-        this.selected = this.adapter.getCount() - 1;
-        this.startSideBarActivity();
-      }
+      return;
     }
+
+    final Object object = this.adapter_accounts.getItem(position);
+    LOG.debug("onItemClick: {}", object);
+
+    if (object instanceof AccountProvider) {
+      final AccountProvider provider = (AccountProvider) object;
+      Simplified.getProfilesController().profileAccountSelectByProvider(provider.id());
+      return;
+    }
+
+    this.selected = this.adapter.getCount() - 1;
+    this.startSideBarActivity();
   }
 
   @Override
@@ -750,14 +838,14 @@ public abstract class SimplifiedActivity extends Activity
 
   private static final class ArrayAdapterWithAccounts extends ArrayAdapter<Object> {
 
-    private final ImmutableList<Object> drawer_item_accounts_untyped;
+    private final ArrayList<Object> drawer_item_accounts_untyped;
     private final LayoutInflater inflater;
     private final AssetManager assets;
 
     ArrayAdapterWithAccounts(
         final SimplifiedActivity activity,
         final AssetManager in_assets,
-        final ImmutableList<Object> drawer_item_accounts_untyped,
+        final ArrayList<Object> drawer_item_accounts_untyped,
         final LayoutInflater inflater) {
 
       super(activity, R.layout.drawer_item_account, drawer_item_accounts_untyped);

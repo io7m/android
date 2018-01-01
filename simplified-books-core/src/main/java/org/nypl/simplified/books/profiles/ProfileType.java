@@ -4,6 +4,7 @@ import org.nypl.simplified.books.accounts.AccountID;
 import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseException;
+import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
 import org.nypl.simplified.books.accounts.AccountsDatabaseType;
 
 import java.io.IOException;
@@ -44,7 +45,8 @@ public interface ProfileType extends ProfileReadableType {
    */
 
   AccountType createAccount(
-      AccountProvider account_provider) throws AccountsDatabaseException;
+      AccountProvider account_provider)
+      throws AccountsDatabaseException;
 
   /**
    * Delete the account using the given provider.
@@ -58,4 +60,14 @@ public interface ProfileType extends ProfileReadableType {
   AccountID deleteAccountByProvider(
       AccountProvider account_provider)
       throws AccountsDatabaseException;
+
+  /**
+   * Set the account created by the given provider to be the current account in the profile.
+   *
+   * @param account_provider The account provider
+   */
+
+  AccountType selectAccount(
+      AccountProvider account_provider)
+      throws AccountsDatabaseNonexistentException;
 }

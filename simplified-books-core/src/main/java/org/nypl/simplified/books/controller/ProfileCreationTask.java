@@ -1,11 +1,15 @@
 package org.nypl.simplified.books.controller;
 
+import com.io7m.jfunctional.Option;
 import com.io7m.jnull.NullCheck;
 
 import org.joda.time.LocalDate;
 import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.profiles.ProfileDatabaseException;
 import org.nypl.simplified.books.profiles.ProfileEvent;
+import org.nypl.simplified.books.profiles.ProfileCreationEvent;
+import org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationFailed;
+import org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationSucceeded;
 import org.nypl.simplified.books.profiles.ProfileType;
 import org.nypl.simplified.books.profiles.ProfilesDatabaseType;
 import org.nypl.simplified.observable.ObservableType;
@@ -15,12 +19,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-import static org.nypl.simplified.books.profiles.ProfileEvent.ProfileEventCreated;
-import static org.nypl.simplified.books.profiles.ProfileEvent.ProfileEventCreationFailed;
-import static org.nypl.simplified.books.profiles.ProfileEvent.ProfileEventCreationFailed.ErrorCode.ERROR_DISPLAY_NAME_ALREADY_USED;
-import static org.nypl.simplified.books.profiles.ProfileEvent.ProfileEventCreationFailed.ErrorCode.ERROR_IO;
+import static org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationFailed.ErrorCode.ERROR_DISPLAY_NAME_ALREADY_USED;
+import static org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationFailed.ErrorCode.ERROR_IO;
 
-final class ProfileCreationTask implements Callable<ProfileEvent> {
+final class ProfileCreationTask implements Callable<ProfileCreationEvent> {
 
   private static final Logger LOG = LoggerFactory.getLogger(ProfileCreationTask.class);
 
@@ -50,10 +52,11 @@ final class ProfileCreationTask implements Callable<ProfileEvent> {
   }
 
   @Override
-  public ProfileEvent call() {
+  public ProfileCreationEvent call() {
 
     if (profiles.findProfileWithDisplayName(this.display_name).isSome()) {
-      return ProfileEventCreationFailed.of(this.display_name, ERROR_DISPLAY_NAME_ALREADY_USED);
+      return ProfileCreationFailed.of(
+          this.display_name, ERROR_DISPLAY_NAME_ALREADY_USED, Option.none());
     }
 
     try {
@@ -66,14 +69,14 @@ final class ProfileCreationTask implements Callable<ProfileEvent> {
               .setDateOfBirth(this.date)
               .build());
 
-      final ProfileEventCreated event =
-          ProfileEventCreated.of(this.display_name, profile.id());
+      final ProfileCreationSucceeded event =
+          ProfileCreationSucceeded.of(this.display_name, profile.id());
       this.profile_events.send(event);
       return event;
     } catch (final ProfileDatabaseException | IOException e) {
       LOG.error("profile creation failed: ", e);
-      final ProfileEventCreationFailed event =
-          ProfileEventCreationFailed.of(this.display_name, ERROR_IO);
+      final ProfileCreationFailed event =
+          ProfileCreationFailed.of(this.display_name, ERROR_IO, Option.some(e));
       this.profile_events.send(event);
       return event;
     }

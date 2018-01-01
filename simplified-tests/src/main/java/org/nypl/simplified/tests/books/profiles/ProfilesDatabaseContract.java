@@ -16,9 +16,12 @@ import org.nypl.simplified.books.accounts.AccountsDatabaseFactoryType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseLastAccountException;
 import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
 import org.nypl.simplified.books.accounts.AccountsDatabases;
+import org.nypl.simplified.books.controller.ProfileUnknownAccountException;
+import org.nypl.simplified.books.controller.ProfileUnknownAccountProviderException;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.books.profiles.ProfileAnonymousDisabledException;
 import org.nypl.simplified.books.profiles.ProfileAnonymousEnabledException;
+import org.nypl.simplified.books.profiles.ProfileDatabaseAccountsException;
 import org.nypl.simplified.books.profiles.ProfileDatabaseException;
 import org.nypl.simplified.books.profiles.ProfileID;
 import org.nypl.simplified.books.profiles.ProfileNonexistentException;
@@ -442,6 +445,47 @@ public abstract class ProfilesDatabaseContract {
 
     expected.expect(AccountsDatabaseLastAccountException.class);
     p0.deleteAccountByProvider(acc0);
+  }
+
+  @Test
+  public final void testSetCurrentAccount()
+      throws Exception {
+    final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
+    final File f_pro = new File(f_tmp, "profiles");
+
+    final ProfilesDatabaseType db0 =
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+    final AccountProvider acc0 =
+        fakeProvider("http://example.com/accounts0/");
+    final AccountProvider acc1 =
+        fakeProvider("http://example.com/accounts1/");
+
+    final ProfileType p0 = db0.createProfile(acc0, "Kermit");
+    db0.setProfileCurrent(p0.id());
+
+    final AccountType ac1 = p0.createAccount(acc1);
+    Assert.assertNotEquals(ac1, p0.accountCurrent());
+    p0.selectAccount(acc1);
+    Assert.assertEquals(ac1, p0.accountCurrent());
+  }
+
+  @Test
+  public final void testSetCurrentAccountUnknown() throws Exception {
+    final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
+    final File f_pro = new File(f_tmp, "profiles");
+
+    final ProfilesDatabaseType db0 =
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+    final AccountProvider acc0 =
+        fakeProvider("http://example.com/accounts0/");
+    final AccountProvider acc1 =
+        fakeProvider("http://example.com/accounts1/");
+
+    final ProfileType p0 = db0.createProfile(acc0, "Kermit");
+    db0.setProfileCurrent(p0.id());
+
+    expected.expect(AccountsDatabaseNonexistentException.class);
+    p0.selectAccount(acc1);
   }
 
   private static AccountProvider exampleAccountProvider() {

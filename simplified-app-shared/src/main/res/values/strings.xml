@@ -242,7 +242,10 @@
   <string name="profiles_create">Create</string>
   <string name="profiles_please_enter">Please enter your name and date of birth.</string>
   <string name="profiles_name_field">Name</string>
-  <string name="profiles_error_name_already_used">That name has already been used. Please pick another.</string>
-  <string name="profiles_error_io">An error occurred whilst trying to create your profile.</string>
+  <string name="profiles_creation_error_name_already_used">That name has already been used. Please pick another.</string>
+  <string name="profiles_creation_error_general">An error occurred whilst trying to create your profile.</string>
+  <string name="profiles_account_selection_error_general">An error occurred whilst trying to select an account.</string>
+  <string name="profiles_account_creation_error_general">An error occurred whilst trying to create the account.</string>
+  <string name="profiles_account_deletion_error_general">An error occurred whilst trying to delete the account.</string>
 
 </resources>

@@ -73,7 +73,11 @@ import org.nypl.simplified.books.core.FeedType;
 import org.nypl.simplified.books.core.FeedWithGroups;
 import org.nypl.simplified.books.core.FeedWithoutGroups;
 import org.nypl.simplified.books.core.LogUtilities;
+import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent;
+import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent.ProfileAccountSelectSucceeded;
+import org.nypl.simplified.books.profiles.ProfileEvent;
 import org.nypl.simplified.http.core.HTTPAuthType;
+import org.nypl.simplified.observable.ObservableSubscriptionType;
 import org.nypl.simplified.opds.core.OPDSFacet;
 import org.nypl.simplified.opds.core.OPDSOpenSearch1_1;
 import org.nypl.simplified.stack.ImmutableStack;
@@ -115,6 +119,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
   private int saved_scroll_pos;
   private boolean previously_paused;
   private SearchView search_view;
+  private ObservableSubscriptionType<ProfileEvent> profile_event_subscription;
 
   /**
    * Construct an activity.
@@ -224,7 +229,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
       final boolean reload = extras.getBoolean("reload");
       if (reload) {
         did_retry = true;
-        CatalogFeedActivity.this.retryFeed();
+        this.retryFeed();
         extras.putBoolean("reload", false);
       }
     }
@@ -540,6 +545,35 @@ public abstract class CatalogFeedActivity extends CatalogActivity
             return Unit.unit();
           }
         });
+
+    /*
+     * Subscribe to profile change events.
+     */
+
+    this.profile_event_subscription =
+        Simplified.getProfilesController()
+            .profileEvents()
+            .subscribe(this::onProfileEvent);
+  }
+
+  private void onProfileEvent(final ProfileEvent event) {
+
+    /*
+     * If the current profile changed accounts, start a new catalog feed activity. The
+     * new activity will automatically navigate to the root of the new account's catalog.
+     */
+
+    if (event instanceof ProfileAccountSelectSucceeded) {
+      UIThread.runOnUIThread(() -> {
+        final Intent i = new Intent(CatalogFeedActivity.this, MainCatalogActivity.class);
+        final Bundle b = new Bundle();
+        SimplifiedActivity.setActivityArguments(b, false);
+        i.putExtras(b);
+        this.startActivity(i);
+        this.overridePendingTransition(0, 0);
+        this.finish();
+      });
+    }
   }
 
   @Override
@@ -634,6 +668,8 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     if (future != null) {
       future.cancel(true);
     }
+
+    this.profile_event_subscription.unsubscribe();
   }
 
   @Override

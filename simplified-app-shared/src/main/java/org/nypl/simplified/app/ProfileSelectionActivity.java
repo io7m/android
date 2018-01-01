@@ -9,7 +9,6 @@ import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -17,7 +16,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import com.io7m.jfunctional.ProcedureType;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 
@@ -32,11 +30,8 @@ import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-
-import static org.nypl.simplified.books.profiles.ProfileEvent.ProfileEventCreationFailed.ErrorCode.ERROR_IO;
 
 public final class ProfileSelectionActivity extends Activity {
 
@@ -65,35 +60,17 @@ public final class ProfileSelectionActivity extends Activity {
     this.reloadProfiles();
 
     this.list_adapter = new ProfileArrayAdapter(this.getApplicationContext(), this.list_items);
-    this.list = NullCheck.notNull((ListView) this.findViewById(R.id.profileSelectionList));
+    this.list = NullCheck.notNull(this.findViewById(R.id.profileSelectionList));
     this.list.setAdapter(this.list_adapter);
-    this.list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-      @Override
-      public void onItemClick(
-          final AdapterView<?> adapter_view,
-          final View view,
-          final int position,
-          final long id) {
-        onSelectedProfile(NullCheck.notNull(list_items.get(position)));
-      }
-    });
+    this.list.setOnItemClickListener(
+        (adapter_view, view, position, id) ->
+            onSelectedProfile(NullCheck.notNull(list_items.get(position))));
 
-    this.button = NullCheck.notNull((Button) this.findViewById(R.id.profileSelectionCreate));
-    this.button.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(final View view) {
-        openCreationDialog();
-      }
-    });
+    this.button = NullCheck.notNull(this.findViewById(R.id.profileSelectionCreate));
+    this.button.setOnClickListener(view -> openCreationDialog());
 
     final ProfilesControllerType profiles = Simplified.getProfilesController();
-    this.profile_event_subscription = profiles.profileEvents().subscribe(
-        new ProcedureType<ProfileEvent>() {
-          @Override
-          public void call(final ProfileEvent event) {
-            reloadProfiles();
-          }
-        });
+    this.profile_event_subscription = profiles.profileEvents().subscribe(event -> reloadProfiles());
   }
 
   @Override
@@ -111,68 +88,49 @@ public final class ProfileSelectionActivity extends Activity {
 
     final ListenableFuture<Unit> task = profiles.profileSelect(profile.id());
 
-    task.addListener(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          onProfileSelectionSucceeded(task.get());
-        } catch (final InterruptedException | ExecutionException e) {
-          LOG.error("profile selection failed: ", e);
-          onProfileSelectionFailed(e);
-        }
+    task.addListener(() -> {
+      try {
+        onProfileSelectionSucceeded(task.get());
+      } catch (final InterruptedException | ExecutionException e) {
+        LOG.error("profile selection failed: ", e);
+        onProfileSelectionFailed(e);
       }
     }, Simplified.getBackgroundTaskExecutor());
   }
 
-  private void onProfileSelectionFailed(
-      final Exception e) {
-
+  private void onProfileSelectionFailed(final Exception e) {
     LOG.error("onProfileSelectionFailed: {}", e);
 
-    UIThread.runOnUIThread(new Runnable() {
-      @Override
-      public void run() {
+    UIThread.runOnUIThread(() -> {
 
-        /*
-         * XXX: What exactly can anyone do about this?
-         */
+      /*
+       * XXX: What exactly can anyone do about this?
+       */
 
-        final AlertDialog.Builder alert_builder =
-            new AlertDialog.Builder(ProfileSelectionActivity.this);
-        alert_builder.setMessage("Unable to select profile!");
-        alert_builder.setCancelable(true);
+      final AlertDialog.Builder alert_builder =
+          new AlertDialog.Builder(ProfileSelectionActivity.this);
+      alert_builder.setMessage("Unable to select profile!");
+      alert_builder.setCancelable(true);
 
-        final AlertDialog alert = alert_builder.create();
-        alert.show();
-      }
+      final AlertDialog alert = alert_builder.create();
+      alert.show();
     });
   }
 
-  private void onProfileSelectionSucceeded(
-      final Unit ignored) {
-
+  private void onProfileSelectionSucceeded(final Unit ignored) {
     LOG.debug("onProfileSelectionSucceeded");
-
-    UIThread.runOnUIThread(new Runnable() {
-      @Override
-      public void run() {
-        openCatalog();
-      }
-    });
+    UIThread.runOnUIThread(this::openCatalog);
   }
 
   private void reloadProfiles() {
     LOG.debug("reloading profiles");
 
-    UIThread.runOnUIThread(new Runnable() {
-      @Override
-      public void run() {
-        final ProfilesControllerType profiles = Simplified.getProfilesController();
-        list_items.clear();
-        list_items.addAll(profiles.profiles().values());
-        Collections.sort(list_items);
-        list_adapter.notifyDataSetChanged();
-      }
+    UIThread.runOnUIThread(() -> {
+      final ProfilesControllerType profiles = Simplified.getProfilesController();
+      list_items.clear();
+      list_items.addAll(profiles.profiles().values());
+      Collections.sort(list_items);
+      list_adapter.notifyDataSetChanged();
     });
   }
 

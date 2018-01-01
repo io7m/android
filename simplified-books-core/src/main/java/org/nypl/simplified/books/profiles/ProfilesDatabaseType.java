@@ -134,13 +134,4 @@ public interface ProfilesDatabaseType {
 
   ProfileType currentProfileUnsafe()
       throws ProfileNoneCurrentException;
-
-  /**
-   * Set the current profile's current account to the account with the given ID.
-   * @param id The ID of the account
-   * @throws ProfileNoneCurrentException If no profile is current
-   */
-
-  void setAccountCurrent(AccountID id)
-      throws ProfileNoneCurrentException, AccountsDatabaseNonexistentException;
 }
