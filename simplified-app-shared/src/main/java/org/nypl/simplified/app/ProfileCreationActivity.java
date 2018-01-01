@@ -121,8 +121,17 @@ public final class ProfileCreationActivity extends Activity {
 
   private void createProfile() {
     final String name_text = name.getText().toString().trim();
+
+    /*
+     * Android numbers months starting from 0. Joda Time numbers them... correctly.
+     */
+
+    final int m_year = date.getYear();
+    final int m_month = date.getMonth() + 1;
+    final int m_day = date.getDayOfMonth();
+
     LOG.debug("name: {}", name_text);
-    LOG.debug("date: {}-{}-{}", date.getYear(), date.getMonth(), date.getDayOfMonth());
+    LOG.debug("date: {}-{}-{}", m_year, m_month, m_day);
 
     final AccountProviderCollection providers = Simplified.getAccountProviders();
     final ProfilesControllerType profiles = Simplified.getProfilesController();
@@ -131,7 +140,7 @@ public final class ProfileCreationActivity extends Activity {
         profiles.profileCreate(
             providers.providerDefault(),
             name_text,
-            new LocalDate(date.getYear(), date.getMonth(), date.getDayOfMonth()));
+            new LocalDate(m_year, m_month, m_day));
 
     task.addListener(() -> {
       try {
