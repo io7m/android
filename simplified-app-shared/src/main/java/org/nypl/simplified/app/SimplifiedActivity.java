@@ -505,16 +505,6 @@ public abstract class SimplifiedActivity extends Activity
     LOG.debug("activity count: {}", ACTIVITY_COUNT);
   }
 
-  /**
-   * Perform an unchecked (but safe) cast of the given list. The cast is safe because {@code S <: B}
-   * and so therefore we can behave as if {@code List<S> <: List<B>}.
-   */
-
-  @SuppressWarnings("unchecked")
-  private <B, S extends B> ImmutableList<B> castList(final ImmutableList<S> xs) {
-    return (ImmutableList<B>) xs;
-  }
-
   @Override
   protected void onDestroy() {
     super.onDestroy();
@@ -535,13 +525,7 @@ public abstract class SimplifiedActivity extends Activity
 
     if (this.finishing) {
       this.finishWithConditionalAnimationOverride();
-      return;
     }
-
-    /*
-     * If the drawer is closing because the user selected an entry, start the
-     * relevant activity.
-     */
   }
 
   @Override
@@ -806,8 +790,6 @@ public abstract class SimplifiedActivity extends Activity
         text_view.setText(account_provider.displayName());
         SimplifiedIconViews.configureIconViewFromURI(
             this.assets, icon_view, account_provider.logo());
-
-        icon_view.setImageURI(Uri.parse(account_provider.logo().toString()));
         return v;
       }
 
