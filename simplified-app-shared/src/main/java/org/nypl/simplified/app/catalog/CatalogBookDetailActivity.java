@@ -19,6 +19,8 @@ import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
 import org.nypl.simplified.books.core.BooksStatusCacheType;
 import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.FeedEntryOPDS;
+import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
+import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 import org.nypl.simplified.observable.ObservableSubscriptionType;
 import org.nypl.simplified.stack.ImmutableStack;
 
@@ -137,16 +139,20 @@ public final class CatalogBookDetailActivity extends CatalogActivity {
     final LayoutInflater inflater =
         NullCheck.notNull(this.getLayoutInflater());
 
-    final CatalogBookDetailView detail_view =
-        new CatalogBookDetailView(
-            this,
-            inflater,
-            Simplified.getProfilesController().profileAccountProviderCurrent(),
-            Simplified.getCoverProvider(),
-            Simplified.getBooksRegistry(),
-            Simplified.getProfilesController(),
-            Simplified.getBooksController(),
-            this.getFeedEntry());
+    final CatalogBookDetailView detail_view;
+    try {
+      detail_view = new CatalogBookDetailView(
+          this,
+          inflater,
+          Simplified.getProfilesController().profileAccountProviderCurrent(),
+          Simplified.getCoverProvider(),
+          Simplified.getBooksRegistry(),
+          Simplified.getProfilesController(),
+          Simplified.getBooksController(),
+          this.getFeedEntry());
+    } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+      throw new IllegalStateException(e);
+    }
 
     this.view = detail_view;
     this.part = this.getPart();

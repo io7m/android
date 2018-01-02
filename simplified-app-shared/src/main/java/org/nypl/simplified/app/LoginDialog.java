@@ -22,13 +22,15 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.io7m.jfunctional.None;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
+import com.io7m.jfunctional.OptionVisitorType;
+import com.io7m.jfunctional.ProcedureType;
 import com.io7m.jfunctional.Some;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
-import com.io7m.junreachable.UnimplementedCodeException;
 import com.io7m.junreachable.UnreachableCodeException;
 
 import org.nypl.simplified.app.utilities.UIThread;
@@ -36,20 +38,21 @@ import org.nypl.simplified.assertions.Assertions;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountAuthenticationProvider;
 import org.nypl.simplified.books.accounts.AccountBarcode;
-import org.nypl.simplified.books.accounts.AccountEvent;
+import org.nypl.simplified.books.accounts.AccountEventLogin;
+import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.accounts.AccountProviderAuthenticationDescription;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.core.AuthenticationDocumentType;
 import org.nypl.simplified.books.core.DocumentStoreType;
 import org.nypl.simplified.books.core.EULAType;
 import org.nypl.simplified.books.core.LogUtilities;
-import org.nypl.simplified.multilibrary.Account;
 import org.slf4j.Logger;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.nypl.simplified.books.accounts.AccountEvent.AccountLoginEvent.*;
+import static org.nypl.simplified.books.accounts.AccountEventLogin.*;
 
 /**
  * A reusable login dialog.
@@ -74,13 +77,15 @@ public final class LoginDialog extends DialogFragment {
   }
 
   private EditText barcode_edit;
-  private LoginListenerType listener;
   private Button login;
   private EditText pin_edit;
   private TextView text;
   private Button cancel;
   private ProfilesControllerType controller;
-  private ListenableFuture<AccountEvent.AccountLoginEvent> login_task;
+  private Runnable on_login_success;
+  private ProcedureType<String> on_login_failure;
+  private Runnable on_login_cancelled;
+  private ListenableFuture<AccountEventLogin> login_task;
 
   /**
    * Construct a new dialog.
@@ -118,76 +123,77 @@ public final class LoginDialog extends DialogFragment {
   }
 
   /**
-   * Create a new login dialog.
+   * Create a new login dialog. The given callback functions will be executed on the UI thread with
+   * the results of the login operation. Any strings passed to the callbacks will be properly
+   * localized and do not require further processing.
    *
-   * @param text    The initial dialog text.
-   * @param barcode The barcode that will be used to log in
-   * @param pin     The PIN that will be used to log in
+   * @param text               The initial dialog text.
+   * @param barcode            The barcode that will be used to log in
+   * @param pin                The PIN that will be used to log in
+   * @param on_login_success   A function evaluated on login success
+   * @param on_login_cancelled A function evaluated on login cancellation
+   * @param on_login_failure   A function evaluated on login failure
    * @return A new dialog
    */
 
   public static LoginDialog newDialog(
       final ProfilesControllerType controller,
       final String text,
-      final AccountBarcode barcode,
-      final AccountPIN pin) {
-
-    NullCheck.notNull(controller, "Controller");
-    NullCheck.notNull(text);
-    NullCheck.notNull(barcode);
-    NullCheck.notNull(pin);
-
-    final Account account = getCurrentAccount();
-
-    final Bundle b = new Bundle();
-    b.putSerializable(LoginDialog.TEXT_ID, text);
-    b.putSerializable(LoginDialog.PIN_ID, pin.value());
-    b.putSerializable(LoginDialog.BARCODE_ID, barcode.value());
-    b.putSerializable(LoginDialog.PIN_ALLOWS_LETTERS, account.pinAllowsLetters());
-    b.putSerializable(LoginDialog.PIN_LENGTH, account.getPinLength());
-
-    final LoginDialog d = new LoginDialog();
-    d.setArguments(b);
-    d.setController(controller);
-    return d;
-  }
-
-  private static Account getCurrentAccount() {
-    throw new UnimplementedCodeException();
-  }
-
-  /**
-   * @param text    Text
-   * @param barcode Barcode
-   * @param pin     Pin
-   * @param account Library Account
-   * @return Login Dialog
-   */
-
-  public static LoginDialog newDialog(
-      final ProfilesControllerType controller,
-      final String text,
+      final AccountProvider provider,
       final AccountBarcode barcode,
       final AccountPIN pin,
-      final Account account) {
+      final Runnable on_login_success,
+      final Runnable on_login_cancelled,
+      final ProcedureType<String> on_login_failure) {
 
     NullCheck.notNull(controller, "Controller");
-    NullCheck.notNull(text);
-    NullCheck.notNull(barcode);
-    NullCheck.notNull(pin);
-    NullCheck.notNull(account);
+    NullCheck.notNull(text, "Text");
+    NullCheck.notNull(provider, "Provider");
+    NullCheck.notNull(barcode, "Barcode");
+    NullCheck.notNull(pin, "PIN");
+    NullCheck.notNull(on_login_success, "Success");
+    NullCheck.notNull(on_login_cancelled, "Cancel");
+    NullCheck.notNull(on_login_failure, "Failure");
 
-    final Bundle b = new Bundle();
-    b.putSerializable(LoginDialog.TEXT_ID, text);
-    b.putSerializable(LoginDialog.PIN_ID, pin.value());
-    b.putSerializable(LoginDialog.BARCODE_ID, barcode.value());
-    b.putSerializable(LoginDialog.PIN_ALLOWS_LETTERS, account.pinAllowsLetters());
-    b.putSerializable(LoginDialog.PIN_LENGTH, account.getPinLength());
+    final OptionType<AccountProviderAuthenticationDescription> authentication_opt =
+        provider.authentication();
 
-    final LoginDialog d = new LoginDialog();
-    d.setArguments(b);
-    d.setController(controller);
-    return d;
+    return authentication_opt.accept(
+        new OptionVisitorType<AccountProviderAuthenticationDescription, LoginDialog>() {
+          @Override
+          public LoginDialog none(final None<AccountProviderAuthenticationDescription> none) {
+            throw new IllegalArgumentException(
+                "Attempted to log in on an account that does not require authentication!");
+          }
+
+          @Override
+          public LoginDialog some(final Some<AccountProviderAuthenticationDescription> some) {
+            final AccountProviderAuthenticationDescription authentication = some.get();
+
+            final Bundle b = new Bundle();
+            b.putSerializable(TEXT_ID, text);
+            b.putSerializable(PIN_ID, pin.value());
+            b.putSerializable(BARCODE_ID, barcode.value());
+            b.putSerializable(PIN_ALLOWS_LETTERS, authentication.passCodeMayContainLetters());
+            b.putSerializable(PIN_LENGTH, authentication.passCodeLength());
+
+            final LoginDialog d = new LoginDialog();
+            d.setArguments(b);
+            d.setRequiredArguments(controller, on_login_success, on_login_failure, on_login_cancelled);
+            return d;
+          }
+        });
+  }
+
+  private void setRequiredArguments(
+      final ProfilesControllerType controller,
+      final Runnable on_login_success,
+      final ProcedureType<String> on_login_failure,
+      final Runnable on_login_cancelled) {
+    this.controller = NullCheck.notNull(controller, "controller");
+    this.on_login_success = NullCheck.notNull(on_login_success, "On login success");
+    this.on_login_failure = NullCheck.notNull(on_login_failure, "On login failure");
+    this.on_login_cancelled = NullCheck.notNull(on_login_cancelled, "On login cancelled");
   }
 
   private void onAccountLoginFailure(
@@ -197,28 +203,14 @@ public final class LoginDialog extends DialogFragment {
     final String s = NullCheck.notNull(String.format("login failed: %s", message));
     LogUtilities.errorWithOptionalException(LOG, s, error);
 
-    final TextView in_text = NullCheck.notNull(this.text);
-    final EditText in_barcode_edit = NullCheck.notNull(this.barcode_edit);
-    final EditText in_pin_edit = NullCheck.notNull(this.pin_edit);
-    final Button in_login = NullCheck.notNull(this.login);
-    final Button in_cancel = NullCheck.notNull(this.cancel);
-
     UIThread.runOnUIThread(() -> {
-      in_text.setText(message);
-      in_barcode_edit.setEnabled(true);
-      in_pin_edit.setEnabled(true);
-      in_login.setEnabled(true);
-      in_cancel.setEnabled(true);
+      this.text.setText(message);
+      this.barcode_edit.setEnabled(true);
+      this.pin_edit.setEnabled(true);
+      this.login.setEnabled(true);
+      this.cancel.setEnabled(true);
+      this.on_login_failure.call(message);
     });
-
-    final LoginListenerType ls = this.listener;
-    if (ls != null) {
-      try {
-        ls.onLoginFailure(error, message);
-      } catch (final Throwable e) {
-        LOG.debug("{}", e.getMessage(), e);
-      }
-    }
   }
 
   @Override
@@ -239,14 +231,8 @@ public final class LoginDialog extends DialogFragment {
   public void onCancel(final @Nullable DialogInterface dialog) {
     LOG.debug("login aborted");
 
-    final LoginListenerType ls = this.listener;
-    if (ls != null) {
-      try {
-        ls.onLoginAborted();
-      } catch (final Throwable e) {
-        LOG.debug("{}", e.getMessage(), e);
-      }
-    }
+    UIThread.checkIsUIThread();
+    this.on_login_cancelled.run();
   }
 
   @Override
@@ -264,17 +250,17 @@ public final class LoginDialog extends DialogFragment {
     final LayoutInflater inflater = NullCheck.notNull(inflater_mn);
     final Bundle b = this.getArguments();
     final AccountPIN initial_pin =
-        AccountPIN.create(b.getString(LoginDialog.PIN_ID));
+        AccountPIN.create(b.getString(PIN_ID));
     final AccountBarcode initial_bar =
-        AccountBarcode.create(b.getString(LoginDialog.BARCODE_ID));
+        AccountBarcode.create(b.getString(BARCODE_ID));
     final String initial_txt =
-        NullCheck.notNull(b.getString(LoginDialog.TEXT_ID));
+        NullCheck.notNull(b.getString(TEXT_ID));
 
-    final int pin_length = b.getInt(LoginDialog.PIN_LENGTH);
-    final boolean pin_allows_letters = b.getBoolean(LoginDialog.PIN_ALLOWS_LETTERS);
+    final int pin_length = b.getInt(PIN_LENGTH);
+    final boolean pin_allows_letters = b.getBoolean(PIN_ALLOWS_LETTERS);
 
-    final ViewGroup in_layout = NullCheck.notNull(
-        (ViewGroup) inflater.inflate(
+    final ViewGroup in_layout =
+        NullCheck.notNull((ViewGroup) inflater.inflate(
             R.layout.login_dialog, container, false));
 
     final TextView in_text =
@@ -292,9 +278,7 @@ public final class LoginDialog extends DialogFragment {
       in_pin_edit.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
     }
     if (pin_length != 0) {
-      in_pin_edit.setFilters(new InputFilter[]{
-          new InputFilter.LengthFilter(pin_length)
-      });
+      in_pin_edit.setFilters(new InputFilter[]{new InputFilter.LengthFilter(pin_length)});
     }
 
     final Button in_login_button =
@@ -317,50 +301,47 @@ public final class LoginDialog extends DialogFragment {
     in_pin_edit.setText(initial_pin.toString());
 
     in_login_button.setEnabled(false);
-    in_login_button.setOnClickListener(
-        button -> {
-          in_barcode_edit.setEnabled(false);
-          in_pin_edit.setEnabled(false);
-          in_login_button.setEnabled(false);
-          in_login_cancel_button.setEnabled(false);
+    in_login_button.setOnClickListener(button -> {
+      in_barcode_edit.setEnabled(false);
+      in_pin_edit.setEnabled(false);
+      in_login_button.setEnabled(false);
+      in_login_cancel_button.setEnabled(false);
 
-          final Editable barcode_edit_text = in_barcode_edit.getText();
-          final Editable pin_edit_text = in_pin_edit.getText();
+      final Editable barcode_edit_text = in_barcode_edit.getText();
+      final Editable pin_edit_text = in_pin_edit.getText();
 
-          final AccountBarcode barcode =
-              AccountBarcode.create(NullCheck.notNull(barcode_edit_text.toString()));
-          final AccountPIN pin =
-              AccountPIN.create(NullCheck.notNull(pin_edit_text.toString()));
-          final AccountAuthenticationProvider provider =
-              AccountAuthenticationProvider.create(
-                  resources.getString(R.string.feature_default_auth_provider_name));
+      final AccountBarcode barcode =
+          AccountBarcode.create(NullCheck.notNull(barcode_edit_text.toString()));
+      final AccountPIN pin =
+          AccountPIN.create(NullCheck.notNull(pin_edit_text.toString()));
+      final AccountAuthenticationProvider provider =
+          AccountAuthenticationProvider.create(
+              resources.getString(R.string.feature_default_auth_provider_name));
 
-          final AccountAuthenticationCredentials creds =
-              AccountAuthenticationCredentials.builder(pin, barcode)
-                  .setAuthenticationProvider(provider)
-                  .build();
+      final AccountAuthenticationCredentials creds =
+          AccountAuthenticationCredentials.builder(pin, barcode)
+              .setAuthenticationProvider(provider)
+              .build();
 
-          this.login_task = this.controller.profileAccountLogin(creds);
-          this.login_task.addListener(
-              () -> onLoginTaskFinished(login_task),
-              Simplified.getBackgroundTaskExecutor());
-        });
+      this.login_task = this.controller.profileAccountLogin(creds);
+      this.login_task.addListener(
+          () -> onLoginTaskFinished(login_task),
+          Simplified.getBackgroundTaskExecutor());
+    });
 
-    in_login_cancel_button.setOnClickListener(
-        v -> {
-          LoginDialog.this.onCancel(null);
-          LoginDialog.this.dismiss();
-        });
+    in_login_cancel_button.setOnClickListener(v -> {
+      this.onCancel(null);
+      this.dismiss();
+    });
 
     final boolean request_new_code =
         resources.getBoolean(R.bool.feature_default_auth_provider_request_new_code);
 
     if (request_new_code) {
-      in_login_request_new_code.setOnClickListener(
-          v -> {
-            final Intent browser_intent = new Intent(Intent.ACTION_VIEW, Uri.parse(resources.getString(R.string.feature_default_auth_provider_request_new_code_uri)));
-            startActivity(browser_intent);
-          });
+      in_login_request_new_code.setOnClickListener(v -> {
+        final Intent browser_intent = new Intent(Intent.ACTION_VIEW, Uri.parse(resources.getString(R.string.feature_default_auth_provider_request_new_code_uri)));
+        this.startActivity(browser_intent);
+      });
     } else {
       in_login_request_new_code.setVisibility(View.GONE);
     }
@@ -473,7 +454,7 @@ public final class LoginDialog extends DialogFragment {
     return in_layout;
   }
 
-  private void onLoginTaskFinished(final ListenableFuture<AccountEvent.AccountLoginEvent> login_task) {
+  private void onLoginTaskFinished(final ListenableFuture<AccountEventLogin> login_task) {
 
     Assertions.checkPrecondition(
         login_task.isDone() || login_task.isCancelled(),
@@ -482,7 +463,7 @@ public final class LoginDialog extends DialogFragment {
     final Resources resources = NullCheck.notNull(this.getResources());
 
     try {
-      final AccountEvent.AccountLoginEvent event = login_task.get();
+      final AccountEventLogin event = login_task.get();
       event.matchLogin(this::onLoginTaskSucceeded, this::onLoginTaskFailed);
     } catch (final InterruptedException | ExecutionException e) {
       /// XXX: This is not correct, need a new translation string for local device errors
@@ -491,65 +472,51 @@ public final class LoginDialog extends DialogFragment {
     }
   }
 
-  private Unit onLoginTaskFailed(final AccountLoginFailed failed) {
-    final Resources resources = NullCheck.notNull(this.getResources());
+  /**
+   * Transform the given login error code to a localized message.
+   * @param resources The resources
+   * @param error The error code
+   * @return A localized message
+   */
 
-    switch (failed.errorCode()) {
-      case ERROR_PROFILE_CONFIGURATION: {
-        /// XXX: This is not correct, need a new translation string for local device errors
-        this.onAccountLoginFailure(
-            failed.exception(), resources.getString(R.string.settings_login_failed_server));
-        return Unit.unit();
-      }
-      case ERROR_NETWORK_EXCEPTION: {
+  public static String loginErrorCodeToLocalizedMessage(
+      final Resources resources,
+      final AccountLoginFailed.ErrorCode error)
+  {
+    NullCheck.notNull(resources, "Resources");
+    NullCheck.notNull(error, "Error");
+
+    switch (error) {
+      case ERROR_PROFILE_CONFIGURATION:
         /// XXX: This is not correct, need a new translation string for network errors
-        this.onAccountLoginFailure(
-            failed.exception(), resources.getString(R.string.settings_login_failed_server));
-        return Unit.unit();
-      }
-      case ERROR_CREDENTIALS_INCORRECT: {
-        this.onAccountLoginFailure(
-            failed.exception(), resources.getString(R.string.settings_login_failed_credentials));
-        return Unit.unit();
-      }
-      case ERROR_SERVER_ERROR: {
-        this.onAccountLoginFailure(
-            failed.exception(), resources.getString(R.string.settings_login_failed_server));
-        return Unit.unit();
-      }
+        return resources.getString(R.string.settings_login_failed_server);
+
+      case ERROR_NETWORK_EXCEPTION:
+        /// XXX: This is not correct, need a new translation string for network errors
+        return resources.getString(R.string.settings_login_failed_server);
+
+      case ERROR_CREDENTIALS_INCORRECT:
+        return resources.getString(R.string.settings_login_failed_credentials);
+
+      case ERROR_SERVER_ERROR:
+        return resources.getString(R.string.settings_login_failed_server);
     }
 
     throw new UnreachableCodeException();
   }
 
-  private Unit onLoginTaskSucceeded(final AccountLoginSucceeded succeeded) {
-
-    UIThread.runOnUIThread(LoginDialog.this::dismiss);
-
-    final LoginListenerType ls = this.listener;
-    if (ls != null) {
-      try {
-        ls.onLoginSuccess(succeeded.credentials());
-      } catch (final Throwable e) {
-        LOG.debug("{}", e.getMessage(), e);
-      }
-    }
-
+  private Unit onLoginTaskFailed(final AccountLoginFailed failed) {
+    final Resources resources = NullCheck.notNull(this.getResources());
+    this.onAccountLoginFailure(failed.exception(),
+        loginErrorCodeToLocalizedMessage(resources, failed.errorCode()));
     return Unit.unit();
   }
 
-  /**
-   * Set the listener that will be used to receive the results of the login
-   * attempt.
-   *
-   * @param in_listener The listener
-   */
-
-  public void setLoginListener(final LoginListenerType in_listener) {
-    this.listener = NullCheck.notNull(in_listener);
-  }
-
-  private void setController(final ProfilesControllerType controller) {
-    this.controller = NullCheck.notNull(controller, "Controller");
+  private Unit onLoginTaskSucceeded(final AccountLoginSucceeded succeeded) {
+    UIThread.runOnUIThread(() -> {
+      this.dismiss();
+      this.on_login_success.run();
+    });
+    return Unit.unit();
   }
 }

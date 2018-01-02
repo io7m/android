@@ -10,15 +10,16 @@ import com.io7m.jnull.NullCheck;
 import org.nypl.simplified.books.accounts.AccountAuthenticatedHTTP;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountEvent;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountLoginEvent;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountLoginEvent.AccountLoginFailed;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountLoginEvent.AccountLoginSucceeded;
+import org.nypl.simplified.books.accounts.AccountEventLogin;
+import org.nypl.simplified.books.accounts.AccountEventLogin.AccountLoginFailed;
+import org.nypl.simplified.books.accounts.AccountEventLogin.AccountLoginSucceeded;
 import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountProviderAuthenticationDescription;
 import org.nypl.simplified.books.accounts.AccountProviderCollection;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseException;
 import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
+import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 import org.nypl.simplified.books.profiles.ProfileReadableType;
 import org.nypl.simplified.books.profiles.ProfilesDatabaseType;
 import org.nypl.simplified.http.core.HTTPAuthType;
@@ -36,12 +37,12 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.concurrent.Callable;
 
-import static org.nypl.simplified.books.accounts.AccountEvent.AccountLoginEvent.AccountLoginFailed.ErrorCode.ERROR_CREDENTIALS_INCORRECT;
-import static org.nypl.simplified.books.accounts.AccountEvent.AccountLoginEvent.AccountLoginFailed.ErrorCode.ERROR_NETWORK_EXCEPTION;
-import static org.nypl.simplified.books.accounts.AccountEvent.AccountLoginEvent.AccountLoginFailed.ErrorCode.ERROR_PROFILE_CONFIGURATION;
-import static org.nypl.simplified.books.accounts.AccountEvent.AccountLoginEvent.AccountLoginFailed.ErrorCode.ERROR_SERVER_ERROR;
+import static org.nypl.simplified.books.accounts.AccountEventLogin.AccountLoginFailed.ErrorCode.ERROR_CREDENTIALS_INCORRECT;
+import static org.nypl.simplified.books.accounts.AccountEventLogin.AccountLoginFailed.ErrorCode.ERROR_NETWORK_EXCEPTION;
+import static org.nypl.simplified.books.accounts.AccountEventLogin.AccountLoginFailed.ErrorCode.ERROR_PROFILE_CONFIGURATION;
+import static org.nypl.simplified.books.accounts.AccountEventLogin.AccountLoginFailed.ErrorCode.ERROR_SERVER_ERROR;
 
-final class ProfileAccountLoginTask implements Callable<AccountLoginEvent> {
+final class ProfileAccountLoginTask implements Callable<AccountEventLogin> {
 
   private static final Logger LOG = LoggerFactory.getLogger(ProfileAccountLoginTask.class);
 
@@ -71,13 +72,13 @@ final class ProfileAccountLoginTask implements Callable<AccountLoginEvent> {
   }
 
   @Override
-  public AccountLoginEvent call() {
-    final AccountLoginEvent event = run();
+  public AccountEventLogin call() {
+    final AccountEventLogin event = run();
     this.account_events.send(event);
     return event;
   }
 
-  private AccountLoginEvent run() {
+  private AccountEventLogin run() {
     try {
       final ProfileReadableType profile = this.profiles.currentProfileUnsafe();
       final AccountType account = profile.accountCurrent();
@@ -89,13 +90,13 @@ final class ProfileAccountLoginTask implements Callable<AccountLoginEvent> {
         return runForProvider(account, provider);
       }
 
-      throw new ProfileUnknownAccountProviderException("Unrecognized provider: " + provider_name);
-    } catch (final ProfileNoneCurrentException | ProfileUnknownAccountProviderException e) {
+      throw new ProfileNonexistentAccountProviderException("Unrecognized provider: " + provider_name);
+    } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
       return AccountLoginFailed.of(ERROR_PROFILE_CONFIGURATION, Option.some(e));
     }
   }
 
-  private AccountLoginEvent runForProvider(
+  private AccountEventLogin runForProvider(
       final AccountType account,
       final AccountProvider provider) {
 
@@ -112,7 +113,7 @@ final class ProfileAccountLoginTask implements Callable<AccountLoginEvent> {
    * Hit the login URI using the given authenticated HTTP instance.
    */
 
-  private AccountLoginEvent runHTTPRequest(
+  private AccountEventLogin runHTTPRequest(
       final AccountType account,
       final AccountProviderAuthenticationDescription auth) {
 
@@ -127,7 +128,7 @@ final class ProfileAccountLoginTask implements Callable<AccountLoginEvent> {
         http_result -> onHTTPOK(account, http_result));
   }
 
-  private AccountLoginEvent onHTTPOK(
+  private AccountEventLogin onHTTPOK(
       final AccountType account,
       final HTTPResultOKType<InputStream> result) {
 
@@ -142,13 +143,12 @@ final class ProfileAccountLoginTask implements Callable<AccountLoginEvent> {
     return AccountLoginSucceeded.of(this.credentials);
   }
 
-  private AccountLoginEvent onHTTPException(final HTTPResultException<InputStream> result) {
+  private AccountEventLogin onHTTPException(final HTTPResultException<InputStream> result) {
     LOG.debug("received http exception: {}: ", result.getURI(), result.getError());
-
     return AccountLoginFailed.of(ERROR_NETWORK_EXCEPTION, Option.some(result.getError()));
   }
 
-  private AccountLoginEvent onHTTPError(final HTTPResultError<InputStream> result) {
+  private AccountEventLogin onHTTPError(final HTTPResultError<InputStream> result) {
     LOG.debug("received http error: {}: {}", result.getMessage(), result.getStatus());
 
     final int code = result.getStatus();

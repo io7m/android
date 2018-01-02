@@ -7,14 +7,19 @@ import com.io7m.jfunctional.Unit;
 import org.joda.time.LocalDate;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountEvent;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountCreationEvent;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountDeletionEvent;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountLoginEvent;
+import org.nypl.simplified.books.accounts.AccountEventCreation;
+import org.nypl.simplified.books.accounts.AccountEventDeletion;
+import org.nypl.simplified.books.accounts.AccountEventLogin;
+import org.nypl.simplified.books.accounts.AccountEventLogout;
 import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.accounts.AccountType;
+import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
 import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent;
-import org.nypl.simplified.books.profiles.ProfileEvent;
 import org.nypl.simplified.books.profiles.ProfileCreationEvent;
+import org.nypl.simplified.books.profiles.ProfileEvent;
 import org.nypl.simplified.books.profiles.ProfileID;
+import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
+import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 import org.nypl.simplified.books.profiles.ProfileReadableType;
 import org.nypl.simplified.books.profiles.ProfilesDatabaseType;
 import org.nypl.simplified.observable.ObservableReadableType;
@@ -42,25 +47,25 @@ public interface ProfilesControllerType {
 
   /**
    * @return The most recently selected profile, or the anonymous profile if it is enabled
-   * @throws ProfileNoProfileIsCurrentException If the anonymous profile is disabled and no profile has been selected
+   * @throws ProfileNoneCurrentException If the anonymous profile is disabled and no profile has been selected
    * @see #profileSelect(ProfileID)
    * @see #profileAnonymousEnabled()
    */
 
   ProfileReadableType profileCurrent()
-      throws ProfileNoProfileIsCurrentException;
+      throws ProfileNoneCurrentException;
 
   /**
    * @return The account provider corresponding to the current account in the current profile
-   * @throws ProfileNoProfileIsCurrentException     If the anonymous profile is disabled and no profile has been selected
-   * @throws ProfileUnknownAccountProviderException If the current account refers to an account provider that is not in the current set of known account providers
+   * @throws ProfileNoneCurrentException                If the anonymous profile is disabled and no profile has been selected
+   * @throws ProfileNonexistentAccountProviderException If the current account refers to an account provider that is not in the current set of known account providers
    * @see #profileSelect(ProfileID)
    * @see #profileAnonymousEnabled()
    */
 
   AccountProvider profileAccountProviderCurrent()
-      throws ProfileNoProfileIsCurrentException,
-      ProfileUnknownAccountProviderException;
+      throws ProfileNoneCurrentException,
+      ProfileNonexistentAccountProviderException;
 
   /**
    * @return An observable that publishes profile events
@@ -100,14 +105,14 @@ public interface ProfilesControllerType {
    * selected is dependent on the date of birth specified in the profile).
    *
    * @return The URI for the root of the catalog in the current account
-   * @throws ProfileNoProfileIsCurrentException     If the anonymous profile is disabled and no profile has been selected
-   * @throws ProfileUnknownAccountProviderException If the current account refers to an account provider that is not in the current set of known account providers
+   * @throws ProfileNoneCurrentException                If the anonymous profile is disabled and no profile has been selected
+   * @throws ProfileNonexistentAccountProviderException If the current account refers to an account provider that is not in the current set of known account providers
    * @see #profileSelect(ProfileID)
    * @see #profileAnonymousEnabled()
    */
 
   URI profileCurrentCatalogRootURI()
-      throws ProfileNoProfileIsCurrentException, ProfileUnknownAccountProviderException;
+      throws ProfileNoneCurrentException, ProfileNonexistentAccountProviderException;
 
   /**
    * Attempt to login using the current account of the current profile. The login is attempted
@@ -117,7 +122,7 @@ public interface ProfilesControllerType {
    * @return A future that returns a login event
    */
 
-  ListenableFuture<AccountLoginEvent> profileAccountLogin(
+  ListenableFuture<AccountEventLogin> profileAccountLogin(
       AccountAuthenticationCredentials credentials);
 
   /**
@@ -128,7 +133,7 @@ public interface ProfilesControllerType {
    * @return A future that returns a login event
    */
 
-  ListenableFuture<AccountCreationEvent> profileAccountCreate(
+  ListenableFuture<AccountEventCreation> profileAccountCreate(
       URI provider);
 
   /**
@@ -140,7 +145,7 @@ public interface ProfilesControllerType {
    * @return A future that returns a login event
    */
 
-  ListenableFuture<AccountDeletionEvent> profileAccountDeleteByProvider(
+  ListenableFuture<AccountEventDeletion> profileAccountDeleteByProvider(
       URI provider);
 
   /**
@@ -153,6 +158,20 @@ public interface ProfilesControllerType {
       URI provider);
 
   /**
+   * Find an account int the current profile using the given provider.
+   *
+   * @param provider The account provider ID
+   * @throws ProfileNoneCurrentException          If the anonymous profile is disabled and no profile has been selected
+   * @throws AccountsDatabaseNonexistentException If no account exists with the given provider
+   * @see #profileSelect(ProfileID)
+   * @see #profileAnonymousEnabled()
+   */
+
+  AccountType profileAccountFindByProvider(
+      URI provider)
+      throws ProfileNoneCurrentException, AccountsDatabaseNonexistentException;
+
+  /**
    * @return An observable that publishes account events
    */
 
@@ -160,12 +179,20 @@ public interface ProfilesControllerType {
 
   /**
    * @return A list of all of the account providers used by the current profile
-   * @throws ProfileNoProfileIsCurrentException     If the anonymous profile is disabled and no profile has been selected
-   * @throws ProfileUnknownAccountProviderException If the current account refers to an account provider that is not in the current set of known account providers
+   * @throws ProfileNoneCurrentException                If the anonymous profile is disabled and no profile has been selected
+   * @throws ProfileNonexistentAccountProviderException If the current account refers to an account provider that is not in the current set of known account providers
    * @see #profileSelect(ProfileID)
    * @see #profileAnonymousEnabled()
    */
 
   ImmutableList<AccountProvider> profileCurrentlyUsedAccountProviders()
-      throws ProfileNoProfileIsCurrentException, ProfileUnknownAccountProviderException;
+      throws ProfileNoneCurrentException, ProfileNonexistentAccountProviderException;
+
+  /**
+   * Attempt to log out using the current account of the current profile.
+   *
+   * @return A future that returns a logout event
+   */
+
+  ListenableFuture<AccountEventLogout> profileAccountLogout();
 }

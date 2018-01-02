@@ -1,9 +1,13 @@
 package org.nypl.simplified.books.profiles;
 
+import com.io7m.jnull.NullCheck;
+
 import org.nypl.simplified.books.accounts.AccountID;
 import org.nypl.simplified.books.accounts.AccountType;
+import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
 
 import java.io.File;
+import java.net.URI;
 import java.util.SortedMap;
 
 /**
@@ -65,4 +69,10 @@ public interface ProfileReadableType extends Comparable<ProfileReadableType> {
    */
 
   ProfilePreferences preferences();
+
+  /**
+   * @return A read-only map of the accounts for this profile, organized by provider
+   */
+
+  SortedMap<URI, AccountType> accountsByProvider();
 }

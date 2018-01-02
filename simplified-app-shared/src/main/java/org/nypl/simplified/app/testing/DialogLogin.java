@@ -10,6 +10,8 @@ import org.nypl.simplified.app.LoginDialog;
 import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
+import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
+import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 
 /**
  * A dialog activity requesting login details.
@@ -29,13 +31,21 @@ public final class DialogLogin extends Activity {
   protected void onCreate(final @Nullable Bundle state) {
     super.onCreate(state);
 
-    final LoginDialog d = LoginDialog.newDialog(
-        Simplified.getProfilesController(),
-        "Something here",
-        AccountBarcode.create(""),
-        AccountPIN.create(""));
+    try {
+      final LoginDialog d = LoginDialog.newDialog(
+          Simplified.getProfilesController(),
+          "Something here",
+          Simplified.getProfilesController().profileAccountProviderCurrent(),
+          AccountBarcode.create(""),
+          AccountPIN.create(""),
+          () -> {},
+          () -> {},
+          x -> {});
 
-    final FragmentManager fm = this.getFragmentManager();
-    d.show(fm, "dialog");
+      final FragmentManager fm = this.getFragmentManager();
+      d.show(fm, "dialog");
+    } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+      throw new IllegalStateException(e);
+    }
   }
 }

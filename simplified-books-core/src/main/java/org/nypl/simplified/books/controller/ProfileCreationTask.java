@@ -5,26 +5,20 @@ import com.io7m.jnull.NullCheck;
 
 import org.joda.time.LocalDate;
 import org.nypl.simplified.books.accounts.AccountProvider;
-import org.nypl.simplified.books.profiles.ProfileDatabaseException;
-import org.nypl.simplified.books.profiles.ProfileEvent;
 import org.nypl.simplified.books.profiles.ProfileCreationEvent;
 import org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationFailed;
 import org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationSucceeded;
+import org.nypl.simplified.books.profiles.ProfileEvent;
 import org.nypl.simplified.books.profiles.ProfileType;
 import org.nypl.simplified.books.profiles.ProfilesDatabaseType;
 import org.nypl.simplified.observable.ObservableType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.concurrent.Callable;
 
 import static org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationFailed.ErrorCode.ERROR_DISPLAY_NAME_ALREADY_USED;
-import static org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationFailed.ErrorCode.ERROR_IO;
+import static org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationFailed.ErrorCode.ERROR_GENERAL;
 
 final class ProfileCreationTask implements Callable<ProfileCreationEvent> {
-
-  private static final Logger LOG = LoggerFactory.getLogger(ProfileCreationTask.class);
 
   private final ProfilesDatabaseType profiles;
   private final ObservableType<ProfileEvent> profile_events;
@@ -51,8 +45,7 @@ final class ProfileCreationTask implements Callable<ProfileCreationEvent> {
         NullCheck.notNull(in_date, "Date");
   }
 
-  @Override
-  public ProfileCreationEvent call() {
+  private ProfileCreationEvent execute() {
 
     if (profiles.findProfileWithDisplayName(this.display_name).isSome()) {
       return ProfileCreationFailed.of(
@@ -69,16 +62,16 @@ final class ProfileCreationTask implements Callable<ProfileCreationEvent> {
               .setDateOfBirth(this.date)
               .build());
 
-      final ProfileCreationSucceeded event =
-          ProfileCreationSucceeded.of(this.display_name, profile.id());
-      this.profile_events.send(event);
-      return event;
-    } catch (final ProfileDatabaseException | IOException e) {
-      LOG.error("profile creation failed: ", e);
-      final ProfileCreationFailed event =
-          ProfileCreationFailed.of(this.display_name, ERROR_IO, Option.some(e));
-      this.profile_events.send(event);
-      return event;
+      return ProfileCreationSucceeded.of(this.display_name, profile.id());
+    } catch (final Exception e) {
+      return ProfileCreationFailed.of(this.display_name, ERROR_GENERAL, Option.some(e));
     }
+  }
+
+  @Override
+  public ProfileCreationEvent call() throws Exception {
+    final ProfileCreationEvent event = execute();
+    this.profile_events.send(event);
+    return event;
   }
 }

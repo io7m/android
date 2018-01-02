@@ -44,16 +44,14 @@ import org.nypl.simplified.app.catalog.MainBooksActivity;
 import org.nypl.simplified.app.catalog.MainCatalogActivity;
 import org.nypl.simplified.app.catalog.MainHoldsActivity;
 import org.nypl.simplified.app.utilities.UIThread;
-import org.nypl.simplified.books.accounts.AccountEvent;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountCreationEvent;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountDeletionEvent;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountLoginEvent;
 import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.core.BooksFeedSelection;
 import org.nypl.simplified.books.core.FeedFacetPseudo;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent;
 import org.nypl.simplified.books.profiles.ProfileEvent;
+import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
+import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 import org.nypl.simplified.observable.ObservableSubscriptionType;
 import org.nypl.simplified.stack.ImmutableStack;
 import org.slf4j.Logger;
@@ -81,7 +79,6 @@ public abstract class SimplifiedActivity extends Activity
   private static final Logger LOG;
   private static final String NAVIGATION_DRAWER_OPEN_ID;
   private static int ACTIVITY_COUNT;
-  private static boolean DEVICE_ACTIVATED;
 
   static {
     LOG = LogUtilities.getLog(SimplifiedActivity.class);
@@ -99,7 +96,6 @@ public abstract class SimplifiedActivity extends Activity
   private SharedPreferences drawer_settings;
   private boolean finishing;
   private int selected;
-  private ObservableSubscriptionType<AccountEvent> account_event_subscription;
   private ObservableSubscriptionType<ProfileEvent> profile_event_subscription;
   private ArrayList<Object> adapter_account_array;
 
@@ -148,19 +144,23 @@ public abstract class SimplifiedActivity extends Activity
 
     drawer_actions.put(
         PART_CATALOG, b -> {
-          final AccountProvider account_provider =
-              Simplified.getProfilesController().profileAccountProviderCurrent();
-          final ImmutableStack<CatalogFeedArgumentsType> empty =
-              ImmutableStack.empty();
-          final CatalogFeedArgumentsRemote remote =
-              new CatalogFeedArgumentsRemote(
-                  false,
-                  NullCheck.notNull(empty),
-                  NullCheck.notNull(resources.getString(R.string.feature_app_name)),
-                  account_provider.catalogURI(),
-                  false);
-          CatalogFeedActivity.setActivityArguments(b, remote);
-          return Unit.unit();
+          try {
+            final AccountProvider account_provider =
+                Simplified.getProfilesController().profileAccountProviderCurrent();
+            final ImmutableStack<CatalogFeedArgumentsType> empty =
+                ImmutableStack.empty();
+            final CatalogFeedArgumentsRemote remote =
+                new CatalogFeedArgumentsRemote(
+                    false,
+                    NullCheck.notNull(empty),
+                    NullCheck.notNull(resources.getString(R.string.feature_app_name)),
+                    account_provider.catalogURI(),
+                    false);
+            CatalogFeedActivity.setActivityArguments(b, remote);
+            return Unit.unit();
+          } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+            throw new IllegalStateException(e);
+          }
         });
 
     if (holds_enabled) {
@@ -365,8 +365,7 @@ public abstract class SimplifiedActivity extends Activity
   }
 
   @Override
-  protected void onCreate(
-      final @Nullable Bundle state) {
+  protected void onCreate(final @Nullable Bundle state) {
 
     this.setTheme(Simplified.getCurrentTheme());
     super.onCreate(state);
@@ -494,11 +493,6 @@ public abstract class SimplifiedActivity extends Activity
 
     LOG.debug("activity count: {}", ACTIVITY_COUNT);
 
-    this.account_event_subscription =
-        Simplified.getProfilesController()
-            .accountEvents()
-            .subscribe(this::onAccountEvent);
-
     this.profile_event_subscription =
         Simplified.getProfilesController()
             .profileEvents()
@@ -512,7 +506,6 @@ public abstract class SimplifiedActivity extends Activity
     super.onDestroy();
     LOG.debug("onDestroy: {}", this);
     ACTIVITY_COUNT = ACTIVITY_COUNT - 1;
-    this.account_event_subscription.unsubscribe();
     this.profile_event_subscription.unsubscribe();
   }
 
@@ -544,43 +537,25 @@ public abstract class SimplifiedActivity extends Activity
   }
 
   private void populateSidebar() {
-    UIThread.checkIsUIThread();
+    try {
+      UIThread.checkIsUIThread();
 
-    final ImmutableList<AccountProvider> drawer_item_accounts =
-        Simplified.getProfilesController().profileCurrentlyUsedAccountProviders();
+      final ImmutableList<AccountProvider> drawer_item_accounts =
+          Simplified.getProfilesController().profileCurrentlyUsedAccountProviders();
 
-    final ImmutableList<Object> drawer_item_accounts_untyped =
-        ImmutableList.builder()
-            .addAll(drawer_item_accounts)
-            .add(PART_MANAGE_ACCOUNTS)
-            .build();
+      final ImmutableList<Object> drawer_item_accounts_untyped =
+          ImmutableList.builder()
+              .addAll(drawer_item_accounts)
+              .add(PART_MANAGE_ACCOUNTS)
+              .build();
 
-    this.adapter_account_array.clear();
-    this.adapter_account_array.addAll(drawer_item_accounts_untyped);
-    this.adapter_accounts.notifyDataSetChanged();
-  }
+      this.adapter_account_array.clear();
+      this.adapter_account_array.addAll(drawer_item_accounts_untyped);
+      this.adapter_accounts.notifyDataSetChanged();
 
-  private void onAccountEvent(final AccountEvent event) {
-    LOG.debug("onAccountEvent: {}", event);
-    event.match(
-        this::onAccountEventCreation,
-        this::onAccountEventDeletion,
-        this::onAccountEventLogin);
-  }
-
-  private Unit onAccountEventLogin(final AccountLoginEvent event) {
-    LOG.debug("onAccountEventLogin: {}", event);
-    return Unit.unit();
-  }
-
-  private Unit onAccountEventDeletion(final AccountDeletionEvent event) {
-    LOG.debug("onAccountEventDeletion: {}", event);
-    return Unit.unit();
-  }
-
-  private Unit onAccountEventCreation(final AccountCreationEvent event) {
-    LOG.debug("onAccountEventCreation: {}", event);
-    return Unit.unit();
+    } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   @Override
@@ -775,8 +750,12 @@ public abstract class SimplifiedActivity extends Activity
       if (part.equals(PART_SWITCHER)) {
         v.setBackgroundResource(R.drawable.textview_underline);
 
-        final AccountProvider account_provider =
-            Simplified.getProfilesController().profileAccountProviderCurrent();
+        final AccountProvider account_provider;
+        try {
+          account_provider = Simplified.getProfilesController().profileAccountProviderCurrent();
+        } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+          throw new IllegalStateException(e);
+        }
 
         text_view.setText(account_provider.displayName());
         text_view.setTextColor(Color.parseColor(account_provider.mainColor()));

@@ -5,7 +5,6 @@ import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 
-import org.nypl.simplified.books.accounts.AccountEvent;
 import org.nypl.simplified.books.accounts.AccountID;
 import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountProviderCollection;
@@ -48,13 +47,6 @@ final class ProfileAccountSelectionTask implements Callable<ProfileAccountSelect
         NullCheck.notNull(provider, "provider_id");
   }
 
-  @Override
-  public ProfileAccountSelectEvent call() throws Exception {
-    final ProfileAccountSelectEvent event = run();
-    this.profile_events.send(event);
-    return event;
-  }
-
   private ProfileAccountSelectEvent run() {
     try {
       final ProfileType profile = this.profiles.currentProfileUnsafe();
@@ -73,5 +65,12 @@ final class ProfileAccountSelectionTask implements Callable<ProfileAccountSelect
     } catch (final AccountsDatabaseNonexistentException e) {
       return ProfileAccountSelectFailed.of(ErrorCode.ERROR_ACCOUNT_NONEXISTENT, Option.some(e));
     }
+  }
+
+  @Override
+  public ProfileAccountSelectEvent call() throws Exception {
+    final ProfileAccountSelectEvent event = run();
+    this.profile_events.send(event);
+    return event;
   }
 }

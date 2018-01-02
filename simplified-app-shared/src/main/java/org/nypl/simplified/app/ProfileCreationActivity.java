@@ -11,7 +11,9 @@ import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 
+import com.google.common.util.concurrent.FluentFuture;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
@@ -28,9 +30,7 @@ import org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationSu
 import org.nypl.simplified.books.profiles.ProfileEvent;
 import org.slf4j.Logger;
 
-import java.util.concurrent.ExecutionException;
-
-import static org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationFailed.ErrorCode.ERROR_IO;
+import static org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationFailed.ErrorCode.ERROR_GENERAL;
 
 /**
  * An activity that allows for the creation of profiles.
@@ -91,7 +91,7 @@ public final class ProfileCreationActivity extends Activity {
     switch (code) {
       case ERROR_DISPLAY_NAME_ALREADY_USED:
         return R.string.profiles_creation_error_name_already_used;
-      case ERROR_IO:
+      case ERROR_GENERAL:
         return R.string.profiles_creation_error_general;
     }
     throw new UnreachableCodeException();
@@ -105,16 +105,17 @@ public final class ProfileCreationActivity extends Activity {
     return Unit.unit();
   }
 
-  private void onProfileEvent(
+  private Unit onProfileEvent(
       final ProfileEvent event) {
 
     LOG.debug("onProfileEvent: {}", event);
     if (event instanceof ProfileCreationEvent) {
       final ProfileCreationEvent event_create = (ProfileCreationEvent) event;
-      event_create.matchCreation(
+      return event_create.matchCreation(
           this::onProfileCreationSucceeded,
           this::onProfileCreationFailed);
     }
+    return Unit.unit();
   }
 
   private void openSelectionActivity() {
@@ -139,6 +140,7 @@ public final class ProfileCreationActivity extends Activity {
 
     final AccountProviderCollection providers = Simplified.getAccountProviders();
     final ProfilesControllerType profiles = Simplified.getProfilesController();
+    final ListeningExecutorService exec = Simplified.getBackgroundTaskExecutor();
 
     final ListenableFuture<ProfileCreationEvent> task =
         profiles.profileCreate(
@@ -146,14 +148,9 @@ public final class ProfileCreationActivity extends Activity {
             name_text,
             new LocalDate(m_year, m_month, m_day));
 
-    task.addListener(() -> {
-      try {
-        onProfileEvent(task.get());
-      } catch (final InterruptedException | ExecutionException e) {
-        LOG.error("profile creation failed: ", e);
-        onProfileCreationFailed(ProfileCreationFailed.of(name_text, ERROR_IO, Option.some(e)));
-      }
-    }, Simplified.getBackgroundTaskExecutor());
+    FluentFuture.from(task)
+        .catching(Exception.class, e -> ProfileCreationFailed.of(name_text, ERROR_GENERAL, Option.some(e)), exec)
+        .transform(this::onProfileEvent, exec);
   }
 
   /**

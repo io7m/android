@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.ImageButton;
 
 import com.io7m.jfunctional.OptionType;
+import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 import com.io7m.junreachable.UnimplementedCodeException;
 
@@ -19,6 +20,8 @@ import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.LogUtilities;
+import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
+import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 import org.slf4j.Logger;
 
 /**
@@ -67,50 +70,29 @@ public final class LoginActivity extends Activity {
     this.finish();
   }
 
-  /**
-   *
-   */
   public void onLoginWithBarcode() {
-
-
-    final LoginListenerType login_listener = new LoginListenerType() {
-      @Override
-      public void onLoginAborted() {
-        LOG.trace("feed auth: aborted login");
-//        listener.onAuthenticationNotProvided();
-      }
-
-      @Override
-      public void onLoginFailure(
-          final OptionType<? extends Throwable> error,
-          final String message) {
-        LogUtilities.errorWithOptionalException(LOG, "failed login", error);
-//        listener.onAuthenticationError(error, message);
-      }
-
-      @Override
-      public void onLoginSuccess(
-          final AccountAuthenticationCredentials creds) {
-        LOG.trace("feed auth: login supplied new credentials");
-        LoginActivity.this.openCatalog();
-      }
-    };
-
-
     final FragmentManager fm = this.getFragmentManager();
+
     UIThread.runOnUIThread(() -> {
-      final AccountBarcode barcode = AccountBarcode.create("");
-      final AccountPIN pin = AccountPIN.create("");
-      final LoginDialog dialog =
-          LoginDialog.newDialog(Simplified.getProfilesController(),"Login required", barcode, pin);
-      dialog.setLoginListener(login_listener);
-      dialog.show(fm, "login-dialog");
+      try {
+        final AccountBarcode barcode = AccountBarcode.create("");
+        final AccountPIN pin = AccountPIN.create("");
+        final LoginDialog dialog =
+            LoginDialog.newDialog(
+                Simplified.getProfilesController(),
+                "Login required",
+                Simplified.getProfilesController().profileAccountProviderCurrent(),
+                barcode,
+                pin,
+                this::openCatalog,
+                () -> LOG.debug("cancelled login"),
+                (m) -> Unit.unit());
+        dialog.show(fm, "login-dialog");
+      } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+        throw new IllegalStateException(e);
+      }
     });
   }
-
-  /**
-   *
-   */
 
   public void onLoginWithClever() {
     final Intent i = new Intent(this, CleverLoginActivity.class);

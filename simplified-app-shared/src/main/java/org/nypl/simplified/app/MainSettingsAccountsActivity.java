@@ -18,27 +18,34 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.FluentFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.accounts.AccountEvent;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountCreationEvent;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountCreationEvent.AccountCreationFailed;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountCreationEvent.AccountCreationSucceeded;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountDeletionEvent.AccountDeletionFailed;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountDeletionEvent.AccountDeletionSucceeded;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountLoginEvent;
+import org.nypl.simplified.books.accounts.AccountEventCreation;
+import org.nypl.simplified.books.accounts.AccountEventCreation.AccountCreationFailed;
+import org.nypl.simplified.books.accounts.AccountEventCreation.AccountCreationSucceeded;
+import org.nypl.simplified.books.accounts.AccountEventDeletion;
+import org.nypl.simplified.books.accounts.AccountEventDeletion.AccountDeletionFailed;
+import org.nypl.simplified.books.accounts.AccountEventDeletion.AccountDeletionSucceeded;
+import org.nypl.simplified.books.accounts.AccountID;
 import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent;
 import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent.ProfileAccountSelectFailed;
 import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent.ProfileAccountSelectSucceeded;
 import org.nypl.simplified.books.profiles.ProfileEvent;
+import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
+import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 import org.nypl.simplified.observable.ObservableSubscriptionType;
 import org.slf4j.Logger;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -97,8 +104,6 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
     this.account_current_view =
         NullCheck.notNull(this.findViewById(R.id.current_account));
 
-    updateCurrentAccountView(account_current_view);
-
     final LayoutInflater inflater = NullCheck.notNull(this.getLayoutInflater());
 
     this.adapter_accounts_array = new ArrayList<>();
@@ -132,14 +137,15 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
 
     this.account_list_view.setAdapter(this.adapter_accounts);
     this.account_list_view.setOnItemClickListener((adapter_view, view, position, id) -> {
-      final AccountProvider selected_provider = adapter_accounts.getItem(position);
-      final Bundle b = new Bundle();
-      SimplifiedActivity.setActivityArguments(b, false);
-      final Intent intent = new Intent();
-      intent.setClass(this, MainSettingsAccountActivity.class);
-      intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-      intent.putExtras(b);
-      this.startActivity(intent);
+      try {
+        final AccountProvider selected_provider =
+            NullCheck.notNull(this.adapter_accounts.getItem(position));
+        this.openAccountSettings(
+            Simplified.getProfilesController()
+                .profileAccountFindByProvider(selected_provider.id()).id());
+      } catch (final ProfileNoneCurrentException | AccountsDatabaseNonexistentException e) {
+        throw new IllegalStateException(e);
+      }
     });
 
     this.account_list_view.setOnItemLongClickListener((adapter_view, view, position, id) -> {
@@ -149,7 +155,12 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
       final AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
       builder.setItems(items, (dialog, item) -> {
-        Simplified.getProfilesController().profileAccountDeleteByProvider(selected_provider.id());
+        final URI provider_id = selected_provider.id();
+        final ListeningExecutorService executor = Simplified.getBackgroundTaskExecutor();
+        FluentFuture
+            .from(Simplified.getProfilesController().profileAccountDeleteByProvider(provider_id))
+            .catching(Exception.class, AccountDeletionFailed::ofException, executor)
+            .transform(this::onAccountDeletionEvent, executor);
       });
 
       builder.create().show();
@@ -157,6 +168,17 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
     });
 
     this.populateAccountsArray();
+
+    try {
+      this.updateCurrentAccountView(
+          this.account_current_view,
+          Simplified.getProfilesController()
+              .profileCurrent()
+              .accountCurrent()
+              .id());
+    } catch (final ProfileNoneCurrentException e) {
+      throw new IllegalStateException(e);
+    }
 
     this.accounts_subscription =
         Simplified.getProfilesController()
@@ -169,63 +191,71 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
             .subscribe(this::onProfileEvent);
   }
 
-  private void updateCurrentAccountView(final LinearLayout current_account_view) {
-    UIThread.checkIsUIThread();
+  private void updateCurrentAccountView(
+      final LinearLayout current_account_view,
+      final AccountID account) {
 
-    final AccountProvider account_provider =
-        Simplified.getProfilesController().profileAccountProviderCurrent();
+    try {
+      UIThread.checkIsUIThread();
 
-    final TextView title_text =
-        NullCheck.notNull(current_account_view.findViewById(android.R.id.text1));
-    title_text.setText(account_provider.displayName());
-    title_text.setTextColor(R.color.text_black);
+      final AccountProvider account_provider =
+          Simplified.getProfilesController().profileAccountProviderCurrent();
 
-    final TextView subtitle_text =
-        NullCheck.notNull(current_account_view.findViewById(android.R.id.text2));
-    subtitle_text.setText(account_provider.subtitle());
-    subtitle_text.setTextColor(R.color.text_black);
+      final TextView title_text =
+          NullCheck.notNull(current_account_view.findViewById(android.R.id.text1));
+      title_text.setText(account_provider.displayName());
+      title_text.setTextColor(R.color.text_black);
 
-    final ImageView icon_view =
-        NullCheck.notNull(current_account_view.findViewById(R.id.cellIcon));
-    SimplifiedIconViews.configureIconViewFromURI(
-        this.getAssets(), icon_view, account_provider.logo());
+      final TextView subtitle_text =
+          NullCheck.notNull(current_account_view.findViewById(android.R.id.text2));
+      subtitle_text.setText(account_provider.subtitle());
+      subtitle_text.setTextColor(R.color.text_black);
 
-    current_account_view.setOnClickListener(view -> {
-      final Bundle b = new Bundle();
-      SimplifiedActivity.setActivityArguments(b, false);
-      final Intent intent = new Intent();
-      intent.setClass(MainSettingsAccountsActivity.this, MainSettingsAccountActivity.class);
-      intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-      intent.putExtras(b);
-      this.startActivity(intent);
-    });
+      final ImageView icon_view =
+          NullCheck.notNull(current_account_view.findViewById(R.id.cellIcon));
+      SimplifiedIconViews.configureIconViewFromURI(
+          this.getAssets(), icon_view, account_provider.logo());
+
+      current_account_view.setOnClickListener(view -> openAccountSettings(account));
+    } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  private void openAccountSettings(final AccountID account) {
+    final Bundle b = new Bundle();
+    SimplifiedActivity.setActivityArguments(b, false);
+    b.putSerializable(MainSettingsAccountActivity.ACCOUNT_ID, account);
+
+    final Intent intent = new Intent();
+    intent.setClass(this, MainSettingsAccountActivity.class);
+    intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+    intent.putExtras(b);
+    this.startActivity(intent);
   }
 
   @Override
   protected void onDestroy() {
     super.onDestroy();
-    this.accounts_subscription.unsubscribe();
     this.profiles_subscription.unsubscribe();
   }
 
-  private void onAccountEvent(final AccountEvent event) {
+  private Unit onAccountEvent(final AccountEvent event) {
     LOG.debug("onAccountEvent: {}", event);
-    event.match(
-        this::onAccountCreationEvent,
-        this::onAccountDeletionEvent,
-        this::onAccountLoginEvent);
-  }
-
-  private Unit onAccountLoginEvent(final AccountLoginEvent event) {
-    LOG.debug("onAccountLoginEvent: {}", event);
+    if (event instanceof AccountEventCreation) {
+      return onAccountCreationEvent((AccountEventCreation) event);
+    }
+    if (event instanceof AccountEventDeletion) {
+      return onAccountDeletionEvent((AccountEventDeletion) event);
+    }
     return Unit.unit();
   }
 
-  private Unit onAccountCreationEvent(final AccountCreationEvent event) {
+  private Unit onAccountCreationEvent(final AccountEventCreation event) {
     return event.matchCreation(this::onAccountCreationSucceeded, this::onAccountCreationFailed);
   }
 
-  private Unit onAccountDeletionEvent(final AccountEvent.AccountDeletionEvent event) {
+  private Unit onAccountDeletionEvent(final AccountEventDeletion event) {
     return event.matchDeletion(this::onAccountDeletionSucceeded, this::onAccountDeletionFailed);
   }
 
@@ -267,14 +297,15 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
     return Unit.unit();
   }
 
-  private void onProfileEvent(final ProfileEvent event) {
+  private Unit onProfileEvent(final ProfileEvent event) {
     if (event instanceof ProfileAccountSelectEvent) {
       final ProfileAccountSelectEvent event_select = (ProfileAccountSelectEvent) event;
-      event_select.matchSelect(
+      return event_select.matchSelect(
           this::onProfileAccountSelectSucceeded,
           this::onProfileAccountSelectFailed);
-      return;
+
     }
+    return Unit.unit();
   }
 
   private Unit onProfileAccountSelectFailed(final ProfileAccountSelectFailed event) {
@@ -289,7 +320,9 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
   private Unit onProfileAccountSelectSucceeded(final ProfileAccountSelectSucceeded event) {
     LOG.debug("onProfileAccountSelectSucceeded: {}", event);
 
-    UIThread.runOnUIThread(() -> this.updateCurrentAccountView(this.account_current_view));
+    UIThread.runOnUIThread(() -> {
+      this.updateCurrentAccountView(this.account_current_view, event.accountCurrent());
+    });
     return Unit.unit();
   }
 
@@ -298,60 +331,74 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
    */
 
   private void populateAccountsArray() {
-    UIThread.checkIsUIThread();
+    try {
 
-    final ImmutableList<AccountProvider> providers =
-        Simplified.getProfilesController().profileCurrentlyUsedAccountProviders();
+      UIThread.checkIsUIThread();
 
-    this.adapter_accounts_array.clear();
-    this.adapter_accounts_array.addAll(providers);
-    Collections.sort(this.adapter_accounts_array);
-    this.adapter_accounts.notifyDataSetChanged();
+      final ImmutableList<AccountProvider> providers =
+          Simplified.getProfilesController().profileCurrentlyUsedAccountProviders();
+
+      this.adapter_accounts_array.clear();
+      this.adapter_accounts_array.addAll(providers);
+      Collections.sort(this.adapter_accounts_array);
+      this.adapter_accounts.notifyDataSetChanged();
+
+    } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   @Override
   public boolean onOptionsItemSelected(final @Nullable MenuItem item_mn) {
 
-    final MenuItem item = NullCheck.notNull(item_mn);
+    try {
+      final MenuItem item = NullCheck.notNull(item_mn);
 
-    if (item.getItemId() == R.id.add_account) {
+      if (item.getItemId() == R.id.add_account) {
 
-      /*
-       * Display a list of all of the account providers that are not currently in use
-       * by the current profile.
-       */
+        /*
+         * Display a list of all of the account providers that are not currently in use
+         * by the current profile.
+         */
 
-      final PopupMenu menu =
-          new PopupMenu(getApplicationContext(), this.findViewById(R.id.add_account));
+        final PopupMenu menu =
+            new PopupMenu(getApplicationContext(), this.findViewById(R.id.add_account));
 
-      final ImmutableList<AccountProvider> used_account_providers =
-          Simplified.getProfilesController().profileCurrentlyUsedAccountProviders();
-      final ImmutableList<AccountProvider> available_account_providers =
-          ImmutableList.sortedCopyOf(Simplified.getAccountProviders().providers().values());
+        final ImmutableList<AccountProvider> used_account_providers =
+            Simplified.getProfilesController().profileCurrentlyUsedAccountProviders();
+        final ImmutableList<AccountProvider> available_account_providers =
+            ImmutableList.sortedCopyOf(Simplified.getAccountProviders().providers().values());
 
-      for (int index = 0; index < available_account_providers.size(); ++index) {
-        final AccountProvider provider = available_account_providers.get(index);
-        if (!used_account_providers.contains(provider)) {
-          menu.getMenu().add(Menu.NONE, index, Menu.NONE, provider.displayName());
+        for (int index = 0; index < available_account_providers.size(); ++index) {
+          final AccountProvider provider = available_account_providers.get(index);
+          if (!used_account_providers.contains(provider)) {
+            menu.getMenu().add(Menu.NONE, index, Menu.NONE, provider.displayName());
+          }
         }
+
+        menu.show();
+        menu.setOnMenuItemClickListener(menu_item -> {
+          final AccountProvider provider = available_account_providers.get(menu_item.getItemId());
+          final ListeningExecutorService exec = Simplified.getBackgroundTaskExecutor();
+          FluentFuture
+              .from(Simplified.getProfilesController().profileAccountCreate(provider.id()))
+              .catching(Exception.class, AccountCreationFailed::of, exec)
+              .transform(this::onAccountCreationEvent, exec);
+          return true;
+        });
+
+        return true;
       }
 
-      menu.show();
-      menu.setOnMenuItemClickListener(menu_item -> {
-        final AccountProvider provider = available_account_providers.get(menu_item.getItemId());
-        Simplified.getProfilesController().profileAccountCreate(provider.id());
+      if (item.getItemId() == android.R.id.home) {
+        onBackPressed();
         return true;
-      });
+      }
 
-      return true;
+      return super.onOptionsItemSelected(item);
+    } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+      throw new IllegalStateException(e);
     }
-
-    if (item.getItemId() == android.R.id.home) {
-      onBackPressed();
-      return true;
-    }
-
-    return super.onOptionsItemSelected(item);
   }
 
   /**
@@ -362,17 +409,21 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
   @Override
   public boolean onCreateOptionsMenu(final @Nullable Menu in_menu) {
 
-    final ImmutableList<AccountProvider> used_account_providers =
-        Simplified.getProfilesController().profileCurrentlyUsedAccountProviders();
-    final ImmutableList<AccountProvider> available_account_providers =
-        ImmutableList.sortedCopyOf(Simplified.getAccountProviders().providers().values());
+    try {
+      final ImmutableList<AccountProvider> used_account_providers =
+          Simplified.getProfilesController().profileCurrentlyUsedAccountProviders();
+      final ImmutableList<AccountProvider> available_account_providers =
+          ImmutableList.sortedCopyOf(Simplified.getAccountProviders().providers().values());
 
-    if (used_account_providers.size() != available_account_providers.size()) {
-      final Menu menu_nn = NullCheck.notNull(in_menu);
-      final MenuInflater inflater = this.getMenuInflater();
-      inflater.inflate(R.menu.add_account, menu_nn);
+      if (used_account_providers.size() != available_account_providers.size()) {
+        final Menu menu_nn = NullCheck.notNull(in_menu);
+        final MenuInflater inflater = this.getMenuInflater();
+        inflater.inflate(R.menu.add_account, menu_nn);
+      }
+
+      return true;
+    } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+      throw new IllegalStateException(e);
     }
-
-    return true;
   }
 }

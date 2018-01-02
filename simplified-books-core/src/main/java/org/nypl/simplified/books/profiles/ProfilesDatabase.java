@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -521,6 +522,11 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
       synchronized (this.description_lock) {
         return this.description.preferences();
       }
+    }
+
+    @Override
+    public SortedMap<URI, AccountType> accountsByProvider() {
+      return this.accounts.accountsByProvider();
     }
 
     @Override

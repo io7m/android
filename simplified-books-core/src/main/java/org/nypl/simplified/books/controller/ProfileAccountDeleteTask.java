@@ -6,18 +6,16 @@ import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 
 import org.nypl.simplified.books.accounts.AccountEvent;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountDeletionEvent;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountDeletionEvent.AccountDeletionFailed;
-import org.nypl.simplified.books.accounts.AccountEvent.AccountDeletionEvent.AccountDeletionSucceeded;
+import org.nypl.simplified.books.accounts.AccountEventDeletion;
+import org.nypl.simplified.books.accounts.AccountEventDeletion.AccountDeletionFailed;
+import org.nypl.simplified.books.accounts.AccountEventDeletion.AccountDeletionSucceeded;
 import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountProviderCollection;
 import org.nypl.simplified.books.accounts.AccountType;
-import org.nypl.simplified.books.accounts.AccountsDatabaseException;
 import org.nypl.simplified.books.accounts.AccountsDatabaseLastAccountException;
-import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent;
 import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent.ProfileAccountSelectSucceeded;
-import org.nypl.simplified.books.profiles.ProfileDatabaseException;
 import org.nypl.simplified.books.profiles.ProfileEvent;
+import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 import org.nypl.simplified.books.profiles.ProfileType;
 import org.nypl.simplified.books.profiles.ProfilesDatabaseType;
 import org.nypl.simplified.observable.ObservableType;
@@ -25,17 +23,16 @@ import org.nypl.simplified.observable.ObservableType;
 import java.net.URI;
 import java.util.concurrent.Callable;
 
-import static org.nypl.simplified.books.accounts.AccountEvent.AccountDeletionEvent.AccountDeletionFailed.ErrorCode.ERROR_ACCOUNT_DATABASE_PROBLEM;
-import static org.nypl.simplified.books.accounts.AccountEvent.AccountDeletionEvent.AccountDeletionFailed.ErrorCode.ERROR_ACCOUNT_ONLY_ONE_REMAINING;
-import static org.nypl.simplified.books.accounts.AccountEvent.AccountDeletionEvent.AccountDeletionFailed.ErrorCode.ERROR_PROFILE_CONFIGURATION;
+import static org.nypl.simplified.books.accounts.AccountEventDeletion.AccountDeletionFailed.ErrorCode.ERROR_ACCOUNT_ONLY_ONE_REMAINING;
+import static org.nypl.simplified.books.accounts.AccountEventDeletion.AccountDeletionFailed.ErrorCode.ERROR_GENERAL;
 
-final class ProfileAccountDeleteTask implements Callable<AccountDeletionEvent> {
+final class ProfileAccountDeleteTask implements Callable<AccountEventDeletion> {
 
   private final ProfilesDatabaseType profiles;
   private final FunctionType<Unit, AccountProviderCollection> account_providers;
   private final URI provider_id;
-  private final ObservableType<AccountEvent> account_events;
   private final ObservableType<ProfileEvent> profile_events;
+  private final ObservableType<AccountEvent> account_events;
 
   ProfileAccountDeleteTask(
       final ProfilesDatabaseType profiles,
@@ -56,14 +53,7 @@ final class ProfileAccountDeleteTask implements Callable<AccountDeletionEvent> {
         NullCheck.notNull(provider, "Provider");
   }
 
-  @Override
-  public AccountDeletionEvent call() {
-    final AccountDeletionEvent event = run();
-    this.account_events.send(event);
-    return event;
-  }
-
-  private AccountDeletionEvent run() {
+  protected AccountEventDeletion execute() {
 
     try {
       final AccountProviderCollection providers_now = this.account_providers.call(Unit.unit());
@@ -75,19 +65,23 @@ final class ProfileAccountDeleteTask implements Callable<AccountDeletionEvent> {
         profile.deleteAccountByProvider(provider);
         final AccountType account_now = profile.accountCurrent();
         if (!account_now.id().equals(account_then.id())) {
-          this.profile_events.send(ProfileAccountSelectSucceeded.of(
-              account_then.id(), account_now.id()));
+          this.profile_events.send(ProfileAccountSelectSucceeded.of(account_then.id(), account_now.id()));
         }
         return AccountDeletionSucceeded.of(provider);
       }
 
-      throw new ProfileUnknownAccountProviderException("Unrecognized provider: " + this.provider_id);
-    } catch (final ProfileControllerException | ProfileDatabaseException e) {
-      return AccountDeletionFailed.of(ERROR_PROFILE_CONFIGURATION, Option.some(e));
+      throw new ProfileNonexistentAccountProviderException("Unrecognized provider: " + this.provider_id);
     } catch (final AccountsDatabaseLastAccountException e) {
       return AccountDeletionFailed.of(ERROR_ACCOUNT_ONLY_ONE_REMAINING, Option.some(e));
-    } catch (final AccountsDatabaseException e) {
-      return AccountDeletionFailed.of(ERROR_ACCOUNT_DATABASE_PROBLEM, Option.some(e));
+    } catch (final Exception e) {
+      return AccountDeletionFailed.of(ERROR_GENERAL, Option.some(e));
     }
+  }
+
+  @Override
+  public AccountEventDeletion call() throws Exception {
+    final AccountEventDeletion event = execute();
+    this.account_events.send(event);
+    return event;
   }
 }

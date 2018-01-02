@@ -6,6 +6,7 @@ import com.io7m.jnull.Nullable;
 import org.nypl.simplified.books.accounts.AccountID;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.core.LogUtilities;
+import org.nypl.simplified.files.DirectoryUtilities;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 import org.nypl.simplified.opds.core.OPDSJSONParserType;
 import org.nypl.simplified.opds.core.OPDSJSONSerializerType;
@@ -147,5 +148,14 @@ public final class BookDatabase implements BookDatabaseType {
   @Override
   public SortedMap<BookID, Book> books() {
     return this.books_read;
+  }
+
+  @Override
+  public void delete() throws IOException {
+    try {
+      DirectoryUtilities.directoryDelete(this.directory);
+    } finally {
+      this.books.clear();
+    }
   }
 }

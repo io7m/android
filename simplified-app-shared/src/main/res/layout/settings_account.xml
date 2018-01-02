@@ -104,7 +104,7 @@
             android:layout_width="60dp"
             android:layout_height="wrap_content"/>
 
-          <TextView
+          <EditText
             android:id="@+id/settings_barcode_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -126,7 +126,7 @@
             android:layout_width="60dp"
             android:layout_height="wrap_content"/>
 
-          <TextView
+          <EditText
             android:id="@+id/settings_pin_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -165,17 +165,6 @@
 
         </TableRow>
       </TableLayout>
-
-      <CheckBox
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:layout_gravity="center_vertical"
-        android:text="@string/age_verification_13_checkbox"
-        android:id="@+id/age13_checkbox"
-        android:checked="false"
-        android:layout_weight="1"
-        android:textAppearance="?android:attr/textAppearanceListItem"
-        />
 
       <Button
         android:id="@+id/settings_login"

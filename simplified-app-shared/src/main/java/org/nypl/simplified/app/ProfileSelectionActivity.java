@@ -15,7 +15,8 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.FluentFuture;
+import com.google.common.util.concurrent.FutureCallback;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 
@@ -31,7 +32,6 @@ import org.slf4j.Logger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 /**
  * An activity that allows users to pick from a list of profiles, or to create a new profile.
@@ -86,22 +86,25 @@ public final class ProfileSelectionActivity extends Activity {
       final ProfileReadableType profile) {
 
     LOG.debug("selected profile: {} ({})", profile.id(), profile.displayName());
-
     final ProfilesControllerType profiles = Simplified.getProfilesController();
 
-    final ListenableFuture<Unit> task = profiles.profileSelect(profile.id());
+    FluentFuture.from(
+        profiles.profileSelect(profile.id()))
+        .addCallback(new FutureCallback<Unit>() {
+          @Override
+          public void onSuccess(final Unit result) {
+            onProfileSelectionSucceeded(result);
+          }
 
-    task.addListener(() -> {
-      try {
-        onProfileSelectionSucceeded(task.get());
-      } catch (final InterruptedException | ExecutionException e) {
-        LOG.error("profile selection failed: ", e);
-        onProfileSelectionFailed(e);
-      }
-    }, Simplified.getBackgroundTaskExecutor());
+          @Override
+          public void onFailure(final Throwable e) {
+            LOG.error("profile selection failed: ", e);
+            onProfileSelectionFailed(e);
+          }
+        }, Simplified.getBackgroundTaskExecutor());
   }
 
-  private void onProfileSelectionFailed(final Exception e) {
+  private void onProfileSelectionFailed(final Throwable e) {
     LOG.error("onProfileSelectionFailed: {}", e);
 
     UIThread.runOnUIThread(() -> {

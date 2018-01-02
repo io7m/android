@@ -23,6 +23,8 @@ import org.nypl.simplified.books.controller.BooksControllerType;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.core.FeedEntryOPDS;
 import org.nypl.simplified.books.core.LogUtilities;
+import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
+import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 import org.nypl.simplified.opds.core.OPDSAcquisition;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 import org.slf4j.Logger;
@@ -34,9 +36,9 @@ import org.slf4j.Logger;
  * borrow of a given book.
  */
 
-public final class CatalogAcquisitionButtonController implements OnClickListener, LoginListenerType {
+public final class CatalogAcquisitionButtonController implements OnClickListener {
 
-  private static final Logger LOG  =
+  private static final Logger LOG =
       LogUtilities.getLog(CatalogAcquisitionButtonController.class);
 
   private final OPDSAcquisition acquisition;
@@ -122,30 +124,27 @@ public final class CatalogAcquisitionButtonController implements OnClickListener
       final AccountBarcode barcode = AccountBarcode.create("");
       final AccountPIN pin = AccountPIN.create("");
 
-      final LoginDialog df = LoginDialog.newDialog(this.profiles, "Login required", barcode, pin);
-      df.setLoginListener(this);
+      final LoginDialog df;
+      try {
+        df = LoginDialog.newDialog(
+            this.profiles,
+            "Login required",
+            this.profiles.profileAccountProviderCurrent(),
+            barcode,
+            pin,
+            () -> {
+              LOG.debug("login succeeded");
+              this.getBook();
+            },
+            () -> LOG.debug("login cancelled"),
+            x -> LOG.debug("login failed: {}", x));
+      } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+        throw new IllegalStateException(e);
+      }
 
       final FragmentManager fm = this.activity.getFragmentManager();
       df.show(fm, "login-dialog");
     }
-  }
-
-  @Override
-  public void onLoginAborted() {
-    // Nothing
-  }
-
-  @Override
-  public void onLoginFailure(
-      final OptionType<? extends Throwable> error,
-      final String message) {
-    // Nothing
-  }
-
-  @Override
-  public void onLoginSuccess(final AccountAuthenticationCredentials creds) {
-    LOG.debug("login succeeded");
-    this.getBook();
   }
 
   private void getBook() {

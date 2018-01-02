@@ -76,6 +76,8 @@ import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent;
 import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent.ProfileAccountSelectSucceeded;
 import org.nypl.simplified.books.profiles.ProfileEvent;
+import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
+import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 import org.nypl.simplified.http.core.HTTPAuthType;
 import org.nypl.simplified.observable.ObservableSubscriptionType;
 import org.nypl.simplified.opds.core.OPDSFacet;
@@ -406,12 +408,16 @@ public abstract class CatalogFeedActivity extends CatalogActivity
      * initial one started for the app), synthesize some.
      */
 
-    return new CatalogFeedArgumentsRemote(
-        true,
-        ImmutableStack.<CatalogFeedArgumentsType>empty(),
-        NullCheck.notNull(rr.getString(R.string.feature_app_name)),
-        Simplified.getProfilesController().profileCurrentCatalogRootURI(),
-        false);
+    try {
+      return new CatalogFeedArgumentsRemote(
+          true,
+          ImmutableStack.empty(),
+          NullCheck.notNull(rr.getString(R.string.feature_app_name)),
+          Simplified.getProfilesController().profileCurrentCatalogRootURI(),
+          false);
+    } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   private void loadFeed(
@@ -731,7 +737,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
 
     this.swipe_refresh_layout =
         NullCheck.notNull(layout.findViewById(R.id.swipe_refresh_layout));
-    this.swipe_refresh_layout.setOnRefreshListener(() -> retryFeed());
+    this.swipe_refresh_layout.setOnRefreshListener(this::retryFeed);
 
     list.post(
         () -> list.setSelection(saved_scroll_pos));
@@ -754,14 +760,18 @@ public abstract class CatalogFeedActivity extends CatalogActivity
           }
         };
 
-    final CatalogFeedWithGroups cfl =
-        new CatalogFeedWithGroups(
-            this,
-            Simplified.getProfilesController().profileAccountProviderCurrent(),
-            Simplified.getScreenSizeInformation(),
-            Simplified.getCoverProvider(),
-            in_lane_listener,
-            f);
+    final CatalogFeedWithGroups cfl;
+    try {
+      cfl = new CatalogFeedWithGroups(
+          this,
+          Simplified.getProfilesController().profileAccountProviderCurrent(),
+          Simplified.getScreenSizeInformation(),
+          Simplified.getCoverProvider(),
+          in_lane_listener,
+          f);
+    } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+      throw new IllegalStateException(e);
+    }
 
     list.setAdapter(cfl);
     list.setOnScrollListener(cfl);
@@ -865,17 +875,21 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     final CatalogBookSelectionListenerType book_select_listener =
         (v, e) -> CatalogFeedActivity.this.onSelectedBook(new_up_stack, e);
 
-    final CatalogFeedWithoutGroups without =
-        new CatalogFeedWithoutGroups(
-            this,
-            Simplified.getProfilesController().profileAccountProviderCurrent(),
-            Simplified.getCoverProvider(),
-            book_select_listener,
-            Simplified.getBooksRegistry(),
-            Simplified.getBooksController(),
-            Simplified.getProfilesController(),
-            Simplified.getFeedLoader(),
-            feed_without_groups);
+    final CatalogFeedWithoutGroups without;
+    try {
+      without = new CatalogFeedWithoutGroups(
+          this,
+          Simplified.getProfilesController().profileAccountProviderCurrent(),
+          Simplified.getCoverProvider(),
+          book_select_listener,
+          Simplified.getBooksRegistry(),
+          Simplified.getBooksController(),
+          Simplified.getProfilesController(),
+          Simplified.getFeedLoader(),
+          feed_without_groups);
+    } catch (ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+      throw new IllegalStateException(e);
+    }
 
     grid_view.setAdapter(without);
     grid_view.setOnScrollListener(without);

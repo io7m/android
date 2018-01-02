@@ -80,8 +80,19 @@ public abstract class ProfileCreationEvent extends ProfileEvent {
      */
 
     public enum ErrorCode {
+
+      /**
+       * A profile already exists with the given display name.
+       */
+
       ERROR_DISPLAY_NAME_ALREADY_USED,
-      ERROR_IO
+
+      /**
+       * A general error code that is not specifically actionable (such as an I/O error
+       * or a programming mistake).
+       */
+
+      ERROR_GENERAL
     }
 
     /**

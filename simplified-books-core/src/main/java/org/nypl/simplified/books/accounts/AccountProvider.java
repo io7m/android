@@ -89,6 +89,7 @@ public abstract class AccountProvider implements Comparable<AccountProvider> {
   public abstract boolean supportsReservations();
 
   /**
+   * XXX: There is an associated Card Creator URL; this should be an OptionType[URI]
    * @return {@code true} iff the card creator is supported
    */
 
