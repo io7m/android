@@ -11,7 +11,7 @@ import org.nypl.simplified.books.core.AccountTooManyActivationsException;
 import org.nypl.simplified.books.core.BookStatusDownloadFailed;
 import org.nypl.simplified.books.core.BookUnsupportedPasshashException;
 import org.nypl.simplified.books.core.BookUnsupportedTypeException;
-import org.nypl.simplified.books.core.FeedHTTPTransportException;
+import org.nypl.simplified.books.feeds.FeedHTTPTransportException;
 import org.nypl.simplified.http.core.HTTPProblemReport;
 
 final class CatalogBookErrorStrings

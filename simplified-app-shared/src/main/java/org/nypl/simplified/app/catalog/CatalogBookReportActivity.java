@@ -24,7 +24,7 @@ import org.nypl.simplified.app.R;
 import org.nypl.simplified.app.SimplifiedActivity;
 import org.nypl.simplified.app.SimplifiedPart;
 import org.nypl.simplified.books.core.BooksType;
-import org.nypl.simplified.books.core.FeedEntryOPDS;
+import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 
 /**
  * An activity showing options for reporting

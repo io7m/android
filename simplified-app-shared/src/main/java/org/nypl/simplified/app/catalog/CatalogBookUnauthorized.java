@@ -7,7 +7,7 @@ import com.io7m.junreachable.UnreachableCodeException;
 
 import org.nypl.simplified.books.core.BookStatusDownloadFailed;
 import org.nypl.simplified.books.core.BookStatusRevokeFailed;
-import org.nypl.simplified.books.core.FeedHTTPTransportException;
+import org.nypl.simplified.books.feeds.FeedHTTPTransportException;
 import org.nypl.simplified.http.core.HTTPProblemReport;
 
 final class CatalogBookUnauthorized

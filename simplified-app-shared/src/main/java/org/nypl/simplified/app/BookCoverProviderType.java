@@ -2,7 +2,7 @@ package org.nypl.simplified.app;
 
 import android.widget.ImageView;
 import com.squareup.picasso.Callback;
-import org.nypl.simplified.books.core.FeedEntryOPDS;
+import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 
 /**
  * The type of cover providers.

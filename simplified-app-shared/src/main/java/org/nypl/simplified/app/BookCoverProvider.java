@@ -5,7 +5,6 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.widget.ImageView;
 
-import com.io7m.jfunctional.FunctionType;
 import com.io7m.jfunctional.None;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
@@ -22,9 +21,8 @@ import org.nypl.simplified.app.catalog.CatalogBookCoverGeneratorType;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
 import org.nypl.simplified.books.book_registry.BookWithStatus;
-import org.nypl.simplified.books.core.BookDatabaseEntrySnapshot;
 import org.nypl.simplified.books.book_database.BookID;
-import org.nypl.simplified.books.core.FeedEntryOPDS;
+import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 import org.slf4j.Logger;

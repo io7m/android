@@ -9,6 +9,7 @@ import com.io7m.jnull.NullCheck;
 
 import org.nypl.simplified.books.accounts.AccountAuthenticatedHTTP;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
+import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 import org.nypl.simplified.http.core.HTTPAuthType;
 import org.nypl.simplified.http.core.HTTPType;
 import org.nypl.simplified.json.core.JSONSerializerUtilities;

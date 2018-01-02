@@ -1,4 +1,4 @@
-package org.nypl.simplified.books.core;
+package org.nypl.simplified.books.feeds;
 
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
@@ -19,6 +19,7 @@ import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
 import org.nypl.simplified.books.book_registry.BookWithStatus;
+import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.http.core.HTTPAuthType;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeed;
 import org.nypl.simplified.opds.core.OPDSFeedParserType;

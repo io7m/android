@@ -4,28 +4,16 @@ import android.app.Activity;
 import android.view.View;
 import android.view.View.OnClickListener;
 
-import com.io7m.jfunctional.OptionType;
-import com.io7m.jfunctional.Some;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 import com.io7m.junreachable.UnimplementedCodeException;
-import com.io7m.junreachable.UnreachableCodeException;
 
-import org.nypl.simplified.app.reader.ReaderActivity;
-import org.nypl.simplified.app.utilities.ErrorDialogUtilities;
-import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.book_database.BookID;
-import org.nypl.simplified.books.core.AccountGetCachedCredentialsListenerType;
-import org.nypl.simplified.books.core.BookDatabaseEntrySnapshot;
-import org.nypl.simplified.books.core.BookDatabaseReadableType;
 import org.nypl.simplified.books.core.BooksType;
-import org.nypl.simplified.books.core.FeedEntryOPDS;
+import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 import org.nypl.simplified.books.core.LogUtilities;
-import org.nypl.simplified.circanalytics.CirculationAnalytics;
 import org.nypl.simplified.prefs.Prefs;
 import org.slf4j.Logger;
-
-import java.io.File;
 
 /**
  * A controller that opens a given book for reading.

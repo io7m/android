@@ -14,7 +14,7 @@ import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.controller.BooksControllerType;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
-import org.nypl.simplified.books.core.FeedEntryOPDS;
+import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.opds.core.OPDSAcquisition;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;

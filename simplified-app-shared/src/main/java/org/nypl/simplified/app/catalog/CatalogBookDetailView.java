@@ -30,7 +30,6 @@ import com.io7m.junreachable.UnimplementedCodeException;
 import com.io7m.junreachable.UnreachableCodeException;
 
 import org.nypl.simplified.app.BookCoverProviderType;
-import org.nypl.simplified.app.LoginActivity;
 import org.nypl.simplified.app.R;
 import org.nypl.simplified.app.ScreenSizeInformationType;
 import org.nypl.simplified.app.Simplified;
@@ -66,10 +65,10 @@ import org.nypl.simplified.books.core.BookStatusRevoked;
 import org.nypl.simplified.books.core.BookStatusType;
 import org.nypl.simplified.books.core.BooksStatusCacheType;
 import org.nypl.simplified.books.core.BooksType;
-import org.nypl.simplified.books.core.FeedEntryCorrupt;
-import org.nypl.simplified.books.core.FeedEntryMatcherType;
-import org.nypl.simplified.books.core.FeedEntryOPDS;
-import org.nypl.simplified.books.core.FeedEntryType;
+import org.nypl.simplified.books.feeds.FeedEntryCorrupt;
+import org.nypl.simplified.books.feeds.FeedEntryMatcherType;
+import org.nypl.simplified.books.feeds.FeedEntryOPDS;
+import org.nypl.simplified.books.feeds.FeedEntryType;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.opds.core.OPDSAcquisition;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
@@ -83,8 +82,6 @@ import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**

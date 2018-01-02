@@ -5,9 +5,9 @@ import android.app.FragmentManager;
 import android.os.Bundle;
 import com.io7m.jnull.Nullable;
 import org.nypl.simplified.app.catalog.CatalogFacetDialog;
-import org.nypl.simplified.books.core.FeedFacetPseudo;
-import org.nypl.simplified.books.core.FeedFacetPseudo.FacetType;
-import org.nypl.simplified.books.core.FeedFacetType;
+import org.nypl.simplified.books.feeds.FeedFacetPseudo;
+import org.nypl.simplified.books.feeds.FeedFacetPseudo.FacetType;
+import org.nypl.simplified.books.feeds.FeedFacetType;
 
 import java.util.ArrayList;
 

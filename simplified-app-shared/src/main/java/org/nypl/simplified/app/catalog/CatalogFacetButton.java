@@ -12,7 +12,7 @@ import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.simplified.app.R;
 import org.nypl.simplified.assertions.Assertions;
-import org.nypl.simplified.books.core.FeedFacetType;
+import org.nypl.simplified.books.feeds.FeedFacetType;
 
 import java.util.ArrayList;
 

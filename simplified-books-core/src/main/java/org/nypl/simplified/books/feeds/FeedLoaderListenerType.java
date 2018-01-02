@@ -1,4 +1,4 @@
-package org.nypl.simplified.books.core;
+package org.nypl.simplified.books.feeds;
 
 import java.net.URI;
 

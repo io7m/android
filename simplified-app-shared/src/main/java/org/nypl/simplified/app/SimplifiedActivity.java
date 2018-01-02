@@ -46,7 +46,7 @@ import org.nypl.simplified.app.catalog.MainHoldsActivity;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.core.BooksFeedSelection;
-import org.nypl.simplified.books.core.FeedFacetPseudo;
+import org.nypl.simplified.books.feeds.FeedFacetPseudo;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent;
 import org.nypl.simplified.books.profiles.ProfileEvent;

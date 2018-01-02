@@ -9,16 +9,13 @@ import android.widget.FrameLayout;
 import com.io7m.jfunctional.ProcedureType;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
-import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.app.SimplifiedActivity;
 import org.nypl.simplified.app.SimplifiedPart;
 import org.nypl.simplified.books.book_registry.BookEvent;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
-import org.nypl.simplified.books.core.BooksStatusCacheType;
-import org.nypl.simplified.books.core.BooksType;
-import org.nypl.simplified.books.core.FeedEntryOPDS;
+import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
 import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 import org.nypl.simplified.observable.ObservableSubscriptionType;

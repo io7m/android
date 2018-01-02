@@ -15,8 +15,8 @@ import com.io7m.jnull.Nullable;
 import org.nypl.simplified.app.BookCoverProviderType;
 import org.nypl.simplified.app.ScreenSizeInformationType;
 import org.nypl.simplified.books.accounts.AccountProvider;
-import org.nypl.simplified.books.core.FeedGroup;
-import org.nypl.simplified.books.core.FeedWithGroups;
+import org.nypl.simplified.books.feeds.FeedGroup;
+import org.nypl.simplified.books.feeds.FeedWithGroups;
 
 /**
  * A view that displays a catalog feed that contains groups.

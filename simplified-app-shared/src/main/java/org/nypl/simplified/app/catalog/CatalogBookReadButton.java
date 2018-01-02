@@ -2,22 +2,15 @@ package org.nypl.simplified.app.catalog;
 
 import android.app.Activity;
 import android.content.res.Resources;
-import android.view.View;
 import android.widget.TextView;
 
-import com.io7m.jfunctional.OptionType;
-import com.io7m.jfunctional.Some;
 import com.io7m.jnull.NullCheck;
-import com.io7m.jnull.Nullable;
 import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.simplified.app.R;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.controller.BooksControllerType;
-import org.nypl.simplified.books.core.BookDatabaseEntrySnapshot;
-import org.nypl.simplified.books.core.BooksType;
-import org.nypl.simplified.books.core.DeviceActivationListenerType;
-import org.nypl.simplified.books.core.FeedEntryOPDS;
+import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 
 
 /**

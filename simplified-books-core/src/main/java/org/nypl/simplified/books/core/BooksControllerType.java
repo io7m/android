@@ -3,6 +3,9 @@ package org.nypl.simplified.books.core;
 import com.io7m.jfunctional.OptionType;
 
 import org.nypl.simplified.books.book_database.BookID;
+import org.nypl.simplified.books.feeds.FeedEntryOPDS;
+import org.nypl.simplified.books.feeds.FeedFacetPseudo;
+import org.nypl.simplified.books.feeds.FeedFacetPseudoTitleProviderType;
 import org.nypl.simplified.opds.core.OPDSAcquisition;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 

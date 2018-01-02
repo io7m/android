@@ -6,7 +6,7 @@ import android.view.View;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 
-import org.nypl.simplified.books.core.FeedEntryOPDS;
+import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.slf4j.Logger;
 

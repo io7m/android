@@ -1,5 +1,7 @@
 package org.nypl.simplified.books.core;
 
+import org.nypl.simplified.books.feeds.FeedWithoutGroups;
+
 /**
  * The type of listeners for generating book feeds.
  */

@@ -1,4 +1,4 @@
-package org.nypl.simplified.books.core;
+package org.nypl.simplified.books.feeds;
 
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;

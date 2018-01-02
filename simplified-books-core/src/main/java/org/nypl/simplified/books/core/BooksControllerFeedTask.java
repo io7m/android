@@ -10,7 +10,17 @@ import com.io7m.jnull.Nullable;
 import com.io7m.junreachable.UnreachableCodeException;
 
 import org.nypl.simplified.books.book_database.BookID;
-import org.nypl.simplified.books.core.FeedFacetPseudo.FacetType;
+import org.nypl.simplified.books.feeds.FeedEntryCorrupt;
+import org.nypl.simplified.books.feeds.FeedEntryMatcherType;
+import org.nypl.simplified.books.feeds.FeedEntryOPDS;
+import org.nypl.simplified.books.feeds.FeedEntryType;
+import org.nypl.simplified.books.feeds.FeedFacetPseudo;
+import org.nypl.simplified.books.feeds.FeedFacetPseudo.FacetType;
+import org.nypl.simplified.books.feeds.FeedFacetPseudoTitleProviderType;
+import org.nypl.simplified.books.feeds.FeedFacetType;
+import org.nypl.simplified.books.feeds.FeedSearchLocal;
+import org.nypl.simplified.books.feeds.FeedSearchType;
+import org.nypl.simplified.books.feeds.FeedWithoutGroups;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 import org.nypl.simplified.opds.core.OPDSAvailabilityHeld;
 import org.nypl.simplified.opds.core.OPDSAvailabilityHeldReady;

@@ -6,22 +6,19 @@ import android.content.Intent;
 import android.view.View;
 import android.view.View.OnClickListener;
 
-import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.simplified.app.LoginActivity;
 import org.nypl.simplified.app.LoginDialog;
-import org.nypl.simplified.app.LoginListenerType;
 import org.nypl.simplified.app.R;
-import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.controller.BooksControllerType;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
-import org.nypl.simplified.books.core.FeedEntryOPDS;
+import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
 import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;

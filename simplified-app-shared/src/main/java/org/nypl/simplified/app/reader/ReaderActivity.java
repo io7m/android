@@ -60,7 +60,7 @@ import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.core.AccountGetCachedCredentialsListenerType;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.core.BooksType;
-import org.nypl.simplified.books.core.FeedEntryOPDS;
+import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.multilibrary.Account;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
