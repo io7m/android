@@ -1,29 +1,36 @@
 package org.nypl.simplified.app.catalog;
 
 import android.app.Activity;
-import android.app.FragmentManager;
-import android.content.Intent;
 import android.view.View;
 import android.view.View.OnClickListener;
 
+import com.io7m.jfunctional.None;
+import com.io7m.jfunctional.Option;
+import com.io7m.jfunctional.OptionVisitorType;
+import com.io7m.jfunctional.Pair;
+import com.io7m.jfunctional.Some;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 import com.io7m.junreachable.UnimplementedCodeException;
 
-import org.nypl.simplified.app.LoginActivity;
 import org.nypl.simplified.app.LoginDialog;
-import org.nypl.simplified.app.R;
-import org.nypl.simplified.books.accounts.AccountBarcode;
-import org.nypl.simplified.books.accounts.AccountPIN;
+import org.nypl.simplified.app.Simplified;
+import org.nypl.simplified.books.accounts.AccountID;
+import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.accounts.AccountType;
+import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
+import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentProviderException;
 import org.nypl.simplified.books.book_database.BookID;
+import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
+import org.nypl.simplified.books.book_registry.BookWithStatus;
 import org.nypl.simplified.books.controller.BooksControllerType;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
-import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 import org.nypl.simplified.books.core.LogUtilities;
+import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
 import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
+import org.nypl.simplified.books.profiles.ProfileReadableType;
 import org.nypl.simplified.opds.core.OPDSAcquisition;
-import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 import org.slf4j.Logger;
 
 /**
@@ -35,8 +42,7 @@ import org.slf4j.Logger;
 
 public final class CatalogAcquisitionButtonController implements OnClickListener {
 
-  private static final Logger LOG =
-      LogUtilities.getLog(CatalogAcquisitionButtonController.class);
+  private static final Logger LOG = LogUtilities.getLog(CatalogAcquisitionButtonController.class);
 
   private final OPDSAcquisition acquisition;
   private final Activity activity;
@@ -44,6 +50,7 @@ public final class CatalogAcquisitionButtonController implements OnClickListener
   private final FeedEntryOPDS entry;
   private final BookID id;
   private final ProfilesControllerType profiles;
+  private final BookRegistryReadableType book_registry;
 
   /**
    * Construct a button controller.
@@ -59,6 +66,7 @@ public final class CatalogAcquisitionButtonController implements OnClickListener
       final Activity in_activity,
       final ProfilesControllerType in_profiles,
       final BooksControllerType in_books,
+      final BookRegistryReadableType in_book_registry,
       final BookID in_id,
       final OPDSAcquisition in_acq,
       final FeedEntryOPDS in_entry) {
@@ -73,6 +81,8 @@ public final class CatalogAcquisitionButtonController implements OnClickListener
         NullCheck.notNull(in_profiles, "Profiles controller");
     this.books =
         NullCheck.notNull(in_books, "Books controller");
+    this.book_registry =
+        NullCheck.notNull(in_book_registry, "Book registry");
     this.entry =
         NullCheck.notNull(in_entry, "Feed entry");
   }
@@ -80,79 +90,33 @@ public final class CatalogAcquisitionButtonController implements OnClickListener
   @Override
   public void onClick(final @Nullable View v) {
 
+    final AccountType account  =
+        accountForBook(this.profiles, this.book_registry, this.id);
 
-    throw new UnimplementedCodeException();
+    final boolean authentication_required =
+        account.provider().authentication().isSome()
+            && this.acquisition.getType() != OPDSAcquisition.Type.ACQUISITION_OPEN_ACCESS;
 
-/*    if (this.books.accountIsLoggedIn() && isNeedsAuth() && this.acquisition.getType() != OPDSAcquisition.Type.ACQUISITION_OPEN_ACCESS) {
-      this.books.accountGetCachedLoginDetails(
-          new AccountGetCachedCredentialsListenerType() {
-            @Override
-            public void onAccountIsNotLoggedIn() {
-              throw new UnreachableCodeException();
-            }
-
-            @Override
-            public void onAccountIsLoggedIn(
-                final AccountAuthenticationCredentials creds) {
-              CatalogAcquisitionButtonController.this.onLoginSuccess(creds);
-            }
-          });
-    } else if (!isNeedsAuth() || this.acquisition.getType() == OPDSAcquisition.Type.ACQUISITION_OPEN_ACCESS) {
-      this.getBook();
-    } else {
-      this.tryLogin();
-    }*/
-  }
-
-  private static boolean isNeedsAuth() {
-    throw new UnimplementedCodeException();
-  }
-
-  private void tryLogin() {
-
-    final boolean clever_enabled = this.activity.getResources().getBoolean(R.bool.feature_auth_provider_clever);
-
-    if (clever_enabled) {
-      final Intent account = new Intent(this.activity, LoginActivity.class);
-      this.activity.startActivityForResult(account, 1);
-      this.activity.overridePendingTransition(0, 0);
-    } else {
-
-      final AccountBarcode barcode = AccountBarcode.create("");
-      final AccountPIN pin = AccountPIN.create("");
-
-      final LoginDialog df;
-      try {
-        df = LoginDialog.newDialog(
-            this.profiles,
-            "Login required",
-            this.profiles.profileAccountProviderCurrent(),
-            barcode,
-            pin,
-            () -> {
-              LOG.debug("login succeeded");
-              this.getBook();
-            },
-            () -> LOG.debug("login cancelled"),
-            x -> LOG.debug("login failed: {}", x));
-      } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
-        throw new IllegalStateException(e);
-      }
-
-      final FragmentManager fm = this.activity.getFragmentManager();
-      df.show(fm, "login-dialog");
+    final boolean authentication_provided = account.credentials().isSome();
+    if (authentication_required && !authentication_provided) {
+      this.tryLogin(account);
+      return;
     }
+
+    this.tryBorrow(account);
   }
 
-  private void getBook() {
-    LOG.debug("attempting borrow of {} acquisition", this.acquisition.getType());
+  private void tryBorrow(final AccountType account) {
 
-    switch (this.acquisition.getType()) {
+    final OPDSAcquisition.Type type = this.acquisition.getType();
+    LOG.debug("trying borrow of type {}", type);
+
+    switch (type) {
       case ACQUISITION_BORROW:
       case ACQUISITION_GENERIC:
       case ACQUISITION_OPEN_ACCESS: {
-        final OPDSAcquisitionFeedEntry eo = this.entry.getFeedEntry();
-        throw new UnimplementedCodeException();
+        this.books.bookBorrow(this.id, account, this.acquisition, this.entry.getFeedEntry());
+        return;
       }
       case ACQUISITION_BUY:
       case ACQUISITION_SAMPLE:
@@ -160,5 +124,63 @@ public final class CatalogAcquisitionButtonController implements OnClickListener
         throw new UnimplementedCodeException();
       }
     }
+  }
+
+  private void tryLogin(final AccountType account) {
+
+    LOG.debug("trying login");
+    final LoginDialog dialog =
+        LoginDialog.newDialog(
+            this.profiles,
+            "Login Required",
+            account,
+            () -> this.onLoginSuccess(account),
+            this::onLoginCancelled,
+            this::onLoginFailure);
+    dialog.show(this.activity.getFragmentManager(), "login-dialog");
+  }
+
+  private void onLoginFailure(final String message) {
+    LOG.debug("login failed: {}", message);
+  }
+
+  private void onLoginCancelled() {
+    LOG.debug("login cancelled");
+  }
+
+  private void onLoginSuccess(
+      final AccountType account) {
+
+    LOG.debug("login succeeded");
+    this.tryBorrow(account);
+  }
+
+  private static AccountType accountForBook(
+      final ProfilesControllerType profiles,
+      final BookRegistryReadableType book_registry,
+      final BookID book_id) {
+
+    return Option.of(book_registry.books().get(book_id)).accept(
+        new OptionVisitorType<BookWithStatus, AccountType>() {
+          @Override
+          public AccountType none(final None<BookWithStatus> none) {
+            try {
+              return profiles.profileAccountCurrent();
+            } catch (final ProfileNoneCurrentException e) {
+              throw new IllegalStateException(e);
+            }
+          }
+
+          @Override
+          public AccountType some(final Some<BookWithStatus> some) {
+            try {
+              final ProfileReadableType profile = profiles.profileCurrent();
+              final AccountID account_id = some.get().book().account();
+              return profile.account(account_id);
+            } catch (ProfileNoneCurrentException | AccountsDatabaseNonexistentException e) {
+              throw new IllegalStateException(e);
+            }
+          }
+        });
   }
 }

@@ -25,6 +25,7 @@ import org.nypl.simplified.app.R;
 import org.nypl.simplified.app.ScreenSizeInformationType;
 import org.nypl.simplified.app.utilities.FadeUtilities;
 import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.feeds.FeedEntryCorrupt;
 import org.nypl.simplified.books.feeds.FeedEntryMatcherType;
 import org.nypl.simplified.books.feeds.FeedEntryOPDS;
@@ -57,13 +58,13 @@ public final class CatalogFeedLane extends LinearLayout {
   private final RelativeLayout header;
   private final TextView feed_title;
   private final TextView feed_more;
-  private final AccountProvider account_provider;
+  private final AccountType account_provider;
 
   /**
    * Construct a feed lane.
    *
    * @param in_context  A context
-   *                    @param in_account_provider The current account provider
+   * @param in_account  The current account
    * @param in_covers   A cover provider
    * @param in_screen   The screen
    * @param in_listener A lane listener
@@ -71,15 +72,15 @@ public final class CatalogFeedLane extends LinearLayout {
 
   public CatalogFeedLane(
       final Context in_context,
-      final AccountProvider in_account_provider,
+      final AccountType in_account,
       final BookCoverProviderType in_covers,
       final ScreenSizeInformationType in_screen,
       final CatalogFeedLaneListenerType in_listener) {
-    
+
     super(NullCheck.notNull(in_context));
 
     this.account_provider =
-        NullCheck.notNull(in_account_provider, "Account provider");
+        NullCheck.notNull(in_account, "Account");
     this.covers =
         NullCheck.notNull(in_covers);
     this.screen =
@@ -100,7 +101,7 @@ public final class CatalogFeedLane extends LinearLayout {
     this.feed_more =
         NullCheck.notNull((TextView) this.header.findViewById(R.id.feed_more), "Feed more");
 
-    final int color = Color.parseColor(in_account_provider.mainColor());
+    final int color = Color.parseColor(in_account.provider().mainColor());
     this.feed_title.setTextColor(color);
     this.feed_more.setTextColor(color);
 

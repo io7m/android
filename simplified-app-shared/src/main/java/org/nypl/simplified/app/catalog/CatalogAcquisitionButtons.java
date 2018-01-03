@@ -11,7 +11,9 @@ import com.io7m.jnull.NullCheck;
 import com.io7m.junreachable.UnreachableCodeException;
 
 import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.book_database.BookID;
+import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
 import org.nypl.simplified.books.controller.BooksControllerType;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.feeds.FeedEntryOPDS;
@@ -40,27 +42,23 @@ public final class CatalogAcquisitionButtons {
   /**
    * Given a feed entry, add all the required acquisition buttons to the given
    * view group.
-   *
-   * @param in_activity         The activity hosting the view
-   * @param in_account_provider The current account provider
-   * @param in_view_group       The view group
-   * @param in_books            The books controller
-   * @param in_entry            The feed entry
    */
 
   public static void addButtons(
       final Activity in_activity,
-      final AccountProvider in_account_provider,
+      final AccountType in_account,
       final ViewGroup in_view_group,
       final BooksControllerType in_books,
       final ProfilesControllerType in_profiles,
+      final BookRegistryReadableType in_book_registry,
       final FeedEntryOPDS in_entry) {
 
     NullCheck.notNull(in_activity, "Activity");
-    NullCheck.notNull(in_account_provider, "Account provider");
+    NullCheck.notNull(in_account, "Account");
     NullCheck.notNull(in_view_group, "View group");
     NullCheck.notNull(in_books, "Book controller");
     NullCheck.notNull(in_profiles, "Profiles controller");
+    NullCheck.notNull(in_book_registry, "Book registry");
     NullCheck.notNull(in_entry, "Entry");
 
     in_view_group.setVisibility(View.VISIBLE);
@@ -77,9 +75,10 @@ public final class CatalogAcquisitionButtons {
       final CatalogAcquisitionButton b =
           new CatalogAcquisitionButton(
               in_activity,
-              in_account_provider,
+              in_account,
               in_books,
               in_profiles,
+              in_book_registry,
               book_id,
               acquisition,
               in_entry);

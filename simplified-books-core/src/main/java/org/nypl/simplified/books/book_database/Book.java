@@ -48,36 +48,27 @@ public abstract class Book {
   @AutoValue.Builder
   public abstract static class Builder {
 
-    public abstract Builder setId(
-        BookID id);
+    public abstract Builder setId(BookID id);
 
-    public abstract Builder setAccount(
-        AccountID id);
+    public abstract Builder setAccount(AccountID id);
 
-    public abstract Builder setCover(
-        OptionType<File> cover_option);
+    public abstract Builder setCover(OptionType<File> cover_option);
 
-    public final Builder setCover(
-        final File cover) {
+    public final Builder setCover(final File cover) {
       return setCover(Option.some(cover));
     }
 
-    public abstract Builder setFile(
-        OptionType<File> file);
+    public abstract Builder setFile(OptionType<File> file);
 
-    public final Builder setFile(
-        final File file) {
+    public final Builder setFile(final File file) {
       return setFile(Option.some(file));
     }
 
-    public abstract Builder setEntry(
-        OPDSAcquisitionFeedEntry entry);
+    public abstract Builder setEntry(OPDSAcquisitionFeedEntry entry);
 
-    public abstract Builder setAdobeLoan(
-        OptionType<AdobeAdeptLoan> loan);
+    public abstract Builder setAdobeLoan(OptionType<AdobeAdeptLoan> loan);
 
-    public final Builder setAdobeLoan(
-        final AdobeAdeptLoan loan) {
+    public final Builder setAdobeLoan(final AdobeAdeptLoan loan) {
       return setAdobeLoan(Option.some(loan));
     }
 

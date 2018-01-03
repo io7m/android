@@ -60,4 +60,10 @@ public interface FeedType
   <A, E extends Exception> A matchFeed(
     FeedMatcherType<A, E> m)
     throws E;
+
+  /**
+   * @return The number of entries in the feed
+   */
+
+  int size();
 }

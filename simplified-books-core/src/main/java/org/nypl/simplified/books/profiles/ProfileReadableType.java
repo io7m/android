@@ -75,4 +75,11 @@ public interface ProfileReadableType extends Comparable<ProfileReadableType> {
    */
 
   SortedMap<URI, AccountType> accountsByProvider();
+
+  /**
+   * @param account_id The account ID
+   * @return The account with the given ID
+   */
+
+  AccountType account(AccountID account_id) throws AccountsDatabaseNonexistentException;
 }

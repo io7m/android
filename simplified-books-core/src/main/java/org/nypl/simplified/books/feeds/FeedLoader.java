@@ -1,5 +1,6 @@
 package org.nypl.simplified.books.feeds;
 
+import com.google.common.util.concurrent.Futures;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.Some;
@@ -35,13 +36,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -168,14 +166,14 @@ public final class FeedLoader implements FeedLoaderType, ExpirationListener<URI,
           @Override
           public Unit onFeedWithoutGroups(final FeedWithoutGroups feed_without_groups) {
             final int size = feed_without_groups.size();
-            LOG.debug("updating {} entries (without groups) from database", size);
+            LOG.debug("updating {} entries (without groups) from book registry", size);
 
             for (int index = 0; index < size; ++index) {
               final FeedEntryType e = feed_without_groups.get(index);
               final BookID id = e.getBookID();
               final BookWithStatus book_with_status = registry.books().get(id);
               if (book_with_status != null) {
-                LOG.debug("updating entry {} from database", id);
+                LOG.debug("updating entry {} from book registry", id);
                 final FeedEntryType en =
                     FeedEntryOPDS.fromOPDSAcquisitionFeedEntry(book_with_status.book().entry());
                 feed_without_groups.set(index, en);
@@ -202,27 +200,22 @@ public final class FeedLoader implements FeedLoaderType, ExpirationListener<URI,
       final boolean update_from_database) {
     LOG.debug("not cached, fetching ({}): {} (auth {})", method, uri, auth);
 
-    final Callable<Unit> c = new Callable<Unit>() {
-      @Override
-      public Unit call() {
-        final ProtectedListener p_listener = new ProtectedListener(listener);
-        try {
-          final FeedType f = FeedLoader.this.loadFeed(uri, method, auth, p_listener);
-          if (update_from_database) {
-            FeedLoader.updateFeedFromBookRegistry(FeedLoader.this.book_registry, f);
-          }
-          FeedLoader.this.cache.put(uri, f);
-          LOG.debug("added to cache: {}", uri);
-          p_listener.onFeedLoadSuccess(uri, f);
-        } catch (final Throwable x) {
-          p_listener.onFeedLoadFailure(uri, x);
+    return NullCheck.notNull(this.exec.submit(() -> {
+      final ProtectedListener p_listener = new ProtectedListener(listener);
+      try {
+        final FeedType f = this.loadFeed(uri, method, auth, p_listener);
+        if (update_from_database) {
+          FeedLoader.updateFeedFromBookRegistry(this.book_registry, f);
         }
-
-        return Unit.unit();
+        this.cache.put(uri, f);
+        LOG.debug("added to cache: {} ({} entries)", uri, f.size());
+        p_listener.onFeedLoadSuccess(uri, f);
+      } catch (final Throwable x) {
+        p_listener.onFeedLoadFailure(uri, x);
       }
-    };
 
-    return NullCheck.notNull(this.exec.submit(c));
+      return Unit.unit();
+    }));
   }
 
   @Override
@@ -230,6 +223,7 @@ public final class FeedLoader implements FeedLoaderType, ExpirationListener<URI,
       final URI uri,
       final OptionType<HTTPAuthType> auth,
       final FeedLoaderListenerType listener) {
+
     NullCheck.notNull(uri);
     NullCheck.notNull(auth);
     NullCheck.notNull(listener);
@@ -239,7 +233,7 @@ public final class FeedLoader implements FeedLoaderType, ExpirationListener<URI,
       final FeedType f = NullCheck.notNull(this.cache.get(uri));
       final ProtectedListener p_listener = new ProtectedListener(listener);
       p_listener.onFeedLoadSuccess(uri, f);
-      return new ImmediateFuture<Unit>(Unit.unit());
+      return Futures.immediateFuture(Unit.unit());
     }
 
     return this.fetch(uri, "GET", auth, listener, false);
@@ -272,7 +266,7 @@ public final class FeedLoader implements FeedLoaderType, ExpirationListener<URI,
       FeedLoader.updateFeedFromBookRegistry(this.book_registry, f);
       final ProtectedListener p_listener = new ProtectedListener(listener);
       p_listener.onFeedLoadSuccess(uri, f);
-      return new ImmediateFuture<Unit>(Unit.unit());
+      return Futures.immediateFuture(Unit.unit());
     }
 
     return this.fetch(uri, "GET", auth, listener, true);
@@ -485,45 +479,6 @@ public final class FeedLoader implements FeedLoaderType, ExpirationListener<URI,
       } catch (final Throwable x) {
         this.onFeedLoadFailure(u, x);
       }
-    }
-  }
-
-  private static final class ImmediateFuture<T> implements Future<T> {
-    private final T value;
-
-    private ImmediateFuture(
-        final T in_value) {
-      this.value = NullCheck.notNull(in_value);
-    }
-
-    @Override
-    public boolean cancel(
-        final boolean x) {
-      return false;
-    }
-
-    @Override
-    public T get()
-        throws InterruptedException, ExecutionException {
-      return this.value;
-    }
-
-    @Override
-    public T get(
-        final long time,
-        final @Nullable TimeUnit time_unit)
-        throws InterruptedException, ExecutionException, TimeoutException {
-      return this.value;
-    }
-
-    @Override
-    public boolean isCancelled() {
-      return false;
-    }
-
-    @Override
-    public boolean isDone() {
-      return true;
     }
   }
 

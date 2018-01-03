@@ -2,13 +2,9 @@ package org.nypl.simplified.app.catalog;
 
 import android.app.Activity;
 import android.app.FragmentManager;
-import android.content.res.Resources;
-import android.view.View;
 import android.widget.Button;
 
 import com.io7m.jnull.NullCheck;
-import com.io7m.jnull.Nullable;
-import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.simplified.app.R;
 import org.nypl.simplified.assertions.Assertions;
@@ -54,35 +50,18 @@ public final class CatalogFacetButton extends Button {
     }
 
     final FeedFacetType active = NullCheck.notNull(active_maybe);
-    final Resources rr = NullCheck.notNull(in_activity.getResources());
     this.setTextSize(12.0f);
     this.setBackgroundResource(R.drawable.simplified_button);
-    this.setTextColor(getBrandingColor());
 
     this.setText(active.facetGetTitle());
-    this.setOnClickListener(
-        new OnClickListener() {
-          @Override
-          public void onClick(
-              final @Nullable View v) {
-            final FragmentManager fm = in_activity.getFragmentManager();
-            final CatalogFacetDialog d =
-                CatalogFacetDialog.newDialog(in_group_name, in_group);
-            d.setFacetSelectionListener(
-                new CatalogFacetSelectionListenerType() {
-                  @Override
-                  public void onFacetSelected(
-                      final FeedFacetType f) {
-                    d.dismiss();
-                    in_listener.onFacetSelected(f);
-                  }
-                });
-            d.show(fm, "facet-dialog");
-          }
-        });
-  }
-
-  private static int getBrandingColor() {
-    throw new UnimplementedCodeException();
+    this.setOnClickListener(view -> {
+      final FragmentManager fm = in_activity.getFragmentManager();
+      final CatalogFacetDialog dialog = CatalogFacetDialog.newDialog(in_group_name, in_group);
+      dialog.setFacetSelectionListener(facet -> {
+        dialog.dismiss();
+        in_listener.onFacetSelected(facet);
+      });
+      dialog.show(fm, "facet-dialog");
+    });
   }
 }

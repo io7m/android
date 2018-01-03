@@ -514,7 +514,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity {
     final ListeningExecutorService exec = Simplified.getBackgroundTaskExecutor();
 
     FluentFuture
-        .from(Simplified.getProfilesController().profileAccountLogin(credentials))
+        .from(Simplified.getProfilesController().profileAccountCurrentLogin(credentials))
         .catching(Exception.class, AccountLoginFailed::ofException, exec)
         .transform(this::onAccountEvent, exec);
   }

@@ -45,6 +45,7 @@ import org.nypl.simplified.app.catalog.MainCatalogActivity;
 import org.nypl.simplified.app.catalog.MainHoldsActivity;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.core.BooksFeedSelection;
 import org.nypl.simplified.books.feeds.FeedFacetPseudo;
 import org.nypl.simplified.books.core.LogUtilities;
@@ -145,8 +146,8 @@ public abstract class SimplifiedActivity extends Activity
     drawer_actions.put(
         PART_CATALOG, b -> {
           try {
-            final AccountProvider account_provider =
-                Simplified.getProfilesController().profileAccountProviderCurrent();
+            final AccountType account =
+                Simplified.getProfilesController().profileAccountCurrent();
             final ImmutableStack<CatalogFeedArgumentsType> empty =
                 ImmutableStack.empty();
             final CatalogFeedArgumentsRemote remote =
@@ -154,11 +155,11 @@ public abstract class SimplifiedActivity extends Activity
                     false,
                     NullCheck.notNull(empty),
                     NullCheck.notNull(resources.getString(R.string.feature_app_name)),
-                    account_provider.catalogURI(),
+                    account.provider().catalogURI(),
                     false);
             CatalogFeedActivity.setActivityArguments(b, remote);
             return Unit.unit();
-          } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+          } catch (final ProfileNoneCurrentException e) {
             throw new IllegalStateException(e);
           }
         });
@@ -750,13 +751,14 @@ public abstract class SimplifiedActivity extends Activity
       if (part.equals(PART_SWITCHER)) {
         v.setBackgroundResource(R.drawable.textview_underline);
 
-        final AccountProvider account_provider;
+        final AccountType account;
         try {
-          account_provider = Simplified.getProfilesController().profileAccountProviderCurrent();
-        } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+          account = Simplified.getProfilesController().profileAccountCurrent();
+        } catch (final ProfileNoneCurrentException e) {
           throw new IllegalStateException(e);
         }
 
+        final AccountProvider account_provider = account.provider();
         text_view.setText(account_provider.displayName());
         text_view.setTextColor(Color.parseColor(account_provider.mainColor()));
         SimplifiedIconViews.configureIconViewFromURI(

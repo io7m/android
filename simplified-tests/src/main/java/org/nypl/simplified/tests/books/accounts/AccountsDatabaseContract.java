@@ -12,10 +12,13 @@ import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.accounts.AccountProviderCollection;
+import org.nypl.simplified.books.accounts.AccountProviderCollectionType;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabase;
 import org.nypl.simplified.books.accounts.AccountsDatabaseException;
 import org.nypl.simplified.books.accounts.AccountsDatabaseType;
+import org.nypl.simplified.books.book_database.BookDatabaseFactoryType;
 import org.nypl.simplified.books.book_database.BookDatabases;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.books.profiles.ProfileID;
@@ -26,6 +29,8 @@ import org.slf4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public abstract class AccountsDatabaseContract {
 
@@ -89,7 +94,7 @@ public abstract class AccountsDatabaseContract {
 
     expected.expect(AccountsDatabaseException.class);
     expected.expect(new CausesContains<>(IOException.class, "Not a directory"));
-    AccountsDatabase.open(bookDatabases(), f_acc);
+    AccountsDatabase.open(bookDatabases(), accountProviders(), f_acc);
   }
 
   private BookDatabases bookDatabases() {
@@ -113,7 +118,7 @@ public abstract class AccountsDatabaseContract {
     expected.expect(AccountsDatabaseException.class);
     expected.expect(new CausesContains<>(
         IOException.class, "Could not parse directory name as an account ID"));
-    AccountsDatabase.open(bookDatabases(), f_acc);
+    AccountsDatabase.open(bookDatabases(), accountProviders(), f_acc);
   }
 
   @Test
@@ -132,7 +137,7 @@ public abstract class AccountsDatabaseContract {
 
     expected.expect(AccountsDatabaseException.class);
     expected.expect(new CausesContains<>(IOException.class, "Could not parse account: "));
-    AccountsDatabase.open(bookDatabases(), f_acc);
+    AccountsDatabase.open(bookDatabases(), accountProviders(), f_acc);
   }
 
   @Test
@@ -154,7 +159,7 @@ public abstract class AccountsDatabaseContract {
 
     expected.expect(AccountsDatabaseException.class);
     expected.expect(new CausesContains<>(IOException.class, "Could not parse account: "));
-    AccountsDatabase.open(bookDatabases(), f_acc);
+    AccountsDatabase.open(bookDatabases(), accountProviders(), f_acc);
   }
 
   @Test
@@ -168,7 +173,8 @@ public abstract class AccountsDatabaseContract {
     f_p.mkdirs();
     final File f_acc = new File(f_p, "accounts");
 
-    final AccountsDatabaseType db = AccountsDatabase.open(bookDatabases(), f_acc);
+    final AccountsDatabaseType db = 
+        AccountsDatabase.open(bookDatabases(), accountProviders(), f_acc);
     Assert.assertEquals(0, db.accounts().size());
     Assert.assertEquals(f_acc, db.directory());
   }
@@ -184,8 +190,10 @@ public abstract class AccountsDatabaseContract {
     f_p.mkdirs();
     final File f_acc = new File(f_p, "accounts");
 
+    final AccountProviderCollectionType account_providers =
+        accountProviders();
     final AccountsDatabaseType db =
-        AccountsDatabase.open(bookDatabases(), f_acc);
+        AccountsDatabase.open(bookDatabases(), account_providers, f_acc);
 
     final AccountProvider provider0 =
         fakeProvider("http://www.example.com/accounts0/");
@@ -205,8 +213,12 @@ public abstract class AccountsDatabaseContract {
         "Account 1 file exists",
         new File(acc1.directory(), "account.json").isFile());
 
-    Assert.assertEquals(URI.create("http://www.example.com/accounts0/"), acc0.provider());
-    Assert.assertEquals(URI.create("http://www.example.com/accounts1/"), acc1.provider());
+    Assert.assertEquals(
+        account_providers.provider(URI.create("http://www.example.com/accounts0/")),
+        acc0.provider());
+    Assert.assertEquals(
+        account_providers.provider(URI.create("http://www.example.com/accounts1/")),
+        acc1.provider());
 
     Assert.assertNotEquals(acc0.id(), acc1.id());
     Assert.assertNotEquals(acc0.directory(), acc1.directory());
@@ -226,7 +238,8 @@ public abstract class AccountsDatabaseContract {
     f_p.mkdirs();
     final File f_acc = new File(f_p, "accounts");
 
-    final AccountsDatabaseType db0 = AccountsDatabase.open(bookDatabases(), f_acc);
+    final AccountsDatabaseType db0 = 
+        AccountsDatabase.open(bookDatabases(), accountProviders(), f_acc);
 
     final AccountProvider provider0 =
         fakeProvider("http://www.example.com/accounts0/");
@@ -236,7 +249,8 @@ public abstract class AccountsDatabaseContract {
     final AccountType acc0 = db0.createAccount(provider0);
     final AccountType acc1 = db0.createAccount(provider1);
 
-    final AccountsDatabaseType db1 = AccountsDatabase.open(bookDatabases(), f_acc);
+    final AccountsDatabaseType db1 = 
+        AccountsDatabase.open(bookDatabases(), accountProviders(), f_acc);
 
     final AccountType acr0 = db1.accounts().get(acc0.id());
     final AccountType acr1 = db1.accounts().get(acc1.id());
@@ -260,7 +274,7 @@ public abstract class AccountsDatabaseContract {
     f_p.mkdirs();
     final File f_acc = new File(f_p, "accounts");
 
-    final AccountsDatabaseType db0 = AccountsDatabase.open(bookDatabases(), f_acc);
+    final AccountsDatabaseType db0 = AccountsDatabase.open(bookDatabases(), accountProviders(), f_acc);
     final AccountProvider provider0 = fakeProvider("http://www.example.com/accounts0/");
     final AccountType acc0 = db0.createAccount(provider0);
 
@@ -272,6 +286,15 @@ public abstract class AccountsDatabaseContract {
 
     acc0.setCredentials(Option.some(creds));
     Assert.assertEquals(Option.some(creds), acc0.credentials());
+  }
+
+  private AccountProviderCollectionType accountProviders() {
+    final AccountProvider p0 = fakeProvider("http://www.example.com/accounts0/");
+    final AccountProvider p1 = fakeProvider("http://www.example.com/accounts1/");
+    final SortedMap<URI, AccountProvider> providers = new TreeMap<>();
+    providers.put(p0.id(), p0);
+    providers.put(p1.id(), p1);
+    return AccountProviderCollection.create(p0, providers);
   }
 
   private static AccountProvider fakeProvider(final String provider_id) {

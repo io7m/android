@@ -3,6 +3,7 @@ package org.nypl.simplified.books.controller;
 import com.io7m.jfunctional.FunctionType;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
+import com.io7m.jfunctional.PartialFunctionType;
 import com.io7m.jfunctional.Some;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
@@ -18,6 +19,7 @@ import org.nypl.simplified.books.accounts.AccountProviderAuthenticationDescripti
 import org.nypl.simplified.books.accounts.AccountProviderCollection;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseException;
+import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
 import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
 import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 import org.nypl.simplified.books.profiles.ProfileReadableType;
@@ -41,6 +43,7 @@ import static org.nypl.simplified.books.accounts.AccountEventLogin.AccountLoginF
 import static org.nypl.simplified.books.accounts.AccountEventLogin.AccountLoginFailed.ErrorCode.ERROR_NETWORK_EXCEPTION;
 import static org.nypl.simplified.books.accounts.AccountEventLogin.AccountLoginFailed.ErrorCode.ERROR_PROFILE_CONFIGURATION;
 import static org.nypl.simplified.books.accounts.AccountEventLogin.AccountLoginFailed.ErrorCode.ERROR_SERVER_ERROR;
+import static org.nypl.simplified.books.accounts.AccountEventLogin.AccountLoginFailed.ErrorCode.ERROR_ACCOUNT_NONEXISTENT;
 
 final class ProfileAccountLoginTask implements Callable<AccountEventLogin> {
 
@@ -48,15 +51,15 @@ final class ProfileAccountLoginTask implements Callable<AccountEventLogin> {
 
   private final ProfilesDatabaseType profiles;
   private final AccountAuthenticationCredentials credentials;
-  private final FunctionType<Unit, AccountProviderCollection> account_providers;
   private final HTTPType http;
   private final ObservableType<AccountEvent> account_events;
+  private final PartialFunctionType<ProfileReadableType, AccountType, AccountsDatabaseNonexistentException> account_id_request;
 
   ProfileAccountLoginTask(
       final HTTPType http,
       final ProfilesDatabaseType profiles,
       final ObservableType<AccountEvent> account_events,
-      final FunctionType<Unit, AccountProviderCollection> account_providers,
+      final PartialFunctionType<ProfileReadableType, AccountType, AccountsDatabaseNonexistentException> account_id,
       final AccountAuthenticationCredentials credentials) {
 
     this.http =
@@ -65,8 +68,8 @@ final class ProfileAccountLoginTask implements Callable<AccountEventLogin> {
         NullCheck.notNull(profiles, "Profiles");
     this.account_events =
         NullCheck.notNull(account_events, "Account events");
-    this.account_providers =
-        NullCheck.notNull(account_providers, "Account providers");
+    this.account_id_request =
+        NullCheck.notNull(account_id, "Account ID");
     this.credentials =
         NullCheck.notNull(credentials, "Credentials");
   }
@@ -81,26 +84,20 @@ final class ProfileAccountLoginTask implements Callable<AccountEventLogin> {
   private AccountEventLogin run() {
     try {
       final ProfileReadableType profile = this.profiles.currentProfileUnsafe();
-      final AccountType account = profile.accountCurrent();
-      final URI provider_name = account.provider();
-      final AccountProviderCollection providers_now = this.account_providers.call(Unit.unit());
-      final AccountProvider provider = providers_now.providers().get(provider_name);
-
-      if (provider != null) {
-        return runForProvider(account, provider);
-      }
-
-      throw new ProfileNonexistentAccountProviderException("Unrecognized provider: " + provider_name);
-    } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+      final AccountType account = this.account_id_request.call(profile);
+      return runForAccount(account);
+    } catch (final ProfileNoneCurrentException e) {
       return AccountLoginFailed.of(ERROR_PROFILE_CONFIGURATION, Option.some(e));
+    } catch (final AccountsDatabaseNonexistentException e) {
+      return AccountLoginFailed.of(ERROR_ACCOUNT_NONEXISTENT, Option.some(e));
     }
   }
 
-  private AccountEventLogin runForProvider(
-      final AccountType account,
-      final AccountProvider provider) {
+  private AccountEventLogin runForAccount(
+      final AccountType account) {
 
-    final OptionType<AccountProviderAuthenticationDescription> auth_opt = provider.authentication();
+    final OptionType<AccountProviderAuthenticationDescription> auth_opt =
+        account.provider().authentication();
     if (auth_opt.isNone()) {
       LOG.debug("account does not require authentication");
       return AccountLoginSucceeded.of(this.credentials);

@@ -19,8 +19,8 @@ import java.util.HashSet;
 import java.util.SortedMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-import static org.nypl.simplified.books.book_registry.BookEvent.Type.BOOK_CHANGED;
-import static org.nypl.simplified.books.book_registry.BookEvent.Type.BOOK_REMOVED;
+import static org.nypl.simplified.books.book_registry.BookStatusEvent.Type.BOOK_CHANGED;
+import static org.nypl.simplified.books.book_registry.BookStatusEvent.Type.BOOK_REMOVED;
 
 public final class BookRegistry implements BookRegistryType {
 
@@ -28,7 +28,7 @@ public final class BookRegistry implements BookRegistryType {
 
   private final SortedMap<BookID, BookWithStatus> books_read_only;
   private final ConcurrentSkipListMap<BookID, BookWithStatus> books;
-  private final ObservableType<BookEvent> observable;
+  private final ObservableType<BookStatusEvent> observable;
 
   private BookRegistry(
       final ConcurrentSkipListMap<BookID, BookWithStatus> books) {
@@ -48,7 +48,7 @@ public final class BookRegistry implements BookRegistryType {
   }
 
   @Override
-  public ObservableReadableType<BookEvent> bookEvents() {
+  public ObservableReadableType<BookStatusEvent> bookEvents() {
     return this.observable;
   }
 
@@ -69,7 +69,7 @@ public final class BookRegistry implements BookRegistryType {
 
     NullCheck.notNull(update, "Update");
     this.books.put(update.book().id(), update);
-    this.observable.send(BookEvent.create(update.book().id(), BOOK_CHANGED));
+    this.observable.send(BookStatusEvent.create(update.book().id(), BOOK_CHANGED));
   }
 
   @Override
@@ -100,7 +100,7 @@ public final class BookRegistry implements BookRegistryType {
     final HashSet<BookID> ids = new HashSet<>(books.keySet());
     this.books.clear();
     for (final BookID id : ids) {
-      this.observable.send(BookEvent.create(id, BOOK_REMOVED));
+      this.observable.send(BookStatusEvent.create(id, BOOK_REMOVED));
     }
   }
 
@@ -108,6 +108,6 @@ public final class BookRegistry implements BookRegistryType {
   public void clearFor(
       final BookID id) {
     this.books.remove(NullCheck.notNull(id, "ID"));
-    this.observable.send(BookEvent.create(id, BOOK_REMOVED));
+    this.observable.send(BookStatusEvent.create(id, BOOK_REMOVED));
   }
 }

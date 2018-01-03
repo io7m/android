@@ -400,8 +400,7 @@ public final class BooksController implements BooksType {
   }
 
   @Override
-  public void bookDownloadCancel(
-      final BookID id) {
+  public void bookDownloadCancel(final BookID id) {
     BooksController.LOG.debug("download cancel {}", id);
 
     final DownloadType d = this.downloads.get(id);

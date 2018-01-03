@@ -29,10 +29,10 @@ public interface AccountReadableType {
   File directory();
 
   /**
-   * @return The URI of the account provider associated with this account
+   * @return The account provider associated with this account
    */
 
-  URI provider();
+  AccountProvider provider();
 
   /**
    * @return The current account credentials

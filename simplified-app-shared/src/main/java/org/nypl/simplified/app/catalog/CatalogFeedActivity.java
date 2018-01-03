@@ -38,10 +38,12 @@ import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.app.SimplifiedActivity;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.assertions.Assertions;
+import org.nypl.simplified.books.book_registry.BookStatusEvent;
 import org.nypl.simplified.books.core.BookFeedListenerType;
 import org.nypl.simplified.books.core.BooksFeedSelection;
 import org.nypl.simplified.books.core.DocumentStoreType;
 import org.nypl.simplified.books.core.EULAType;
+import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 import org.nypl.simplified.books.feeds.FeedFacetMatcherType;
 import org.nypl.simplified.books.feeds.FeedFacetOPDS;
@@ -60,7 +62,6 @@ import org.nypl.simplified.books.feeds.FeedSearchType;
 import org.nypl.simplified.books.feeds.FeedType;
 import org.nypl.simplified.books.feeds.FeedWithGroups;
 import org.nypl.simplified.books.feeds.FeedWithoutGroups;
-import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent.ProfileAccountSelectSucceeded;
 import org.nypl.simplified.books.profiles.ProfileEvent;
 import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
@@ -100,15 +101,16 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     LIST_STATE_ID = "org.nypl.simplified.app.CatalogFeedActivity.list_view_state";
   }
 
-  private @Nullable FeedType feed;
-  private @Nullable AbsListView list_view;
-  private @Nullable SwipeRefreshLayout swipe_refresh_layout;
-  private @Nullable Future<Unit> loading;
-  private @Nullable ViewGroup progress_layout;
+  private  FeedType feed;
+  private  AbsListView list_view;
+  private  SwipeRefreshLayout swipe_refresh_layout;
+  private  Future<Unit> loading;
+  private  ViewGroup progress_layout;
   private int saved_scroll_pos;
   private boolean previously_paused;
   private SearchView search_view;
   private ObservableSubscriptionType<ProfileEvent> profile_event_subscription;
+  private ObservableSubscriptionType<BookStatusEvent> book_event_subscription;
 
   /**
    * Construct an activity.
@@ -400,9 +402,9 @@ public abstract class CatalogFeedActivity extends CatalogActivity
           true,
           ImmutableStack.empty(),
           NullCheck.notNull(rr.getString(R.string.feature_app_name)),
-          Simplified.getProfilesController().profileCurrentCatalogRootURI(),
+          Simplified.getProfilesController().profileAccountCurrent().provider().catalogURI(),
           false);
-    } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+    } catch (final ProfileNoneCurrentException e) {
       throw new IllegalStateException(e);
     }
   }
@@ -639,6 +641,11 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     }
 
     this.profile_event_subscription.unsubscribe();
+
+    final ObservableSubscriptionType<BookStatusEvent> book_sub = this.book_event_subscription;
+    if (book_sub != null) {
+      book_sub.unsubscribe();
+    }
   }
 
   @Override
@@ -726,8 +733,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
         NullCheck.notNull(layout.findViewById(R.id.swipe_refresh_layout));
     this.swipe_refresh_layout.setOnRefreshListener(this::retryFeed);
 
-    list.post(
-        () -> list.setSelection(saved_scroll_pos));
+    list.post(() -> list.setSelection(saved_scroll_pos));
     list.setDividerHeight(0);
     this.list_view = list;
 
@@ -751,12 +757,12 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     try {
       cfl = new CatalogFeedWithGroups(
           this,
-          Simplified.getProfilesController().profileAccountProviderCurrent(),
+          Simplified.getProfilesController().profileAccountCurrent(),
           Simplified.getScreenSizeInformation(),
           Simplified.getCoverProvider(),
           in_lane_listener,
           f);
-    } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+    } catch (final ProfileNoneCurrentException e) {
       throw new IllegalStateException(e);
     }
 
@@ -866,7 +872,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     try {
       without = new CatalogFeedWithoutGroups(
           this,
-          Simplified.getProfilesController().profileAccountProviderCurrent(),
+          Simplified.getProfilesController().profileAccountCurrent(),
           Simplified.getCoverProvider(),
           book_select_listener,
           Simplified.getBooksRegistry(),
@@ -874,12 +880,22 @@ public abstract class CatalogFeedActivity extends CatalogActivity
           Simplified.getProfilesController(),
           Simplified.getFeedLoader(),
           feed_without_groups);
-    } catch (ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+    } catch (final ProfileNoneCurrentException e) {
       throw new IllegalStateException(e);
     }
 
     grid_view.setAdapter(without);
     grid_view.setOnScrollListener(without);
+
+    /*
+     * Subscribe the grid view to book events. This will allow individual cells to be
+     * updated whenever the status of a book changes.
+     */
+
+    this.book_event_subscription =
+        Simplified.getBooksRegistry()
+            .bookEvents()
+            .subscribe(without::onBookEvent);
   }
 
   private void onFeedWithoutGroupsUI(

@@ -6,18 +6,17 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.widget.FrameLayout;
 
-import com.io7m.jfunctional.ProcedureType;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 
 import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.app.SimplifiedActivity;
 import org.nypl.simplified.app.SimplifiedPart;
-import org.nypl.simplified.books.book_registry.BookEvent;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
+import org.nypl.simplified.books.book_registry.BookStatusEvent;
+import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
-import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 import org.nypl.simplified.observable.ObservableSubscriptionType;
 import org.nypl.simplified.stack.ImmutableStack;
 
@@ -39,7 +38,7 @@ public final class CatalogBookDetailActivity extends CatalogActivity {
 
   private @Nullable SimplifiedPart part;
   private @Nullable CatalogBookDetailView view;
-  private ObservableSubscriptionType<BookEvent> book_subscription;
+  private ObservableSubscriptionType<BookStatusEvent> book_subscription;
 
   /**
    * Construct an activity.
@@ -127,8 +126,7 @@ public final class CatalogBookDetailActivity extends CatalogActivity {
   }
 
   @Override
-  protected void onCreate(
-      final @Nullable Bundle state) {
+  protected void onCreate(final @Nullable Bundle state) {
     super.onCreate(state);
 
     final BookRegistryReadableType book_registry =
@@ -138,16 +136,17 @@ public final class CatalogBookDetailActivity extends CatalogActivity {
 
     final CatalogBookDetailView detail_view;
     try {
+      final ProfilesControllerType profiles = Simplified.getProfilesController();
       detail_view = new CatalogBookDetailView(
           this,
           inflater,
-          Simplified.getProfilesController().profileAccountProviderCurrent(),
+          profiles.profileAccountCurrent(),
           Simplified.getCoverProvider(),
           Simplified.getBooksRegistry(),
-          Simplified.getProfilesController(),
+          profiles,
           Simplified.getBooksController(),
           this.getFeedEntry());
-    } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+    } catch (final ProfileNoneCurrentException e) {
       throw new IllegalStateException(e);
     }
 
@@ -159,13 +158,13 @@ public final class CatalogBookDetailActivity extends CatalogActivity {
     content_area.addView(detail_view.getScrollView());
     content_area.requestLayout();
 
+    /*
+     * Subscribe the detail view to book events.
+     */
+
     this.book_subscription =
-        book_registry.bookEvents().subscribe(new ProcedureType<BookEvent>() {
-          @Override
-          public void call(final BookEvent event) {
-            detail_view.onBookEvent(event);
-          }
-        });
+        book_registry.bookEvents()
+            .subscribe(detail_view::onBookEvent);
   }
 
   @Override

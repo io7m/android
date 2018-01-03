@@ -12,7 +12,7 @@ public interface BookRegistryReadableType {
 
   SortedMap<BookID, BookWithStatus> books();
 
-  ObservableReadableType<BookEvent> bookEvents();
+  ObservableReadableType<BookStatusEvent> bookEvents();
 
   OptionType<BookStatusType> bookStatus(BookID id);
 }

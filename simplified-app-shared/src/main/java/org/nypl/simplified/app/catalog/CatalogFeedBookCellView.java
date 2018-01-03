@@ -3,6 +3,7 @@ package org.nypl.simplified.app.catalog;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,22 +15,21 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.io7m.jfunctional.OptionType;
-import com.io7m.jfunctional.ProcedureType;
 import com.io7m.jfunctional.Some;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
-import com.io7m.jnull.Nullable;
 import com.io7m.junreachable.UnimplementedCodeException;
 import com.io7m.junreachable.UnreachableCodeException;
 import com.squareup.picasso.Callback;
 
 import org.nypl.simplified.app.BookCoverProviderType;
 import org.nypl.simplified.app.R;
+import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.app.utilities.UIThread;
-import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.book_database.BookID;
-import org.nypl.simplified.books.book_registry.BookEvent;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
+import org.nypl.simplified.books.controller.BooksControllerType;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.core.BookStatusDownloadFailed;
 import org.nypl.simplified.books.core.BookStatusDownloadInProgress;
@@ -50,13 +50,12 @@ import org.nypl.simplified.books.core.BookStatusRequestingRevoke;
 import org.nypl.simplified.books.core.BookStatusRevokeFailed;
 import org.nypl.simplified.books.core.BookStatusRevoked;
 import org.nypl.simplified.books.core.BookStatusType;
-import org.nypl.simplified.books.controller.BooksControllerType;
+import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.books.feeds.FeedEntryCorrupt;
 import org.nypl.simplified.books.feeds.FeedEntryMatcherType;
 import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 import org.nypl.simplified.books.feeds.FeedEntryType;
-import org.nypl.simplified.books.core.LogUtilities;
-import org.nypl.simplified.observable.ObservableSubscriptionType;
+import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
 import org.nypl.simplified.opds.core.OPDSAcquisition;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 import org.slf4j.Logger;
@@ -104,23 +103,18 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
   private final AtomicReference<FeedEntryOPDS> entry;
   private final TextView cell_downloading_label;
   private final TextView cell_downloading_failed_label;
-  private final ObservableSubscriptionType<BookEvent> book_status_subscription;
   private final BooksControllerType books_controller;
-  private final AccountProvider account_provider;
   private final ProfilesControllerType profiles_controller;
+  private final AccountType account;
   private CatalogBookSelectionListenerType book_selection_listener;
 
   /**
    * Construct a cell view.
-   *
-   * @param in_activity       The host activity
-   * @param in_cover_provider A cover provider
-   * @param in_books_registry The books registry
    */
 
   public CatalogFeedBookCellView(
       final Activity in_activity,
-      final AccountProvider in_account_provider,
+      final AccountType in_account,
       final BookCoverProviderType in_cover_provider,
       final BooksControllerType in_books_controller,
       final ProfilesControllerType in_profiles_controller,
@@ -130,8 +124,8 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
     this.activity =
         NullCheck.notNull(in_activity, "Activity");
-    this.account_provider =
-        NullCheck.notNull(in_account_provider, "Account provider");
+    this.account =
+        NullCheck.notNull(in_account, "Account");
     this.cover_provider =
         NullCheck.notNull(in_cover_provider, "Cover provider");
     this.books_registry =
@@ -141,14 +135,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
     this.profiles_controller =
         NullCheck.notNull(in_profiles_controller, "Profiles controller");
 
-    this.book_selection_listener = new CatalogBookSelectionListenerType() {
-      @Override
-      public void onSelectBook(
-          final CatalogFeedBookCellView v,
-          final FeedEntryOPDS e) {
-        LOG.debug("doing nothing for {}", e);
-      }
-    };
+    this.book_selection_listener = (v, e) -> LOG.debug("doing nothing for {}", e);
 
     final Context context =
         NullCheck.notNull(in_activity.getApplicationContext());
@@ -163,53 +150,38 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
      * Receive book status updates.
      */
 
-    // XXX: When is this unsubscribed?
-    this.book_status_subscription = this.books_registry.bookEvents().subscribe(
-        new ProcedureType<BookEvent>() {
-          @Override
-          public void call(final BookEvent event) {
-            onBookEvent(event);
-          }
-        });
-
     this.cell_downloading =
-        NullCheck.notNull((ViewGroup) this.findViewById(R.id.cell_downloading));
-    this.cell_downloading.setBackgroundColor(
-        getBrandingColor());
+        NullCheck.notNull(this.findViewById(R.id.cell_downloading));
 
     this.cell_downloading_progress = NullCheck.notNull(
-        (ProgressBar) this.cell_downloading.findViewById(
+        this.cell_downloading.findViewById(
             R.id.cell_downloading_progress));
     this.cell_downloading_percent_text = NullCheck.notNull(
-        (TextView) this.cell_downloading.findViewById(
+        this.cell_downloading.findViewById(
             R.id.cell_downloading_percent_text));
     this.cell_downloading_label = NullCheck.notNull(
-        (TextView) this.cell_downloading.findViewById(
+        this.cell_downloading.findViewById(
             R.id.cell_downloading_label));
     this.cell_downloading_title = NullCheck.notNull(
-        (TextView) this.cell_downloading.findViewById(
+        this.cell_downloading.findViewById(
             R.id.cell_downloading_title));
     this.cell_downloading_authors = NullCheck.notNull(
-        (TextView) this.cell_downloading.findViewById(
+        this.cell_downloading.findViewById(
             R.id.cell_downloading_authors));
     this.cell_downloading_cancel = NullCheck.notNull(
-        (Button) this.cell_downloading.findViewById(
+        this.cell_downloading.findViewById(
             R.id.cell_downloading_cancel));
 
-    this.cell_downloading_failed = NullCheck.notNull(
-        (ViewGroup) this.findViewById(R.id.cell_downloading_failed));
-    this.cell_downloading_failed_title = NullCheck.notNull(
-        (TextView) this.cell_downloading_failed.findViewById(
-            R.id.cell_downloading_failed_title));
-    this.cell_downloading_failed_label = NullCheck.notNull(
-        (TextView) this.cell_downloading_failed.findViewById(
-            R.id.cell_downloading_failed_static_text));
-    this.cell_downloading_failed_dismiss = NullCheck.notNull(
-        (Button) this.cell_downloading_failed.findViewById(
-            R.id.cell_downloading_failed_dismiss));
-    this.cell_downloading_failed_retry = NullCheck.notNull(
-        (Button) this.cell_downloading_failed.findViewById(
-            R.id.cell_downloading_failed_retry));
+    this.cell_downloading_failed =
+        NullCheck.notNull(this.findViewById(R.id.cell_downloading_failed));
+    this.cell_downloading_failed_title =
+        NullCheck.notNull(this.cell_downloading_failed.findViewById(R.id.cell_downloading_failed_title));
+    this.cell_downloading_failed_label =
+        NullCheck.notNull(this.cell_downloading_failed.findViewById(R.id.cell_downloading_failed_static_text));
+    this.cell_downloading_failed_dismiss =
+        NullCheck.notNull(this.cell_downloading_failed.findViewById(R.id.cell_downloading_failed_dismiss));
+    this.cell_downloading_failed_retry =
+        NullCheck.notNull(this.cell_downloading_failed.findViewById(R.id.cell_downloading_failed_retry));
 
     this.cell_downloading_cancel.setBackgroundResource(R.drawable.simplified_button);
     this.cell_downloading_cancel.setTextColor(getBrandingColor());
@@ -221,15 +193,15 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
     this.cell_downloading_failed_retry.setTextColor(getBrandingColor());
 
     this.cell_corrupt =
-        NullCheck.notNull((ViewGroup) this.findViewById(R.id.cell_corrupt));
-    this.cell_corrupt_text = NullCheck.notNull(
-        (TextView) this.cell_corrupt.findViewById(R.id.cell_corrupt_text));
+        NullCheck.notNull(this.findViewById(R.id.cell_corrupt));
+    this.cell_corrupt_text =
+        NullCheck.notNull(this.cell_corrupt.findViewById(R.id.cell_corrupt_text));
 
     this.cell_book =
-        NullCheck.notNull((ViewGroup) this.findViewById(R.id.cell_book));
+        NullCheck.notNull(this.findViewById(R.id.cell_book));
 
     this.cell_debug =
-        NullCheck.notNull((TextView) this.findViewById(R.id.cell_debug));
+        NullCheck.notNull(this.findViewById(R.id.cell_debug));
     this.debug_cell_state =
         resources.getBoolean(R.bool.debug_catalog_cell_view_states);
     if (this.debug_cell_state == false) {
@@ -237,24 +209,24 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
     }
 
     this.cell_text_layout = NullCheck.notNull(
-        (ViewGroup) this.cell_book.findViewById(R.id.cell_text_layout));
+        this.cell_book.findViewById(R.id.cell_text_layout));
     this.cell_title = NullCheck.notNull(
-        (TextView) this.cell_text_layout.findViewById(R.id.cell_title));
+        this.cell_text_layout.findViewById(R.id.cell_title));
     this.cell_authors = NullCheck.notNull(
-        (TextView) this.cell_text_layout.findViewById(R.id.cell_authors));
+        this.cell_text_layout.findViewById(R.id.cell_authors));
     this.cell_buttons = NullCheck.notNull(
-        (ViewGroup) this.cell_text_layout.findViewById(R.id.cell_buttons));
+        this.cell_text_layout.findViewById(R.id.cell_buttons));
 
     this.cell_cover_layout =
-        NullCheck.notNull((ViewGroup) this.findViewById(R.id.cell_cover_layout));
+        NullCheck.notNull(this.findViewById(R.id.cell_cover_layout));
     this.cell_cover_image = NullCheck.notNull(
-        (ImageView) this.cell_cover_layout.findViewById(R.id.cell_cover_image));
+        this.cell_cover_layout.findViewById(R.id.cell_cover_image));
     this.cell_cover_progress = NullCheck.notNull(
-        (ProgressBar) this.cell_cover_layout.findViewById(
+        this.cell_cover_layout.findViewById(
             R.id.cell_cover_loading));
 
-    this.cell_cover_progress.getIndeterminateDrawable().setColorFilter(getBrandingColor(),
-        android.graphics.PorterDuff.Mode.SRC_IN);
+    this.cell_cover_progress.getIndeterminateDrawable()
+        .setColorFilter(getBrandingColor(), android.graphics.PorterDuff.Mode.SRC_IN);
 
     /*
      * The height of the row is known, so assume a roughly 4:3 aspect ratio
@@ -267,7 +239,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
         new LinearLayout.LayoutParams(cover_width, cover_height);
     this.cell_cover_layout.setLayoutParams(ccl_p);
 
-    this.entry = new AtomicReference<FeedEntryOPDS>();
+    this.entry = new AtomicReference<>();
 
     this.cell_book.setVisibility(View.INVISIBLE);
     this.cell_corrupt.setVisibility(View.INVISIBLE);
@@ -276,7 +248,15 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
   }
 
   private int getBrandingColor() {
-    throw new UnimplementedCodeException();
+    try {
+      return Color.parseColor(
+          Simplified.getProfilesController()
+              .profileAccountCurrent()
+              .provider()
+              .mainColor());
+    } catch (final ProfileNoneCurrentException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   private static String makeAuthorText(final OPDSAcquisitionFeedEntry in_e) {
@@ -360,11 +340,6 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
     LOG.debug("{}: download failed", f.getID());
 
-    // XXX: What is this? This should not be here.
-//    if (CatalogBookUnauthorized.isUnAuthorized(f)) {
-//      CatalogFeedBookCellView.this.books_registry.accountRemoveCredentials();
-//    }
-
     this.cell_book.setVisibility(View.INVISIBLE);
     this.cell_corrupt.setVisibility(View.INVISIBLE);
     this.cell_downloading.setVisibility(View.INVISIBLE);
@@ -380,13 +355,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
     this.cell_downloading_failed_title.setText(oe.getTitle());
     this.cell_downloading_failed_dismiss.setOnClickListener(
-        new OnClickListener() {
-          @Override
-          public void onClick(final @Nullable View v) {
-//            CatalogFeedBookCellView.this.books_registry.bookDownloadAcknowledge(f.getID());
-            throw new UnimplementedCodeException();
-          }
-        });
+        view -> this.books_controller.bookBorrowFailedDismiss(f.getID(), this.account));
 
     /*
      * Manually construct an acquisition controller for the retry button.
@@ -410,6 +379,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
             this.activity,
             this.profiles_controller,
             this.books_controller,
+            this.books_registry,
             fe.getBookID(),
             acquisition,
             fe);
@@ -422,8 +392,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
   }
 
   @Override
-  public Unit onBookStatusDownloading(
-      final BookStatusDownloadingType o) {
+  public Unit onBookStatusDownloading(final BookStatusDownloadingType o) {
     return o.matchBookDownloadingStatus(this);
   }
 
@@ -454,12 +423,9 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
     this.cell_downloading_cancel.setVisibility(View.VISIBLE);
     this.cell_downloading_cancel.setEnabled(true);
     this.cell_downloading_cancel.setOnClickListener(
-        new OnClickListener() {
-          @Override
-          public void onClick(final @Nullable View v) {
-            // CatalogFeedBookCellView.this.books_registry.bookDownloadCancel(book_id);
-            throw new UnimplementedCodeException();
-          }
+        v -> {
+          // CatalogFeedBookCellView.this.books_registry.bookDownloadCancel(book_id);
+          throw new UnimplementedCodeException();
         });
 
     return Unit.unit();
@@ -485,7 +451,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
     if (s.isRevocable()) {
       final CatalogBookRevokeButton revoke =
           new CatalogBookRevokeButton(
-          this.activity,
+              this.activity,
               s.getID(),
               CatalogBookRevokeType.REVOKE_HOLD,
               this.books_controller);
@@ -511,16 +477,17 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
     CatalogAcquisitionButtons.addButtons(
         this.activity,
-        this.account_provider,
+        this.account,
         this.cell_buttons,
         this.books_controller,
         this.profiles_controller,
+        this.books_registry,
         feed_entry);
 
     if (s.isRevocable()) {
       final CatalogBookRevokeButton revoke =
           new CatalogBookRevokeButton(
-          this.activity,
+              this.activity,
               s.getID(),
               CatalogBookRevokeType.REVOKE_HOLD,
               this.books_controller);
@@ -549,10 +516,11 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
     CatalogAcquisitionButtons.addButtons(
         this.activity,
-        this.account_provider,
+        this.account,
         this.cell_buttons,
         this.books_controller,
         this.profiles_controller,
+        this.books_registry,
         feed_entry);
 
     return Unit.unit();
@@ -581,12 +549,9 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
     this.cell_downloading_failed_label.setText(R.string.catalog_revoke_failed);
     this.cell_downloading_failed_title.setText(oe.getTitle());
     this.cell_downloading_failed_dismiss.setOnClickListener(
-        new OnClickListener() {
-          @Override
-          public void onClick(final @Nullable View v) {
-            // CatalogFeedBookCellView.this.books_registry.bookGetLatestStatusFromDisk(s.getID());
-            throw new UnimplementedCodeException();
-          }
+        v -> {
+          // CatalogFeedBookCellView.this.books_registry.bookGetLatestStatusFromDisk(s.getID());
+          throw new UnimplementedCodeException();
         });
 
     this.cell_downloading_failed_retry.setVisibility(View.GONE);
@@ -628,10 +593,11 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
     CatalogAcquisitionButtons.addButtons(
         this.activity,
-        this.account_provider,
+        this.account,
         this.cell_buttons,
         this.books_controller,
         this.profiles_controller,
+        this.books_registry,
         feed_entry);
 
     return Unit.unit();
@@ -661,10 +627,11 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
     CatalogAcquisitionButtons.addButtons(
         this.activity,
-        this.account_provider,
+        this.account,
         this.cell_buttons,
         this.books_controller,
         this.profiles_controller,
+        this.books_registry,
         in_entry);
   }
 
@@ -774,13 +741,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
     final CatalogBookSelectionListenerType book_listener =
         this.book_selection_listener;
     this.setOnClickListener(
-        new OnClickListener() {
-          @Override
-          public void onClick(
-              final @Nullable View v) {
-            book_listener.onSelectBook(CatalogFeedBookCellView.this, feed_e);
-          }
-        });
+        v -> book_listener.onSelectBook(CatalogFeedBookCellView.this, feed_e));
 
     this.entry.set(feed_e);
 
@@ -797,20 +758,10 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
     if (status_opt.isSome()) {
       final Some<BookStatusType> some = (Some<BookStatusType>) status_opt;
       UIThread.runOnUIThread(
-          new Runnable() {
-            @Override
-            public void run() {
-              some.get().matchBookStatus(CatalogFeedBookCellView.this);
-            }
-          });
+          () -> some.get().matchBookStatus(CatalogFeedBookCellView.this));
     } else {
       UIThread.runOnUIThread(
-          new Runnable() {
-            @Override
-            public void run() {
-              CatalogFeedBookCellView.this.onBookStatusNone(in_entry, id);
-            }
-          });
+          () -> CatalogFeedBookCellView.this.onBookStatusNone(in_entry, id));
     }
   }
 
@@ -818,25 +769,6 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
       final String text) {
     if (this.debug_cell_state) {
       this.cell_debug.setText(text);
-    }
-  }
-
-  private void onBookEvent(final BookEvent event) {
-
-    final BookID update_id = event.book();
-    final FeedEntryOPDS in_entry = this.entry.get();
-
-    if (in_entry != null) {
-      final BookID current_id = in_entry.getBookID();
-      if (current_id.equals(update_id)) {
-        UIThread.runOnUIThread(
-            new Runnable() {
-              @Override
-              public void run() {
-                viewConfigure(in_entry, book_selection_listener);
-              }
-            });
-      }
     }
   }
 

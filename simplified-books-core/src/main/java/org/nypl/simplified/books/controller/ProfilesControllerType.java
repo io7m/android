@@ -11,6 +11,7 @@ import org.nypl.simplified.books.accounts.AccountEventCreation;
 import org.nypl.simplified.books.accounts.AccountEventDeletion;
 import org.nypl.simplified.books.accounts.AccountEventLogin;
 import org.nypl.simplified.books.accounts.AccountEventLogout;
+import org.nypl.simplified.books.accounts.AccountID;
 import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
@@ -56,18 +57,6 @@ public interface ProfilesControllerType {
       throws ProfileNoneCurrentException;
 
   /**
-   * @return The account provider corresponding to the current account in the current profile
-   * @throws ProfileNoneCurrentException                If the anonymous profile is disabled and no profile has been selected
-   * @throws ProfileNonexistentAccountProviderException If the current account refers to an account provider that is not in the current set of known account providers
-   * @see #profileSelect(ProfileID)
-   * @see #profileAnonymousEnabled()
-   */
-
-  AccountProvider profileAccountProviderCurrent()
-      throws ProfileNoneCurrentException,
-      ProfileNonexistentAccountProviderException;
-
-  /**
    * @return An observable that publishes profile events
    */
 
@@ -99,20 +88,14 @@ public interface ProfilesControllerType {
       ProfileID id);
 
   /**
-   * Determine the URI for the root of the catalog in the current account in the current profile.
-   * This method returns the correct URI based on the preferences for the current profile (for
-   * example, some catalogs have different addresses for readers under the age of 13, so the URI
-   * selected is dependent on the date of birth specified in the profile).
-   *
-   * @return The URI for the root of the catalog in the current account
-   * @throws ProfileNoneCurrentException                If the anonymous profile is disabled and no profile has been selected
-   * @throws ProfileNonexistentAccountProviderException If the current account refers to an account provider that is not in the current set of known account providers
+   * @return The current account in most recently selected profile, or the anonymous profile if it is enabled
+   * @throws ProfileNoneCurrentException If the anonymous profile is disabled and no profile has been selected
    * @see #profileSelect(ProfileID)
    * @see #profileAnonymousEnabled()
    */
 
-  URI profileCurrentCatalogRootURI()
-      throws ProfileNoneCurrentException, ProfileNonexistentAccountProviderException;
+  AccountType profileAccountCurrent()
+      throws ProfileNoneCurrentException;
 
   /**
    * Attempt to login using the current account of the current profile. The login is attempted
@@ -122,7 +105,20 @@ public interface ProfilesControllerType {
    * @return A future that returns a login event
    */
 
+  ListenableFuture<AccountEventLogin> profileAccountCurrentLogin(
+      AccountAuthenticationCredentials credentials);
+
+  /**
+   * Attempt to login using the given account of the current profile. The login is attempted
+   * using the given credentials.
+   *
+   * @param account The account ID
+   * @param credentials The credentials
+   * @return A future that returns a login event
+   */
+
   ListenableFuture<AccountEventLogin> profileAccountLogin(
+      AccountID account,
       AccountAuthenticationCredentials credentials);
 
   /**

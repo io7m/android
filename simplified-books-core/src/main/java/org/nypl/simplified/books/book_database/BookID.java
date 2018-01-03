@@ -34,6 +34,15 @@ public abstract class BookID implements Comparable<BookID>, Serializable {
 
   public abstract String value();
 
+  /**
+   * @return The brief form of the ID
+   */
+
+  public final String brief()
+  {
+    return this.value().substring(0, Math.min(8, value().length()));
+  }
+
   @Override
   public String toString() {
     return value();

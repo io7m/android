@@ -71,27 +71,7 @@ public final class LoginActivity extends Activity {
   }
 
   public void onLoginWithBarcode() {
-    final FragmentManager fm = this.getFragmentManager();
-
-    UIThread.runOnUIThread(() -> {
-      try {
-        final AccountBarcode barcode = AccountBarcode.create("");
-        final AccountPIN pin = AccountPIN.create("");
-        final LoginDialog dialog =
-            LoginDialog.newDialog(
-                Simplified.getProfilesController(),
-                "Login required",
-                Simplified.getProfilesController().profileAccountProviderCurrent(),
-                barcode,
-                pin,
-                this::openCatalog,
-                () -> LOG.debug("cancelled login"),
-                (m) -> Unit.unit());
-        dialog.show(fm, "login-dialog");
-      } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
-        throw new IllegalStateException(e);
-      }
-    });
+    throw new UnimplementedCodeException();
   }
 
   public void onLoginWithClever() {

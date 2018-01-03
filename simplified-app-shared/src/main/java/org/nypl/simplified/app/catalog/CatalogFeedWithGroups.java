@@ -15,6 +15,7 @@ import com.io7m.jnull.Nullable;
 import org.nypl.simplified.app.BookCoverProviderType;
 import org.nypl.simplified.app.ScreenSizeInformationType;
 import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.feeds.FeedGroup;
 import org.nypl.simplified.books.feeds.FeedWithGroups;
 
@@ -30,29 +31,22 @@ public final class CatalogFeedWithGroups implements ListAdapter, OnScrollListene
   private final FeedWithGroups feed;
   private final CatalogFeedLaneListenerType lane_listener;
   private final ScreenSizeInformationType screen;
-  private final AccountProvider account_provider;
+  private final AccountType account;
 
   /**
    * Construct a view.
-   *
-   * @param in_activity            The host activity
-   * @param in_screen              The screen
-   * @param in_account_provider    The current account provider
-   * @param in_book_cover_provider A cover provider
-   * @param in_lane_listener       A lane listener
-   * @param in_feed                A feed
    */
 
   CatalogFeedWithGroups(
       final Activity in_activity,
-      final AccountProvider in_account_provider,
+      final AccountType in_account,
       final ScreenSizeInformationType in_screen,
       final BookCoverProviderType in_book_cover_provider,
       final CatalogFeedLaneListenerType in_lane_listener,
       final FeedWithGroups in_feed) {
 
     this.activity = NullCheck.notNull(in_activity);
-    this.account_provider = NullCheck.notNull(in_account_provider, "Account provider");
+    this.account = NullCheck.notNull(in_account, "Account");
     this.book_cover_provider = NullCheck.notNull(in_book_cover_provider);
     this.lane_listener = NullCheck.notNull(in_lane_listener);
     this.feed = NullCheck.notNull(in_feed);
@@ -100,7 +94,7 @@ public final class CatalogFeedWithGroups implements ListAdapter, OnScrollListene
     } else {
       view = new CatalogFeedLane(
           this.activity,
-          this.account_provider,
+          this.account,
           this.book_cover_provider,
           this.screen,
           this.lane_listener);

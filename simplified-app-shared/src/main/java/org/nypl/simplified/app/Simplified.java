@@ -360,13 +360,15 @@ public final class Simplified extends Application {
     if (anonymous) {
       LOG.debug("opening profile database with anonymous profile");
       return ProfilesDatabase.openWithAnonymousAccountEnabled(
+          account_providers,
           AccountsDatabases.get(),
           account_providers.providerDefault(),
           directory);
     }
 
     LOG.debug("opening profile database without anonymous profile");
-    return ProfilesDatabase.openWithAnonymousAccountDisabled(AccountsDatabases.get(), directory);
+    return ProfilesDatabase.openWithAnonymousAccountDisabled(
+        account_providers, AccountsDatabases.get(), directory);
   }
 
   private static BookCoverProviderType createCoverProvider(
@@ -577,6 +579,7 @@ public final class Simplified extends Application {
     this.book_controller = Controller.createBookController(
         this.exec_books,
         this.http,
+        this.downloader,
         this.profiles,
         this.book_registry,
         ignored -> this.account_providers);

@@ -97,6 +97,12 @@ public abstract class AccountEventLogin extends AccountEvent {
       ERROR_SERVER_ERROR,
 
       /**
+       * The specified account does not exist.
+       */
+
+      ERROR_ACCOUNT_NONEXISTENT,
+
+      /**
        * A general error code that is not specifically actionable (such as an I/O error
        * or a programming mistake).
        */

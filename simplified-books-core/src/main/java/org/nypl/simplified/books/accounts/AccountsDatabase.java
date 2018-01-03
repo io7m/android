@@ -2,7 +2,6 @@ package org.nypl.simplified.books.accounts;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.io7m.jfunctional.OptionType;
-import com.io7m.jfunctional.PartialFunctionType;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 
@@ -75,10 +74,13 @@ public final class AccountsDatabase implements AccountsDatabaseType {
 
   public static AccountsDatabaseType open(
       final BookDatabaseFactoryType book_databases,
+      final AccountProviderCollectionType account_providers,
       final File directory)
       throws AccountsDatabaseException {
 
+    NullCheck.notNull(book_databases, "Book databases");
     NullCheck.notNull(directory, "Directory");
+    NullCheck.notNull(account_providers, "Account providers");
 
     LOG.debug("opening account database: {}", directory);
 
@@ -95,7 +97,14 @@ public final class AccountsDatabase implements AccountsDatabaseType {
       errors.add(new IOException("Not a directory: " + directory));
     }
 
-    openAllAccounts(book_databases, directory, accounts, accounts_by_provider, jom, errors);
+    openAllAccounts(
+        book_databases,
+        account_providers,
+        directory,
+        accounts,
+        accounts_by_provider,
+        jom,
+        errors);
 
     if (!errors.isEmpty()) {
       throw new AccountsDatabaseOpenException(
@@ -107,6 +116,7 @@ public final class AccountsDatabase implements AccountsDatabaseType {
 
   private static void openAllAccounts(
       final BookDatabaseFactoryType book_databases,
+      final AccountProviderCollectionType account_providers,
       final File directory,
       final SortedMap<AccountID, Account> accounts,
       final SortedMap<URI, Account> accounts_by_provider,
@@ -119,17 +129,17 @@ public final class AccountsDatabase implements AccountsDatabaseType {
         final String account_id_name = account_dirs[index];
         LOG.debug("opening account: {}/{}", directory, account_id_name);
 
-        final Account account =
-            openOneAccount(book_databases, directory, jom, errors, account_id_name);
+        final Account account = openOneAccount(
+            book_databases, account_providers, directory, jom, errors, account_id_name);
 
         if (account != null) {
-          if (accounts_by_provider.containsKey(account.provider())) {
+          if (accounts_by_provider.containsKey(account.provider().id())) {
             errors.add(new AccountsDatabaseDuplicateProviderException(
                 "Multiple accounts using the same provider: " + account.provider()));
           }
 
           accounts.put(account.id, account);
-          accounts_by_provider.put(account.provider(), account);
+          accounts_by_provider.put(account.provider().id(), account);
         }
       }
     }
@@ -137,6 +147,7 @@ public final class AccountsDatabase implements AccountsDatabaseType {
 
   private static Account openOneAccount(
       final BookDatabaseFactoryType book_databases,
+      final AccountProviderCollectionType account_providers,
       final File directory,
       final ObjectMapper jom,
       final List<Exception> errors,
@@ -161,11 +172,12 @@ public final class AccountsDatabase implements AccountsDatabaseType {
       final AccountDescription desc =
           AccountDescriptionJSON.deserializeFromFile(jom, account_file);
 
-      return new Account(account_id, account_dir, desc, book_database);
+      return new Account(
+          account_id, account_dir, desc, account_providers.provider(desc.provider()), book_database);
     } catch (final IOException e) {
       errors.add(new IOException("Could not parse account: " + account_file, e));
       return null;
-    } catch (final BookDatabaseException e) {
+    } catch (final BookDatabaseException | AccountsDatabaseNonexistentProviderException e) {
       errors.add(e);
       return null;
     }
@@ -246,7 +258,7 @@ public final class AccountsDatabase implements AccountsDatabaseType {
       writeDescription(account_lock, account_file, account_file_tmp, desc);
 
       synchronized (this.accounts_lock) {
-        final Account account = new Account(next, account_dir, desc, book_database);
+        final Account account = new Account(next, account_dir, desc, account_provider, book_database);
         this.accounts.put(next, account);
         this.accounts_by_provider.put(account_provider.id(), account);
         return account;
@@ -313,17 +325,26 @@ public final class AccountsDatabase implements AccountsDatabaseType {
     private final Object description_lock;
     private @GuardedBy("description_lock") AccountDescription description;
     private final BookDatabaseType book_database;
+    private final AccountProvider provider;
 
     Account(
         final AccountID id,
         final File directory,
         final AccountDescription description,
+        final AccountProvider provider,
         final BookDatabaseType book_database) {
 
-      this.id = NullCheck.notNull(id, "id");
-      this.directory = NullCheck.notNull(directory, "directory");
-      this.description = NullCheck.notNull(description, "description");
-      this.book_database = NullCheck.notNull(book_database, "book database");
+      this.id =
+          NullCheck.notNull(id, "id");
+      this.directory =
+          NullCheck.notNull(directory, "directory");
+      this.description =
+          NullCheck.notNull(description, "description");
+      this.book_database =
+          NullCheck.notNull(book_database, "book database");
+      this.provider =
+          NullCheck.notNull(provider, "provider");
+
       this.description_lock = new Object();
     }
 
@@ -338,9 +359,9 @@ public final class AccountsDatabase implements AccountsDatabaseType {
     }
 
     @Override
-    public URI provider() {
+    public AccountProvider provider() {
       synchronized (this.description_lock) {
-        return this.description.provider();
+        return this.provider;
       }
     }
 

@@ -134,12 +134,6 @@
       android:exported="true">
     </activity>
 
-    <activity
-      android:name="org.nypl.simplified.app.MainWelcomeAccountPickerActivity"
-      android:configChanges="orientation|screenSize"
-      android:exported="true">
-    </activity>
-
     <!-- EULA -->
     <activity
       android:name="org.nypl.simplified.app.MainEULAActivity"

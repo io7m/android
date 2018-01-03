@@ -1,6 +1,7 @@
 package org.nypl.simplified.books.accounts;
 
 import com.google.auto.value.AutoValue;
+import com.io7m.jnull.NullCheck;
 
 import java.net.URI;
 import java.util.Collections;
@@ -11,7 +12,7 @@ import java.util.SortedMap;
  */
 
 @AutoValue
-public abstract class AccountProviderCollection {
+public abstract class AccountProviderCollection implements AccountProviderCollectionType {
 
   AccountProviderCollection() {
 
@@ -22,7 +23,6 @@ public abstract class AccountProviderCollection {
    *
    * @param in_default_provider The default provider
    * @param in_providers        The available providers
-   *
    * @throws IllegalArgumentException If the default provider is not present in the available providers
    */
 
@@ -30,19 +30,21 @@ public abstract class AccountProviderCollection {
       final AccountProvider in_default_provider,
       final SortedMap<URI, AccountProvider> in_providers)
       throws IllegalArgumentException {
+
     return new AutoValue_AccountProviderCollection(
         in_default_provider, Collections.unmodifiableSortedMap(in_providers));
   }
 
-  /**
-   * @return The default account provider
-   */
+  @Override
+  public final AccountProvider provider(final URI provider_id)
+      throws AccountsDatabaseNonexistentProviderException {
 
-  public abstract AccountProvider providerDefault();
-
-  /**
-   * @return The account providers
-   */
-
-  public abstract SortedMap<URI, AccountProvider> providers();
+    final AccountProvider provider =
+        this.providers().get(NullCheck.notNull(provider_id, "Provider"));
+    if (provider == null) {
+      throw new AccountsDatabaseNonexistentProviderException(
+          "Nonexistent provider: " + provider_id);
+    }
+    return provider;
+  }
 }

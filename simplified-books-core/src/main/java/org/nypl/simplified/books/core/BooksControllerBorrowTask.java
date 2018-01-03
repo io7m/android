@@ -347,7 +347,6 @@ final class BooksControllerBorrowTask implements Runnable {
       final OPDSAcquisition.Type at = this.acq.getType();
       switch (at) {
         case ACQUISITION_BORROW: {
-
           LOG.debug("[{}]: acquisition type is {}, performing borrow", this.short_id, at);
           this.runAcquisitionBorrow();
           break;

@@ -11,6 +11,8 @@ import com.io7m.junreachable.UnreachableCodeException;
 import org.nypl.simplified.assertions.Assertions;
 import org.nypl.simplified.books.accounts.AccountID;
 import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.accounts.AccountProviderCollection;
+import org.nypl.simplified.books.accounts.AccountProviderCollectionType;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseException;
 import org.nypl.simplified.books.accounts.AccountsDatabaseFactoryType;
@@ -51,14 +53,18 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
   private final AnonymousProfileEnabled profile_anon_enabled;
   private final AccountsDatabaseFactoryType accounts_databases;
   private final Object profile_current_lock;
+  private final AccountProviderCollectionType account_providers;
   private @GuardedBy("profile_current_lock") ProfileID profile_current;
 
   private ProfilesDatabase(
+      final AccountProviderCollectionType account_providers,
       final AccountsDatabaseFactoryType accounts_databases,
       final File directory,
       final ConcurrentSkipListMap<ProfileID, Profile> profiles,
       final AnonymousProfileEnabled anonymous_enabled) {
 
+    this.account_providers =
+        NullCheck.notNull(account_providers, "Account providers");
     this.accounts_databases =
         NullCheck.notNull(accounts_databases, "Accounts databases");
     this.directory =
@@ -92,16 +98,19 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
    * exist. The anonymous account will not be enabled, and will be ignored even if one is present
    * in the on-disk database.
    *
-   * @param directory The directory
+   * @param account_providers The available account providers
+   * @param directory         The directory
    * @return A profile database
    * @throws ProfileDatabaseException If any errors occurred whilst trying to open the database
    */
 
   public static ProfilesDatabaseType openWithAnonymousAccountDisabled(
+      final AccountProviderCollectionType account_providers,
       final AccountsDatabaseFactoryType accounts_databases,
       final File directory)
       throws ProfileDatabaseException {
 
+    NullCheck.notNull(account_providers, "Account providers");
     NullCheck.notNull(accounts_databases, "Accounts databases");
     NullCheck.notNull(directory, "Directory");
 
@@ -111,7 +120,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
     final ObjectMapper jom = new ObjectMapper();
 
     final List<Exception> errors = new ArrayList<>();
-    openAllProfiles(accounts_databases, directory, profiles, jom, errors);
+    openAllProfiles(account_providers, accounts_databases, directory, profiles, jom, errors);
     profiles.remove(ANONYMOUS_PROFILE_ID);
 
     if (!errors.isEmpty()) {
@@ -120,10 +129,11 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
     }
 
     return new ProfilesDatabase(
-        accounts_databases, directory, profiles, ANONYMOUS_PROFILE_DISABLED);
+        account_providers, accounts_databases, directory, profiles, ANONYMOUS_PROFILE_DISABLED);
   }
 
   private static void openAllProfiles(
+      final AccountProviderCollectionType account_providers,
       final AccountsDatabaseFactoryType accounts_databases,
       final File directory,
       final SortedMap<ProfileID, Profile> profiles,
@@ -143,7 +153,8 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
       for (final String profile_id_name : profile_dirs) {
         LOG.debug("opening profile: {}/{}", directory, profile_id_name);
         final Profile profile =
-            openOneProfile(accounts_databases, jom, directory, errors, profile_id_name);
+            openOneProfile(
+                account_providers, accounts_databases, jom, directory, errors, profile_id_name);
         if (profile == null) {
           continue;
         }
@@ -157,18 +168,21 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
    * The anonymous account will be enabled and will use the given account provider as the default
    * account.
    *
-   * @param account_provider The account provider that will be used for the anonymous account
-   * @param directory        The directory
+   * @param account_providers The available account providers
+   * @param account_provider  The account provider that will be used for the anonymous account
+   * @param directory         The directory
    * @return A profile database
    * @throws ProfileDatabaseException If any errors occurred whilst trying to open the database
    */
 
   public static ProfilesDatabaseType openWithAnonymousAccountEnabled(
+      final AccountProviderCollectionType account_providers,
       final AccountsDatabaseFactoryType accounts_databases,
       final AccountProvider account_provider,
       final File directory)
       throws ProfileDatabaseException {
 
+    NullCheck.notNull(account_providers, "Account providers");
     NullCheck.notNull(accounts_databases, "Accounts databases");
     NullCheck.notNull(account_provider, "Account provider");
     NullCheck.notNull(directory, "Directory");
@@ -179,11 +193,11 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
     final ObjectMapper jom = new ObjectMapper();
 
     final List<Exception> errors = new ArrayList<>();
-    openAllProfiles(accounts_databases, directory, profiles, jom, errors);
+    openAllProfiles(account_providers, accounts_databases, directory, profiles, jom, errors);
 
     if (!profiles.containsKey(ANONYMOUS_PROFILE_ID)) {
       final Profile anon = createProfileActual(
-          accounts_databases, account_provider, directory, "", ANONYMOUS_PROFILE_ID);
+          account_providers, accounts_databases, account_provider, directory, "", ANONYMOUS_PROFILE_ID);
       profiles.put(ANONYMOUS_PROFILE_ID, anon);
     }
 
@@ -193,7 +207,12 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
     }
 
     final ProfilesDatabase database =
-        new ProfilesDatabase(accounts_databases, directory, profiles, ANONYMOUS_PROFILE_ENABLED);
+        new ProfilesDatabase(
+            account_providers,
+            accounts_databases,
+            directory,
+            profiles,
+            ANONYMOUS_PROFILE_ENABLED);
 
     database.setCurrentProfile(ANONYMOUS_PROFILE_ID);
     return database;
@@ -201,6 +220,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
 
   private static @Nullable
   Profile openOneProfile(
+      final AccountProviderCollectionType account_providers,
       final AccountsDatabaseFactoryType accounts_databases,
       final ObjectMapper jom,
       final File directory,
@@ -231,7 +251,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
 
     try {
       final AccountsDatabaseType accounts =
-          accounts_databases.openDatabase(profile_accounts_dir);
+          accounts_databases.openDatabase(account_providers, profile_accounts_dir);
       final AccountType account =
           accounts.accounts().get(accounts.accounts().firstKey());
 
@@ -298,7 +318,12 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
         "Profile ID %s cannot have been used", next);
 
     final Profile profile = createProfileActual(
-        this.accounts_databases, account_provider, this.directory, display_name, next);
+        this.account_providers,
+        this.accounts_databases,
+        account_provider,
+        this.directory,
+        display_name,
+        next);
 
     this.profiles.put(profile.id(), profile);
     profile.setOwner(this);
@@ -308,6 +333,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
   /**
    * Do the actual work of creating the account.
    *
+   * @param account_providers  The available account providers
    * @param accounts_databases A factory for account databases
    * @param account_provider   The account provider that will be used for the default account
    * @param directory          The profile directory
@@ -316,6 +342,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
    */
 
   private static Profile createProfileActual(
+      final AccountProviderCollectionType account_providers,
       final AccountsDatabaseFactoryType accounts_databases,
       final AccountProvider account_provider,
       final File directory,
@@ -339,7 +366,7 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
 
       try {
         final AccountsDatabaseType accounts =
-            accounts_databases.openDatabase(profile_accounts_dir);
+            accounts_databases.openDatabase(account_providers, profile_accounts_dir);
         final AccountType account =
             accounts.createAccount(account_provider);
 
@@ -527,6 +554,20 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
     @Override
     public SortedMap<URI, AccountType> accountsByProvider() {
       return this.accounts.accountsByProvider();
+    }
+
+    @Override
+    public AccountType account(final AccountID account_id)
+        throws AccountsDatabaseNonexistentException {
+
+      final AccountType account =
+          this.accounts().get(NullCheck.notNull(account_id, "Account ID"));
+
+      if (account == null) {
+        throw new AccountsDatabaseNonexistentException("Nonexistent account: " + account_id.id());
+      }
+
+      return account;
     }
 
     @Override

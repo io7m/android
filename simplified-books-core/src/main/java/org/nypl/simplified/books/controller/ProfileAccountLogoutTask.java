@@ -13,6 +13,7 @@ import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountProviderCollection;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseException;
+import org.nypl.simplified.books.book_database.BookDatabaseException;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
 import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
@@ -38,15 +39,13 @@ final class ProfileAccountLogoutTask implements Callable<AccountEventLogout> {
   private static final Logger LOG = LoggerFactory.getLogger(ProfileAccountLogoutTask.class);
 
   private final ProfilesDatabaseType profiles;
-  private final FunctionType<Unit, AccountProviderCollection> account_providers;
   private final ObservableType<AccountEvent> account_events;
   private final BookRegistryType book_registry;
 
   ProfileAccountLogoutTask(
       final ProfilesDatabaseType profiles,
       final BookRegistryType in_book_registry,
-      final ObservableType<AccountEvent> account_events,
-      final FunctionType<Unit, AccountProviderCollection> account_providers) {
+      final ObservableType<AccountEvent> account_events) {
 
     this.profiles =
         NullCheck.notNull(profiles, "Profiles");
@@ -54,8 +53,6 @@ final class ProfileAccountLogoutTask implements Callable<AccountEventLogout> {
         NullCheck.notNull(in_book_registry, "Book registry");
     this.account_events =
         NullCheck.notNull(account_events, "Account events");
-    this.account_providers =
-        NullCheck.notNull(account_providers, "Account providers");
   }
 
   @Override
@@ -69,16 +66,8 @@ final class ProfileAccountLogoutTask implements Callable<AccountEventLogout> {
     try {
       final ProfileReadableType profile = this.profiles.currentProfileUnsafe();
       final AccountType account = profile.accountCurrent();
-      final URI provider_name = account.provider();
-      final AccountProviderCollection providers_now = this.account_providers.call(Unit.unit());
-      final AccountProvider provider = providers_now.providers().get(provider_name);
-
-      if (provider != null) {
-        return runForProvider(account);
-      }
-
-      throw new ProfileNonexistentAccountProviderException("Unrecognized provider: " + provider_name);
-    } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+      return runForAccount(account);
+    } catch (final ProfileNoneCurrentException e) {
       return AccountLogoutFailed.of(ERROR_PROFILE_CONFIGURATION, Option.some(e));
     } catch (final AccountsDatabaseException e) {
       return AccountLogoutFailed.of(ERROR_ACCOUNTS_DATABASE, Option.some(e));
@@ -87,7 +76,7 @@ final class ProfileAccountLogoutTask implements Callable<AccountEventLogout> {
     }
   }
 
-  private AccountEventLogout runForProvider(
+  private AccountEventLogout runForAccount(
       final AccountType account)
       throws AccountsDatabaseException, IOException {
 
@@ -97,6 +86,8 @@ final class ProfileAccountLogoutTask implements Callable<AccountEventLogout> {
     try {
       LOG.debug("deleting book database");
       account.bookDatabase().delete();
+    } catch (final BookDatabaseException e) {
+      LOG.error("deleting book database: ", e);
     } finally {
       LOG.debug("clearing books from book registry");
       for (final BookID book : account_books) {

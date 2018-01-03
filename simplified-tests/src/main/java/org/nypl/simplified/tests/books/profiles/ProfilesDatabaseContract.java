@@ -11,6 +11,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.accounts.AccountProviderCollection;
+import org.nypl.simplified.books.accounts.AccountProviderCollectionType;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseFactoryType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseLastAccountException;
@@ -32,6 +34,8 @@ import org.slf4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public abstract class ProfilesDatabaseContract {
 
@@ -90,7 +94,7 @@ public abstract class ProfilesDatabaseContract {
 
     expected.expect(ProfileDatabaseException.class);
     expected.expect(new CausesContains<>(IOException.class, "Not a directory"));
-    ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+    ProfilesDatabase.openWithAnonymousAccountDisabled(accountProviders(), accountsDatabases(), f_pro);
   }
 
   @Test
@@ -106,7 +110,7 @@ public abstract class ProfilesDatabaseContract {
     expected.expect(ProfileDatabaseException.class);
     expected.expect(new CausesContains<>(
         IOException.class, "Could not parse directory name as profile ID"));
-    ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+    ProfilesDatabase.openWithAnonymousAccountDisabled(accountProviders(), accountsDatabases(), f_pro);
   }
 
   private AccountsDatabaseFactoryType accountsDatabases()
@@ -126,7 +130,7 @@ public abstract class ProfilesDatabaseContract {
 
     expected.expect(ProfileDatabaseException.class);
     expected.expect(new CausesContains<>(IOException.class, "Could not parse profile: "));
-    ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+    ProfilesDatabase.openWithAnonymousAccountDisabled(accountProviders(), accountsDatabases(), f_pro);
   }
 
   @Test
@@ -143,7 +147,7 @@ public abstract class ProfilesDatabaseContract {
 
     expected.expect(ProfileDatabaseException.class);
     expected.expect(new CausesContains<>(IOException.class, "Could not parse profile: "));
-    ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+    ProfilesDatabase.openWithAnonymousAccountDisabled(accountProviders(), accountsDatabases(), f_pro);
   }
 
   @Test
@@ -153,7 +157,7 @@ public abstract class ProfilesDatabaseContract {
     final File f_pro = new File(f_tmp, "profiles");
 
     final ProfilesDatabaseType db =
-        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountProviders(), accountsDatabases(), f_pro);
 
     Assert.assertEquals(0, db.profiles().size());
     Assert.assertEquals(f_pro, db.directory());
@@ -166,10 +170,13 @@ public abstract class ProfilesDatabaseContract {
     final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
     final File f_pro = new File(f_tmp, "profiles");
 
-    final ProfilesDatabaseType db =
-        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+    final AccountProviderCollectionType account_providers = accountProviders();
 
-    final AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+    final ProfilesDatabaseType db =
+        ProfilesDatabase.openWithAnonymousAccountDisabled(
+            account_providers, accountsDatabases(), f_pro);
+
+    final AccountProvider acc = fakeProvider("http://www.example.com/accounts0/");
 
     final ProfileType p0 = db.createProfile(acc, "Kermit");
     final ProfileType p1 = db.createProfile(acc, "Gonzo");
@@ -216,11 +223,14 @@ public abstract class ProfilesDatabaseContract {
     Assert.assertFalse(p2.isCurrent());
 
     Assert.assertEquals(
-        URI.create("http://example.com/accounts0/"), p0.accountCurrent().provider());
+        account_providers.provider(URI.create("http://www.example.com/accounts0/")),
+        p0.accountCurrent().provider());
     Assert.assertEquals(
-        URI.create("http://example.com/accounts0/"), p1.accountCurrent().provider());
+        account_providers.provider(URI.create("http://www.example.com/accounts0/")),
+        p1.accountCurrent().provider());
     Assert.assertEquals(
-        URI.create("http://example.com/accounts0/"), p2.accountCurrent().provider());
+        account_providers.provider(URI.create("http://www.example.com/accounts0/")),
+        p2.accountCurrent().provider());
 
     Assert.assertTrue(db.currentProfile().isNone());
   }
@@ -231,17 +241,22 @@ public abstract class ProfilesDatabaseContract {
     final File f_tmp = DirectoryUtilities.directoryCreateTemporary();
     final File f_pro = new File(f_tmp, "profiles");
 
-    final ProfilesDatabaseType db0 =
-        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+    final AccountProviderCollectionType account_providers = accountProviders();
 
-    final AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+    final ProfilesDatabaseType db0 =
+        ProfilesDatabase.openWithAnonymousAccountDisabled(
+            account_providers, accountsDatabases(), f_pro);
+
+    final AccountProvider acc = fakeProvider("http://www.example.com/accounts0/");
 
     final ProfileType p0 = db0.createProfile(acc, "Kermit");
     final ProfileType p1 = db0.createProfile(acc, "Gonzo");
     final ProfileType p2 = db0.createProfile(acc, "Beaker");
 
     final ProfilesDatabaseType db1 =
-        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+        ProfilesDatabase.openWithAnonymousAccountDisabled(
+            account_providers, accountsDatabases(), f_pro);
+
     final ProfileType pr0 = db1.profiles().get(p0.id());
     final ProfileType pr1 = db1.profiles().get(p1.id());
     final ProfileType pr2 = db1.profiles().get(p2.id());
@@ -266,9 +281,9 @@ public abstract class ProfilesDatabaseContract {
     final File f_pro = new File(f_tmp, "profiles");
 
     final ProfilesDatabaseType db =
-        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountProviders(), accountsDatabases(), f_pro);
 
-    final AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+    final AccountProvider acc = fakeProvider("http://www.example.com/accounts0/");
 
     final ProfileType p0 = db.createProfile(acc, "Kermit");
     p0.preferencesUpdate(
@@ -289,9 +304,9 @@ public abstract class ProfilesDatabaseContract {
     final File f_pro = new File(f_tmp, "profiles");
 
     final ProfilesDatabaseType db =
-        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountProviders(), accountsDatabases(), f_pro);
 
-    final AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+    final AccountProvider acc = fakeProvider("http://www.example.com/accounts0/");
 
     final ProfileType p0 = db.createProfile(acc, "Kermit");
 
@@ -307,9 +322,9 @@ public abstract class ProfilesDatabaseContract {
     final File f_pro = new File(f_tmp, "profiles");
 
     final ProfilesDatabaseType db =
-        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountProviders(), accountsDatabases(), f_pro);
 
-    final AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+    final AccountProvider acc = fakeProvider("http://www.example.com/accounts0/");
 
     expected.expect(ProfileDatabaseException.class);
     expected.expectMessage(StringContains.containsString("Display name cannot be empty"));
@@ -323,9 +338,9 @@ public abstract class ProfilesDatabaseContract {
     final File f_pro = new File(f_tmp, "profiles");
 
     final ProfilesDatabaseType db0 =
-        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountProviders(), accountsDatabases(), f_pro);
 
-    final AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+    final AccountProvider acc = fakeProvider("http://www.example.com/accounts0/");
 
     final ProfileType p0 = db0.createProfile(acc, "Kermit");
 
@@ -342,9 +357,9 @@ public abstract class ProfilesDatabaseContract {
     final File f_pro = new File(f_tmp, "profiles");
 
     final ProfilesDatabaseType db0 =
-        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountProviders(), accountsDatabases(), f_pro);
 
-    final AccountProvider acc = fakeProvider("http://example.com/accounts0/");
+    final AccountProvider acc = fakeProvider("http://www.example.com/accounts0/");
 
     final ProfileType p0 = db0.createProfile(acc, "Kermit");
 
@@ -361,7 +376,7 @@ public abstract class ProfilesDatabaseContract {
 
     final ProfilesDatabaseType db0 =
         ProfilesDatabase.openWithAnonymousAccountEnabled(
-            accountsDatabases(), exampleAccountProvider(), f_pro);
+            accountProviders(), accountsDatabases(), exampleAccountProvider(), f_pro);
 
     Assert.assertEquals(1L, db0.profiles().size());
 
@@ -378,7 +393,7 @@ public abstract class ProfilesDatabaseContract {
 
     final ProfilesDatabaseType db0 =
         ProfilesDatabase.openWithAnonymousAccountEnabled(
-            accountsDatabases(), exampleAccountProvider(), f_pro);
+            accountProviders(), accountsDatabases(), exampleAccountProvider(), f_pro);
 
     expected.expect(ProfileAnonymousEnabledException.class);
     db0.setProfileCurrent(ProfileID.create(23));
@@ -391,11 +406,11 @@ public abstract class ProfilesDatabaseContract {
     final File f_pro = new File(f_tmp, "profiles");
 
     final ProfilesDatabaseType db0 =
-        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountProviders(), accountsDatabases(), f_pro);
     final AccountProvider acc0 =
-        fakeProvider("http://example.com/accounts0/");
+        fakeProvider("http://www.example.com/accounts0/");
     final AccountProvider acc1 =
-        fakeProvider("http://example.com/accounts1/");
+        fakeProvider("http://www.example.com/accounts1/");
 
     final ProfileType p0 = db0.createProfile(acc0, "Kermit");
     db0.setProfileCurrent(p0.id());
@@ -413,11 +428,11 @@ public abstract class ProfilesDatabaseContract {
     final File f_pro = new File(f_tmp, "profiles");
 
     final ProfilesDatabaseType db0 =
-        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountProviders(), accountsDatabases(), f_pro);
     final AccountProvider acc0 =
-        fakeProvider("http://example.com/accounts0/");
+        fakeProvider("http://www.example.com/accounts0/");
     final AccountProvider acc1 =
-        fakeProvider("http://example.com/accounts1/");
+        fakeProvider("http://www.example.com/accounts1/");
 
     final ProfileType p0 = db0.createProfile(acc0, "Kermit");
     db0.setProfileCurrent(p0.id());
@@ -433,9 +448,9 @@ public abstract class ProfilesDatabaseContract {
     final File f_pro = new File(f_tmp, "profiles");
 
     final ProfilesDatabaseType db0 =
-        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountProviders(), accountsDatabases(), f_pro);
     final AccountProvider acc0 =
-        fakeProvider("http://example.com/accounts0/");
+        fakeProvider("http://www.example.com/accounts0/");
 
     final ProfileType p0 = db0.createProfile(acc0, "Kermit");
     db0.setProfileCurrent(p0.id());
@@ -451,11 +466,11 @@ public abstract class ProfilesDatabaseContract {
     final File f_pro = new File(f_tmp, "profiles");
 
     final ProfilesDatabaseType db0 =
-        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountProviders(), accountsDatabases(), f_pro);
     final AccountProvider acc0 =
-        fakeProvider("http://example.com/accounts0/");
+        fakeProvider("http://www.example.com/accounts0/");
     final AccountProvider acc1 =
-        fakeProvider("http://example.com/accounts1/");
+        fakeProvider("http://www.example.com/accounts1/");
 
     final ProfileType p0 = db0.createProfile(acc0, "Kermit");
     db0.setProfileCurrent(p0.id());
@@ -472,11 +487,11 @@ public abstract class ProfilesDatabaseContract {
     final File f_pro = new File(f_tmp, "profiles");
 
     final ProfilesDatabaseType db0 =
-        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountProviders(), accountsDatabases(), f_pro);
     final AccountProvider acc0 =
-        fakeProvider("http://example.com/accounts0/");
+        fakeProvider("http://www.example.com/accounts0/");
     final AccountProvider acc1 =
-        fakeProvider("http://example.com/accounts1/");
+        fakeProvider("http://www.example.com/accounts1/");
 
     final ProfileType p0 = db0.createProfile(acc0, "Kermit");
     db0.setProfileCurrent(p0.id());
@@ -487,11 +502,11 @@ public abstract class ProfilesDatabaseContract {
 
   private static AccountProvider exampleAccountProvider() {
     return AccountProvider.builder()
-        .setCatalogURI(URI.create("http://example.com"))
+        .setCatalogURI(URI.create("http://www.example.com"))
         .setSupportEmail("postmaster@example.com")
         .setId(URI.create("urn:com.example"))
         .setMainColor("#eeeeee")
-        .setLogo(URI.create("http://example.com/logo.png"))
+        .setLogo(URI.create("http://www.example.com/logo.png"))
         .setSubtitle("Example Subtitle")
         .setDisplayName("Example Provider")
         .build();
@@ -504,11 +519,20 @@ public abstract class ProfilesDatabaseContract {
     final File f_pro = new File(f_tmp, "profiles");
 
     final ProfilesDatabaseType db0 =
-        ProfilesDatabase.openWithAnonymousAccountDisabled(accountsDatabases(), f_pro);
+        ProfilesDatabase.openWithAnonymousAccountDisabled(accountProviders(), accountsDatabases(), f_pro);
 
     expected.expect(ProfileAnonymousDisabledException.class);
     expected.expectMessage(StringContains.containsString("The anonymous profile is not enabled"));
     db0.anonymousProfile();
+  }
+
+  private AccountProviderCollectionType accountProviders() {
+    final AccountProvider p0 = fakeProvider("http://www.example.com/accounts0/");
+    final AccountProvider p1 = fakeProvider("http://www.example.com/accounts1/");
+    final SortedMap<URI, AccountProvider> providers = new TreeMap<>();
+    providers.put(p0.id(), p0);
+    providers.put(p1.id(), p1);
+    return AccountProviderCollection.create(p0, providers);
   }
 
   private static AccountProvider fakeProvider(final String provider_id) {
@@ -516,8 +540,8 @@ public abstract class ProfilesDatabaseContract {
         .setId(URI.create(provider_id))
         .setDisplayName("Fake Library")
         .setSubtitle("Imaginary books")
-        .setLogo(URI.create("http://example.com/logo.png"))
-        .setCatalogURI(URI.create("http://example.com/accounts0/feed.xml"))
+        .setLogo(URI.create("http://www.example.com/logo.png"))
+        .setCatalogURI(URI.create("http://www.example.com/accounts0/feed.xml"))
         .setSupportEmail("postmaster@example.com")
         .build();
   }

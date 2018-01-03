@@ -23,8 +23,9 @@ import com.io7m.junreachable.UnreachableCodeException;
 import org.nypl.simplified.app.BookCoverProviderType;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.accounts.AccountProvider;
+import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.book_database.BookID;
-import org.nypl.simplified.books.book_registry.BookEvent;
+import org.nypl.simplified.books.book_registry.BookStatusEvent;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
 import org.nypl.simplified.books.controller.BooksControllerType;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
@@ -72,28 +73,18 @@ public final class CatalogFeedWithoutGroups
   private final FeedLoaderType feed_loader;
   private final AtomicReference<Pair<Future<Unit>, URI>> loading;
   private final AtomicReference<OptionType<URI>> uri_next;
-  private final ObservableSubscriptionType<BookEvent> book_event_sub;
   private final BookRegistryReadableType books_registry;
   private final BooksControllerType books_controller;
-  private final AccountProvider account_provider;
   private final ProfilesControllerType profiles_controller;
+  private final AccountType account;
 
   /**
    * Construct a view.
-   *
-   * @param in_activity                The host activity
-   * @param in_book_cover_provider     A cover provider
-   * @param in_book_selection_listener A book selection listener
-   * @param in_book_registry           The books registry
-   * @param in_book_controller         The books controller
-   * @param in_profiles_controller     The profiles controller
-   * @param in_feed_loader             An asynchronous feed loader
-   * @param in_feed                    The current feed
    */
 
   public CatalogFeedWithoutGroups(
       final Activity in_activity,
-      final AccountProvider in_account_provider,
+      final AccountType in_account,
       final BookCoverProviderType in_book_cover_provider,
       final CatalogBookSelectionListenerType in_book_selection_listener,
       final BookRegistryReadableType in_book_registry,
@@ -104,8 +95,8 @@ public final class CatalogFeedWithoutGroups
 
     this.activity =
         NullCheck.notNull(in_activity, "Activity");
-    this.account_provider =
-        NullCheck.notNull(in_account_provider, "Account provider");
+    this.account =
+        NullCheck.notNull(in_account, "Account");
     this.book_cover_provider =
         NullCheck.notNull(in_book_cover_provider, "Cover provider");
     this.book_select_listener =
@@ -124,28 +115,18 @@ public final class CatalogFeedWithoutGroups
     this.uri_next = new AtomicReference<>(in_feed.getFeedNext());
     this.adapter = new ArrayAdapter<>(this.activity, 0, this.feed);
     this.loading = new AtomicReference<>();
-
-    this.book_event_sub = in_book_registry.bookEvents().subscribe(new ProcedureType<BookEvent>() {
-      @Override
-      public void call(final BookEvent event) {
-        onBookEvent(event);
-      }
-    });
   }
 
-  private void onBookEvent(final BookEvent event) {
+  /**
+   * Deliver a book status event to the view.
+   *
+   * @param event The event
+   */
+
+  public void onBookEvent(final BookStatusEvent event) {
     if (this.feed.containsID(event.book())) {
       LOG.debug("update: updated feed entry");
-
-      UIThread.runOnUIThread(
-          new Runnable() {
-            @Override
-            public void run() {
-              adapter.notifyDataSetChanged();
-            }
-          });
-
-      throw new UnimplementedCodeException();
+      UIThread.runOnUIThread(adapter::notifyDataSetChanged);
     }
   }
 
@@ -196,7 +177,7 @@ public final class CatalogFeedWithoutGroups
     } else {
       cv = new CatalogFeedBookCellView(
           this.activity,
-          this.account_provider,
+          this.account,
           this.book_cover_provider,
           this.books_controller,
           this.profiles_controller,
@@ -205,7 +186,6 @@ public final class CatalogFeedWithoutGroups
 
     cv.viewConfigure(e, this.book_select_listener);
     return cv;
-
   }
 
   @Override
@@ -359,58 +339,12 @@ public final class CatalogFeedWithoutGroups
   }
 
   @Override
-  public void registerDataSetObserver(
-      final @Nullable DataSetObserver observer) {
+  public void registerDataSetObserver(final @Nullable DataSetObserver observer) {
     this.adapter.registerDataSetObserver(observer);
   }
 
   @Override
-  public void unregisterDataSetObserver(
-      final @Nullable DataSetObserver observer) {
+  public void unregisterDataSetObserver(final @Nullable DataSetObserver observer) {
     this.adapter.unregisterDataSetObserver(observer);
-  }
-
-  private boolean updateFetchDatabaseSnapshot(
-      final BookID current_id,
-      final BookDatabaseReadableType db) {
-
-//    final OptionType<BookDatabaseEntrySnapshot> snap_opt =
-//        db.databaseGetEntrySnapshot(current_id);
-//
-//    LOG.debug("database snapshot is {}", snap_opt);
-//
-//    if (snap_opt.isSome()) {
-//      final Some<BookDatabaseEntrySnapshot> some =
-//          (Some<BookDatabaseEntrySnapshot>) snap_opt;
-//      final BookDatabaseEntrySnapshot snap = some.get();
-//      final FeedEntryType re =
-//          FeedEntryOPDS.fromOPDSAcquisitionFeedEntry(snap.getEntry());
-//      this.feed.updateEntry(re);
-//      return true;
-//    }
-//
-//    return false;
-
-    throw new UnimplementedCodeException();
-  }
-
-  private boolean updateCheckForRevocationEntry(
-      final BookID current_id,
-      final BooksStatusCacheType status_cache) {
-
-//    final OptionType<FeedEntryType> revoke_opt =
-//        status_cache.booksRevocationFeedEntryGet(current_id);
-//
-//    LOG.debug("revocation entry update is {}", revoke_opt);
-//
-//    if (revoke_opt.isSome()) {
-//      final Some<FeedEntryType> some = (Some<FeedEntryType>) revoke_opt;
-//      this.feed.updateEntry(some.get());
-//      return true;
-//    }
-//
-//    return false;
-
-    throw new UnimplementedCodeException();
   }
 }

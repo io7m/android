@@ -22,6 +22,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
 import com.io7m.jfunctional.None;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
@@ -41,6 +42,9 @@ import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountEventLogin;
 import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountProviderAuthenticationDescription;
+import org.nypl.simplified.books.accounts.AccountProviderCollection;
+import org.nypl.simplified.books.accounts.AccountType;
+import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentProviderException;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.core.AuthenticationDocumentType;
@@ -86,6 +90,7 @@ public final class LoginDialog extends DialogFragment {
   private ProcedureType<String> on_login_failure;
   private Runnable on_login_cancelled;
   private ListenableFuture<AccountEventLogin> login_task;
+  private AccountType account;
 
   /**
    * Construct a new dialog.
@@ -127,9 +132,6 @@ public final class LoginDialog extends DialogFragment {
    * the results of the login operation. Any strings passed to the callbacks will be properly
    * localized and do not require further processing.
    *
-   * @param text               The initial dialog text.
-   * @param barcode            The barcode that will be used to log in
-   * @param pin                The PIN that will be used to log in
    * @param on_login_success   A function evaluated on login success
    * @param on_login_cancelled A function evaluated on login cancellation
    * @param on_login_failure   A function evaluated on login failure
@@ -139,26 +141,19 @@ public final class LoginDialog extends DialogFragment {
   public static LoginDialog newDialog(
       final ProfilesControllerType controller,
       final String text,
-      final AccountProvider provider,
-      final AccountBarcode barcode,
-      final AccountPIN pin,
+      final AccountType account,
       final Runnable on_login_success,
       final Runnable on_login_cancelled,
       final ProcedureType<String> on_login_failure) {
 
     NullCheck.notNull(controller, "Controller");
     NullCheck.notNull(text, "Text");
-    NullCheck.notNull(provider, "Provider");
-    NullCheck.notNull(barcode, "Barcode");
-    NullCheck.notNull(pin, "PIN");
+    NullCheck.notNull(account, "Account");
     NullCheck.notNull(on_login_success, "Success");
     NullCheck.notNull(on_login_cancelled, "Cancel");
     NullCheck.notNull(on_login_failure, "Failure");
 
-    final OptionType<AccountProviderAuthenticationDescription> authentication_opt =
-        provider.authentication();
-
-    return authentication_opt.accept(
+    return account.provider().authentication().accept(
         new OptionVisitorType<AccountProviderAuthenticationDescription, LoginDialog>() {
           @Override
           public LoginDialog none(final None<AccountProviderAuthenticationDescription> none) {
@@ -172,14 +167,19 @@ public final class LoginDialog extends DialogFragment {
 
             final Bundle b = new Bundle();
             b.putSerializable(TEXT_ID, text);
-            b.putSerializable(PIN_ID, pin.value());
-            b.putSerializable(BARCODE_ID, barcode.value());
+            b.putSerializable(PIN_ID, "");
+            b.putSerializable(BARCODE_ID, "");
             b.putSerializable(PIN_ALLOWS_LETTERS, authentication.passCodeMayContainLetters());
             b.putSerializable(PIN_LENGTH, authentication.passCodeLength());
 
             final LoginDialog d = new LoginDialog();
             d.setArguments(b);
-            d.setRequiredArguments(controller, on_login_success, on_login_failure, on_login_cancelled);
+            d.setRequiredArguments(
+                controller,
+                account,
+                on_login_success,
+                on_login_failure,
+                on_login_cancelled);
             return d;
           }
         });
@@ -187,13 +187,21 @@ public final class LoginDialog extends DialogFragment {
 
   private void setRequiredArguments(
       final ProfilesControllerType controller,
+      final AccountType account,
       final Runnable on_login_success,
       final ProcedureType<String> on_login_failure,
       final Runnable on_login_cancelled) {
-    this.controller = NullCheck.notNull(controller, "controller");
-    this.on_login_success = NullCheck.notNull(on_login_success, "On login success");
-    this.on_login_failure = NullCheck.notNull(on_login_failure, "On login failure");
-    this.on_login_cancelled = NullCheck.notNull(on_login_cancelled, "On login cancelled");
+
+    this.controller =
+        NullCheck.notNull(controller, "controller");
+    this.account =
+        NullCheck.notNull(account, "Account");
+    this.on_login_success =
+        NullCheck.notNull(on_login_success, "On login success");
+    this.on_login_failure =
+        NullCheck.notNull(on_login_failure, "On login failure");
+    this.on_login_cancelled =
+        NullCheck.notNull(on_login_cancelled, "On login cancelled");
   }
 
   private void onAccountLoginFailure(
@@ -323,10 +331,9 @@ public final class LoginDialog extends DialogFragment {
               .setAuthenticationProvider(provider)
               .build();
 
-      this.login_task = this.controller.profileAccountLogin(creds);
-      this.login_task.addListener(
-          () -> onLoginTaskFinished(login_task),
-          Simplified.getBackgroundTaskExecutor());
+      final ListeningExecutorService exec = Simplified.getBackgroundTaskExecutor();
+      this.login_task = this.controller.profileAccountLogin(this.account.id(), creds);
+      this.login_task.addListener(() -> onLoginTaskFinished(login_task), exec);
     });
 
     in_login_cancel_button.setOnClickListener(v -> {
@@ -474,15 +481,15 @@ public final class LoginDialog extends DialogFragment {
 
   /**
    * Transform the given login error code to a localized message.
+   *
    * @param resources The resources
-   * @param error The error code
+   * @param error     The error code
    * @return A localized message
    */
 
   public static String loginErrorCodeToLocalizedMessage(
       final Resources resources,
-      final AccountLoginFailed.ErrorCode error)
-  {
+      final AccountLoginFailed.ErrorCode error) {
     NullCheck.notNull(resources, "Resources");
     NullCheck.notNull(error, "Error");
 

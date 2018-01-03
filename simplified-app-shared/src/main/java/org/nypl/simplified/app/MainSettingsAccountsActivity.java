@@ -199,7 +199,7 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
       UIThread.checkIsUIThread();
 
       final AccountProvider account_provider =
-          Simplified.getProfilesController().profileAccountProviderCurrent();
+          Simplified.getProfilesController().profileCurrent().account(account).provider();
 
       final TextView title_text =
           NullCheck.notNull(current_account_view.findViewById(android.R.id.text1));
@@ -217,7 +217,7 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
           this.getAssets(), icon_view, account_provider.logo());
 
       current_account_view.setOnClickListener(view -> openAccountSettings(account));
-    } catch (final ProfileNoneCurrentException | ProfileNonexistentAccountProviderException e) {
+    } catch (final ProfileNoneCurrentException | AccountsDatabaseNonexistentException e) {
       throw new IllegalStateException(e);
     }
   }
