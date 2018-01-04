@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnLayoutChangeListener;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.webkit.WebSettings;
@@ -25,7 +24,6 @@ import com.io7m.jfunctional.OptionVisitorType;
 import com.io7m.jfunctional.Some;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
-import com.io7m.jnull.Nullable;
 import com.io7m.junreachable.UnimplementedCodeException;
 import com.io7m.junreachable.UnreachableCodeException;
 
@@ -35,15 +33,12 @@ import org.nypl.simplified.app.ScreenSizeInformationType;
 import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.assertions.Assertions;
-import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.book_registry.BookStatusEvent;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
 import org.nypl.simplified.books.book_registry.BookWithStatus;
 import org.nypl.simplified.books.controller.BooksControllerType;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
-import org.nypl.simplified.books.core.BookDatabaseEntrySnapshot;
-import org.nypl.simplified.books.core.BookDatabaseReadableType;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.core.BookStatusDownloadFailed;
 import org.nypl.simplified.books.core.BookStatusDownloadInProgress;
@@ -64,11 +59,7 @@ import org.nypl.simplified.books.core.BookStatusRequestingRevoke;
 import org.nypl.simplified.books.core.BookStatusRevokeFailed;
 import org.nypl.simplified.books.core.BookStatusRevoked;
 import org.nypl.simplified.books.core.BookStatusType;
-import org.nypl.simplified.books.core.BooksStatusCacheType;
-import org.nypl.simplified.books.feeds.FeedEntryCorrupt;
-import org.nypl.simplified.books.feeds.FeedEntryMatcherType;
 import org.nypl.simplified.books.feeds.FeedEntryOPDS;
-import org.nypl.simplified.books.feeds.FeedEntryType;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.opds.core.OPDSAcquisition;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
@@ -489,9 +480,10 @@ public final class CatalogBookDetailView
     this.book_download_buttons.addView(
         new CatalogBookReadButton(
             this.activity,
+            this.books_controller,
+            this.account,
             d.getID(),
-            this.entry.get(),
-            this.books_controller),
+            this.entry.get()),
         0);
 
     if (d.isReturnable()) {
@@ -504,7 +496,13 @@ public final class CatalogBookDetailView
 
       this.book_download_buttons.addView(revoke, 1);
     } else if (this.entry.get().getFeedEntry().getAvailability() instanceof OPDSAvailabilityOpenAccess) {
-      this.book_download_buttons.addView(new CatalogBookDeleteButton(this.activity, d.getID()), 1);
+      this.book_download_buttons.addView(
+          new CatalogBookDeleteButton(
+              this.activity,
+              this.books_controller,
+              this.account,
+              d.getID()),
+          1);
     }
 
     this.book_download_buttons.setVisibility(View.VISIBLE);
@@ -547,7 +545,7 @@ public final class CatalogBookDetailView
     final Button retry = NullCheck.notNull(this.book_downloading_failed_retry);
 
     dismiss.setOnClickListener(
-        view -> this.books_controller.bookBorrowFailedDismiss(f.getID(), this.account));
+        view -> this.books_controller.bookBorrowFailedDismiss(this.account, f.getID()));
 
     /*
      * Manually construct an acquisition controller for the retry button.

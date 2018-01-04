@@ -14,28 +14,28 @@ public interface BooksControllerType {
   /**
    * Attempt to borrow the given book.
    *
-   * @param id          The ID of the book
    * @param account     The account that will receive the book
+   * @param id          The ID of the book
    * @param acquisition The acquisition entry for the book
    * @param entry       The OPDS feed entry for the book
    */
 
   void bookBorrow(
-      BookID id,
       AccountType account,
+      BookID id,
       OPDSAcquisition acquisition,
       OPDSAcquisitionFeedEntry entry);
 
   /**
    * Dismiss a failed book borrowing.
    *
-   * @param id      The ID of the book
    * @param account The account that failed to receive the book
+   * @param id      The ID of the book
    */
 
   void bookBorrowFailedDismiss(
-      BookID id,
-      AccountType account);
+      AccountType account,
+      BookID id);
 
   /**
    * Sync all books for the given account.
@@ -49,11 +49,24 @@ public interface BooksControllerType {
   /**
    * Revoke the given book.
    *
-   * @param book_id The ID of the book
    * @param account The account
+   * @param book_id The ID of the book
    */
 
   void bookRevoke(
-      BookID book_id,
-      AccountType account);
+      AccountType account,
+      BookID book_id);
+
+
+  /**
+   * Delete the given book.
+   *
+   * @param account The account
+   * @param book_id The ID of the book
+   */
+
+  void bookDelete(
+      AccountType account,
+      BookID book_id);
+
 }

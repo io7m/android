@@ -454,15 +454,23 @@ final class BookBorrowTask implements Callable<Unit> {
 
       if (ACSM_CONTENT_TYPE.equals(content_type)) {
         this.runFulfillACSM(file);
-      } else {
-
-        /*
-         * Otherwise, assume it's an EPUB and keep it.
-         */
-
-        final OptionType<AdobeAdeptLoan> none = Option.none();
-        this.saveEPUBAndRights(file, none);
+        return;
       }
+
+      /*
+       * Otherwise, assume it's an EPUB and keep it.
+       */
+
+      final OptionType<AdobeAdeptLoan> none = Option.none();
+      this.saveEPUBAndRights(file, none);
+
+      try {
+        final Book book = this.database_entry.book();
+        this.book_registry.update(BookWithStatus.create(book, BookStatus.fromBook(book)));
+      } finally {
+        this.downloadRemoveFromCurrent();
+      }
+
     } catch (final Exception e) {
       LOG.error("onDownloadCompleted: exception: ", e);
       this.downloadFailed(Option.some(e));

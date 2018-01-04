@@ -7,19 +7,15 @@ import android.view.View.OnClickListener;
 import com.io7m.jfunctional.None;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionVisitorType;
-import com.io7m.jfunctional.Pair;
 import com.io7m.jfunctional.Some;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.simplified.app.LoginDialog;
-import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.books.accounts.AccountID;
-import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
-import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentProviderException;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
 import org.nypl.simplified.books.book_registry.BookWithStatus;
@@ -28,7 +24,6 @@ import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
-import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 import org.nypl.simplified.books.profiles.ProfileReadableType;
 import org.nypl.simplified.opds.core.OPDSAcquisition;
 import org.slf4j.Logger;
@@ -115,7 +110,7 @@ public final class CatalogAcquisitionButtonController implements OnClickListener
       case ACQUISITION_BORROW:
       case ACQUISITION_GENERIC:
       case ACQUISITION_OPEN_ACCESS: {
-        this.books.bookBorrow(this.id, account, this.acquisition, this.entry.getFeedEntry());
+        this.books.bookBorrow(account, this.id, this.acquisition, this.entry.getFeedEntry());
         return;
       }
       case ACQUISITION_BUY:

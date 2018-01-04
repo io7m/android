@@ -1,5 +1,6 @@
 package org.nypl.simplified.books.book_database;
 
+import com.io7m.jfunctional.Option;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 
@@ -403,6 +404,27 @@ public final class BookDatabase implements BookDatabaseType {
 
         try {
           DirectoryUtilities.directoryDelete(this.book_dir);
+        } catch (final IOException e) {
+          throw new BookDatabaseException(e.getMessage(), Collections.singletonList(e));
+        }
+      }
+    }
+
+    @Override
+    public void deleteEPUB() throws BookDatabaseException {
+      synchronized (this.book_lock) {
+        Assertions.checkPrecondition(!this.deleted, "Entry must not have been deleted");
+
+        final File file_target =
+            new File(this.book_dir, "book.epub");
+
+        try {
+          DirectoryUtilities.directoryCreate(this.book_dir);
+          FileUtilities.fileDelete(file_target);
+          this.book =
+              this.book.toBuilder()
+                  .setFile(Option.none())
+                  .build();
         } catch (final IOException e) {
           throw new BookDatabaseException(e.getMessage(), Collections.singletonList(e));
         }

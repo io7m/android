@@ -49,8 +49,19 @@ public interface BookDatabaseEntryType {
 
   /**
    * Delete the entry.
+   *
    * @throws BookDatabaseException On errors
    */
 
-  void delete() throws BookDatabaseException;
+  void delete()
+      throws BookDatabaseException;
+
+  /**
+   * Delete the EPUB file.
+   *
+   * @throws BookDatabaseException On errors
+   */
+
+  void deleteEPUB()
+      throws BookDatabaseException;
 }

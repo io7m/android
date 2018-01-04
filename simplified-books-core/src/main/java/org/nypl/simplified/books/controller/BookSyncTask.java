@@ -210,7 +210,7 @@ final class BookSyncTask implements Callable<Unit> {
 
     for (final BookID revoke_id : revoking) {
       LOG.debug("[{}] revoking", revoke_id.brief());
-      this.books_controller.bookRevoke(revoke_id, this.account);
+      this.books_controller.bookRevoke(this.account, revoke_id);
     }
   }
 

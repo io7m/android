@@ -304,13 +304,13 @@ public final class Controller implements BooksControllerType, ProfilesController
 
   @Override
   public void bookBorrow(
-      final BookID id,
       final AccountType account,
+      final BookID id,
       final OPDSAcquisition acquisition,
       final OPDSAcquisitionFeedEntry entry) {
 
-    NullCheck.notNull(id, "Book ID");
     NullCheck.notNull(account, "Account");
+    NullCheck.notNull(id, "Book ID");
     NullCheck.notNull(acquisition, "Acquisition");
     NullCheck.notNull(entry, "Entry");
 
@@ -327,11 +327,11 @@ public final class Controller implements BooksControllerType, ProfilesController
 
   @Override
   public void bookBorrowFailedDismiss(
-      final BookID id,
-      final AccountType account) {
+      final AccountType account,
+      final BookID id) {
 
-    NullCheck.notNull(id, "Book ID");
     NullCheck.notNull(account, "Account");
+    NullCheck.notNull(id, "Book ID");
 
     this.exec.submit(new BookBorrowFailedDismissTask(
         this.downloader,
@@ -356,15 +356,29 @@ public final class Controller implements BooksControllerType, ProfilesController
 
   @Override
   public void bookRevoke(
-      final BookID book_id,
-      final AccountType account) {
+      final AccountType account,
+      final BookID book_id) {
 
-    NullCheck.notNull(book_id, "Book ID");
     NullCheck.notNull(account, "Account");
+    NullCheck.notNull(book_id, "Book ID");
 
     this.exec.submit(new BookRevokeTask(
         account,
         this.book_registry,
         this.http));
+  }
+
+  @Override
+  public void bookDelete(
+      final AccountType account,
+      final BookID book_id) {
+
+    NullCheck.notNull(account, "Account");
+    NullCheck.notNull(book_id, "Book ID");
+
+    this.exec.submit(new BookDeleteTask(
+        account,
+        this.book_registry,
+        book_id));
   }
 }

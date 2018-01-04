@@ -327,9 +327,10 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
     this.cell_buttons.addView(
         new CatalogBookReadButton(
             this.activity,
+            this.books_controller,
+            this.account,
             book_id,
-            this.entry.get(),
-            this.books_controller),
+            this.entry.get()),
         0);
 
     return Unit.unit();
@@ -355,7 +356,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
     this.cell_downloading_failed_title.setText(oe.getTitle());
     this.cell_downloading_failed_dismiss.setOnClickListener(
-        view -> this.books_controller.bookBorrowFailedDismiss(f.getID(), this.account));
+        view -> this.books_controller.bookBorrowFailedDismiss(this.account, f.getID()));
 
     /*
      * Manually construct an acquisition controller for the retry button.
