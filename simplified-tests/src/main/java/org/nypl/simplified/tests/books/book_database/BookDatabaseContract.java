@@ -73,11 +73,11 @@ public abstract class BookDatabaseContract {
             .build();
 
     final BookID id0 = BookID.create("a");
-    db0.create(id0, entry0);
+    db0.createOrUpdate(id0, entry0);
     final BookID id1 = BookID.create("b");
-    db0.create(id1, entry1);
+    db0.createOrUpdate(id1, entry1);
     final BookID id2 = BookID.create("c");
-    db0.create(id2, entry2);
+    db0.createOrUpdate(id2, entry2);
 
     final BookDatabaseType db1 =
         BookDatabase.open(parser, serializer, AccountID.create(1), directory);

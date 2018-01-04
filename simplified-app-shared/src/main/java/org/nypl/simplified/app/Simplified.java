@@ -591,6 +591,7 @@ public final class Simplified extends Application {
         this.exec_books,
         this.http,
         this.feed_parser,
+        this.feed_loader,
         this.downloader,
         this.profiles,
         this.book_registry,

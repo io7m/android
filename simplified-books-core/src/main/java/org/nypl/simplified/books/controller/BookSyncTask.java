@@ -169,10 +169,10 @@ final class BookSyncTask implements Callable<Unit> {
     for (final OPDSAcquisitionFeedEntry opds_entry : entries) {
       final BookID book_id = BookIDs.newFromOPDSEntry(opds_entry);
       received.add(book_id);
+      LOG.debug("[{}] updating", book_id.brief());
 
       try {
-        final BookDatabaseEntryType db_entry = book_database.entry(book_id);
-        db_entry.writeOPDSEntry(opds_entry);
+        book_database.createOrUpdate(book_id, opds_entry);
       } catch (final BookDatabaseException e) {
         LOG.error("[{}] unable to update database entry: ", book_id.brief(), e);
       }
@@ -187,9 +187,10 @@ final class BookSyncTask implements Callable<Unit> {
     final Set<BookID> revoking = new HashSet<BookID>(existing.size());
     for (final BookID existing_id : existing) {
       try {
+        LOG.debug("[{}] deleting", existing_id.brief());
+
         if (!received.contains(existing_id)) {
           final BookDatabaseEntryType db_entry = book_database.entry(existing_id);
-
           final OPDSAvailabilityType a = db_entry.book().entry().getAvailability();
           if (a instanceof OPDSAvailabilityRevoked) {
             revoking.add(existing_id);
@@ -208,6 +209,7 @@ final class BookSyncTask implements Callable<Unit> {
      */
 
     for (final BookID revoke_id : revoking) {
+      LOG.debug("[{}] revoking", revoke_id.brief());
       this.books_controller.bookRevoke(revoke_id, this.account);
     }
   }

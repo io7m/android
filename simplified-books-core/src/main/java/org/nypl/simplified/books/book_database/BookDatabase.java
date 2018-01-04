@@ -198,7 +198,7 @@ public final class BookDatabase implements BookDatabaseType {
   }
 
   @Override
-  public BookDatabaseEntryType create(
+  public BookDatabaseEntryType createOrUpdate(
       final BookID id,
       final OPDSAcquisitionFeedEntry feed_entry) throws BookDatabaseException {
 
