@@ -112,7 +112,7 @@ public interface ProfilesControllerType {
    * Attempt to login using the given account of the current profile. The login is attempted
    * using the given credentials.
    *
-   * @param account The account ID
+   * @param account     The account ID
    * @param credentials The credentials
    * @return A future that returns a login event
    */
@@ -191,4 +191,17 @@ public interface ProfilesControllerType {
    */
 
   ListenableFuture<AccountEventLogout> profileAccountLogout();
+
+  /**
+   * Determine the root URI of the catalog based on the current account of the current profile,
+   * and any age-related settings in the current profile. For example, some accounts require different
+   * root catalog URIs based on whether or not the reader is over 13.
+   *
+   * @return The calculated catalog root URI
+   * @throws ProfileNoneCurrentException If the anonymous profile is disabled and no profile has been selected
+   * @see #profileSelect(ProfileID)
+   * @see #profileAnonymousEnabled()
+   */
+
+  URI profileAccountCurrentCatalogRootURI() throws ProfileNoneCurrentException;
 }

@@ -46,6 +46,7 @@ import org.nypl.simplified.app.catalog.MainHoldsActivity;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountType;
+import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.core.BooksFeedSelection;
 import org.nypl.simplified.books.feeds.FeedFacetPseudo;
 import org.nypl.simplified.books.core.LogUtilities;
@@ -146,8 +147,9 @@ public abstract class SimplifiedActivity extends Activity
     drawer_actions.put(
         PART_CATALOG, b -> {
           try {
-            final AccountType account =
-                Simplified.getProfilesController().profileAccountCurrent();
+            final ProfilesControllerType profiles = Simplified.getProfilesController();
+            final AccountType account = profiles.profileAccountCurrent();
+
             final ImmutableStack<CatalogFeedArgumentsType> empty =
                 ImmutableStack.empty();
             final CatalogFeedArgumentsRemote remote =
@@ -155,7 +157,7 @@ public abstract class SimplifiedActivity extends Activity
                     false,
                     NullCheck.notNull(empty),
                     NullCheck.notNull(resources.getString(R.string.feature_app_name)),
-                    account.provider().catalogURI(),
+                    profiles.profileAccountCurrentCatalogRootURI(),
                     false);
             CatalogFeedActivity.setActivityArguments(b, remote);
             return Unit.unit();

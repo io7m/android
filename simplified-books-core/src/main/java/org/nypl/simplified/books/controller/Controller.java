@@ -5,6 +5,9 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.io7m.jfunctional.FunctionType;
+import com.io7m.jfunctional.None;
+import com.io7m.jfunctional.OptionVisitorType;
+import com.io7m.jfunctional.Some;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 
@@ -30,6 +33,7 @@ import org.nypl.simplified.books.profiles.ProfileID;
 import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
 import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 import org.nypl.simplified.books.profiles.ProfileReadableType;
+import org.nypl.simplified.books.profiles.ProfileType;
 import org.nypl.simplified.books.profiles.ProfilesDatabaseType;
 import org.nypl.simplified.books.profiles.ProfilesDatabaseType.AnonymousProfileEnabled;
 import org.nypl.simplified.downloader.core.DownloadType;
@@ -273,6 +277,29 @@ public final class Controller implements BooksControllerType, ProfilesController
         this.book_registry,
         this.account_events
     ));
+  }
+
+  @Override
+  public URI profileAccountCurrentCatalogRootURI()
+      throws ProfileNoneCurrentException {
+
+    final ProfileType profile = this.profiles.currentProfileUnsafe();
+    final AccountType account = profile.accountCurrent();
+
+    return profile.preferences().dateOfBirth().accept(new OptionVisitorType<LocalDate, URI>() {
+      @Override
+      public URI none(final None<LocalDate> none) {
+        return account.provider().catalogURI();
+      }
+
+      @Override
+      public URI some(final Some<LocalDate> some) {
+        final LocalDate now = LocalDate.now();
+        final LocalDate then = some.get();
+        final int age = now.getYear() - then.getYear();
+        return account.provider().catalogURIForAge(age);
+      }
+    });
   }
 
   @Override

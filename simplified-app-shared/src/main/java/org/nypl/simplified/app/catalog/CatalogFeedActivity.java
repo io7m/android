@@ -402,7 +402,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
           true,
           ImmutableStack.empty(),
           NullCheck.notNull(rr.getString(R.string.feature_app_name)),
-          Simplified.getProfilesController().profileAccountCurrent().provider().catalogURI(),
+          Simplified.getProfilesController().profileAccountCurrentCatalogRootURI(),
           false);
     } catch (final ProfileNoneCurrentException e) {
       throw new IllegalStateException(e);
