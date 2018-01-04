@@ -575,15 +575,6 @@ public final class Simplified extends Application {
       throw new IllegalStateException("Could not initialize profile database", e);
     }
 
-    LOG.debug("initializing book controller");
-    this.book_controller = Controller.createBookController(
-        this.exec_books,
-        this.http,
-        this.downloader,
-        this.profiles,
-        this.book_registry,
-        ignored -> this.account_providers);
-
     LOG.debug("initializing feed loader");
     this.feed_parser = createFeedParser();
     this.feed_search_parser = OPDSSearchParser.newParser();
@@ -594,6 +585,16 @@ public final class Simplified extends Application {
         this.feed_parser,
         this.feed_transport,
         this.feed_search_parser);
+
+    LOG.debug("initializing book controller");
+    this.book_controller = Controller.createBookController(
+        this.exec_books,
+        this.http,
+        this.feed_parser,
+        this.downloader,
+        this.profiles,
+        this.book_registry,
+        ignored -> this.account_providers);
 
     LOG.debug("initializing network connectivity checker");
     this.network_connectivity = new NetworkConnectivity(this);

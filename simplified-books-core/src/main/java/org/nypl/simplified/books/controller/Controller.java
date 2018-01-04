@@ -5,9 +5,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.io7m.jfunctional.FunctionType;
-import com.io7m.jfunctional.None;
-import com.io7m.jfunctional.OptionVisitorType;
-import com.io7m.jfunctional.Some;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 
@@ -42,14 +39,13 @@ import org.nypl.simplified.observable.ObservableReadableType;
 import org.nypl.simplified.observable.ObservableType;
 import org.nypl.simplified.opds.core.OPDSAcquisition;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
+import org.nypl.simplified.opds.core.OPDSFeedParserType;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-
-import static com.io7m.jfunctional.Unit.unit;
 
 /**
  * The default controller implementation.
@@ -65,11 +61,13 @@ public final class Controller implements BooksControllerType, ProfilesController
   private final HTTPType http;
   private final ObservableType<AccountEvent> account_events;
   private final ConcurrentHashMap<BookID, DownloadType> downloads;
+  private final OPDSFeedParserType feed_parser;
   private final DownloaderType downloader;
 
   private Controller(
       final ExecutorService in_exec,
       final HTTPType in_http,
+      final OPDSFeedParserType in_feed_parser,
       final DownloaderType in_downloader,
       final ProfilesDatabaseType in_profiles,
       final BookRegistryType in_book_registry,
@@ -79,6 +77,8 @@ public final class Controller implements BooksControllerType, ProfilesController
         MoreExecutors.listeningDecorator(NullCheck.notNull(in_exec, "Executor"));
     this.http =
         NullCheck.notNull(in_http, "HTTP");
+    this.feed_parser =
+        NullCheck.notNull(in_feed_parser, "Feed parser");
     this.downloader =
         NullCheck.notNull(in_downloader, "Downloader");
     this.profiles =
@@ -96,6 +96,7 @@ public final class Controller implements BooksControllerType, ProfilesController
   public static Controller createBookController(
       final ExecutorService in_exec,
       final HTTPType in_http,
+      final OPDSFeedParserType in_feed_parser,
       final DownloaderType in_downloader,
       final ProfilesDatabaseType in_profiles,
       final BookRegistryType in_book_registry,
@@ -104,6 +105,7 @@ public final class Controller implements BooksControllerType, ProfilesController
     return new Controller(
         in_exec,
         in_http,
+        in_feed_parser,
         in_downloader,
         in_profiles,
         in_book_registry,
@@ -171,6 +173,7 @@ public final class Controller implements BooksControllerType, ProfilesController
       final AccountAuthenticationCredentials credentials) {
     NullCheck.notNull(credentials, "Credentials");
     return this.exec.submit(new ProfileAccountLoginTask(
+        this,
         this.http,
         this.profiles,
         this.account_events,
@@ -185,6 +188,7 @@ public final class Controller implements BooksControllerType, ProfilesController
     NullCheck.notNull(account, "Account");
     NullCheck.notNull(credentials, "Credentials");
     return this.exec.submit(new ProfileAccountLoginTask(
+        this,
         this.http,
         this.profiles,
         this.account_events,
@@ -300,5 +304,32 @@ public final class Controller implements BooksControllerType, ProfilesController
         account.bookDatabase(),
         this.book_registry,
         id));
+  }
+
+  @Override
+  public void booksSync(final AccountType account) {
+
+    NullCheck.notNull(account, "Account");
+
+    this.exec.submit(new BookSyncTask(
+        this,
+        account,
+        this.book_registry,
+        this.http,
+        this.feed_parser));
+  }
+
+  @Override
+  public void bookRevoke(
+      final BookID book_id,
+      final AccountType account) {
+
+    NullCheck.notNull(book_id, "Book ID");
+    NullCheck.notNull(account, "Account");
+
+    this.exec.submit(new BookRevokeTask(
+        account,
+        this.book_registry,
+        this.http));
   }
 }

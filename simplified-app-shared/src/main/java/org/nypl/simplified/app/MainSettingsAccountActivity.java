@@ -68,7 +68,9 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity {
 
   public static final String ACCOUNT_ID =
       "org.nypl.simplified.app.MainSettingsAccountActivity.account_id";
+
   private static final Logger LOG = LogUtilities.getLog(MainSettingsActivity.class);
+
   private TextView account_name_text;
   private TextView account_subtitle_text;
   private ImageView account_icon;
@@ -87,7 +89,6 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity {
   private TableRow privacy;
   private TableRow license;
   private AccountType account;
-  private AccountProvider account_provider;
   private ObservableSubscriptionType<AccountEvent> account_event_subscription;
 
   /**
@@ -103,25 +104,16 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity {
    * activity.
    */
 
-  private static Pair<AccountType, AccountProvider> getAccountAndProvider(final Bundle extras) {
+  private static AccountType getAccount(final Bundle extras) {
 
     try {
-      final AccountType account;
       final ProfileReadableType profile = Simplified.getProfilesController().profileCurrent();
-
       if (extras != null && extras.containsKey(ACCOUNT_ID)) {
         final AccountID account_id = (AccountID) extras.getSerializable(ACCOUNT_ID);
-        account = NullCheck.notNull(profile.accounts().get(account_id), "Account");
+        return NullCheck.notNull(profile.accounts().get(account_id), "Account");
       } else {
-        account = profile.accountCurrent();
+        return profile.accountCurrent();
       }
-
-      final AccountProvider provider =
-          Simplified.getAccountProviders()
-              .providers()
-              .get(account.provider());
-
-      return Pair.pair(account, provider);
     } catch (final ProfileNoneCurrentException e) {
       throw new IllegalStateException(e);
     }
@@ -167,7 +159,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity {
 
     if (item.getItemId() == R.id.show_eula) {
       final Intent eula_intent = new Intent(this, MainEULAActivity.class);
-      this.account_provider.eula().map_(eula_uri -> {
+      this.account.provider().eula().map_(eula_uri -> {
         final Bundle b = new Bundle();
         MainEULAActivity.setActivityArguments(b, eula_uri.toString());
         eula_intent.putExtras(b);
@@ -201,10 +193,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity {
     content_area.requestLayout();
 
     final Bundle extras = getIntent().getExtras();
-    final Pair<AccountType, AccountProvider> pair = getAccountAndProvider(extras);
-
-    this.account = pair.getLeft();
-    this.account_provider = pair.getRight();
+    this.account = getAccount(extras);
 
     this.account_name_text =
         NullCheck.notNull(this.findViewById(android.R.id.text1));
@@ -252,14 +241,14 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity {
       bar.setHomeButtonEnabled(false);
     }
 
-    this.account_name_text.setText(this.account_provider.displayName());
-    this.account_subtitle_text.setText(this.account_provider.subtitle());
+    this.account_name_text.setText(this.account.provider().displayName());
+    this.account_subtitle_text.setText(this.account.provider().subtitle());
 
     /*
      * Show the "Support Center" section if the provider offers one.
      */
 
-    if (this.account_provider.supportEmail().isSome()) {
+    if (this.account.provider().supportEmail().isSome()) {
       this.report_issue.setVisibility(View.VISIBLE);
       this.report_issue.setOnClickListener(view -> {
         final Intent intent = new Intent(MainSettingsAccountActivity.this, ReportIssueActivity.class);
@@ -276,7 +265,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity {
      * Show the "Help Center" section if the provider offers one.
      */
 
-    if (this.account_provider.supportsHelpCenter()) {
+    if (this.account.provider().supportsHelpCenter()) {
       this.support_center.setVisibility(View.VISIBLE);
       this.support_center.setOnClickListener(view -> {
         final HSHelpStack stack = HSHelpStack.getInstance(MainSettingsAccountActivity.this);
@@ -292,7 +281,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity {
      * Show the "Card Creator" section if the provider supports it.
      */
 
-    if (this.account_provider.supportsCardCreator()) {
+    if (this.account.provider().supportsCardCreator()) {
       this.table_signup.setVisibility(View.VISIBLE);
       this.signup.setOnClickListener(v -> {
         final Intent cardcreator = new Intent(this, CardCreatorActivity.class);
@@ -322,7 +311,7 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity {
       this.pin_reveal.setVisibility(View.GONE);
     }
 
-    if (this.account_provider.authentication().isSome()) {
+    if (this.account.provider().authentication().isSome()) {
       this.table_with_code.setVisibility(View.VISIBLE);
       this.login.setVisibility(View.VISIBLE);
       this.configureLoginFieldVisibilityAndContents();
@@ -335,14 +324,14 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity {
      * Show the "Privacy Policy" section if the provider has one.
      */
 
-    if (this.account_provider.privacyPolicy().isSome()) {
+    if (this.account.provider().privacyPolicy().isSome()) {
       this.privacy.setVisibility(View.VISIBLE);
       this.privacy.setOnClickListener(view -> {
         final Intent intent = new Intent(MainSettingsAccountActivity.this, WebViewActivity.class);
         final Bundle b = new Bundle();
         WebViewActivity.setActivityArguments(
             b,
-            ((Some<URI>) this.account_provider.privacyPolicy()).get().toString(),
+            ((Some<URI>) this.account.provider().privacyPolicy()).get().toString(),
             "Privacy Policy",
             SimplifiedPart.PART_SETTINGS);
         intent.putExtras(b);
@@ -358,14 +347,14 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity {
      * Show the "Content License" section if the provider has one.
      */
 
-    if (this.account_provider.license().isSome()) {
+    if (this.account.provider().license().isSome()) {
       this.license.setVisibility(View.VISIBLE);
       this.license.setOnClickListener(view -> {
         final Intent intent = new Intent(MainSettingsAccountActivity.this, WebViewActivity.class);
         final Bundle b = new Bundle();
         WebViewActivity.setActivityArguments(
             b,
-            ((Some<URI>) this.account_provider.license()).get().toString(),
+            ((Some<URI>) this.account.provider().license()).get().toString(),
             "Content Licenses",
             SimplifiedPart.PART_SETTINGS);
         intent.putExtras(b);
@@ -407,14 +396,14 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity {
     if (event instanceof AccountEventLogin) {
       final AccountEventLogin event_login = (AccountEventLogin) event;
       return event_login.matchLogin(
-          this::onAccountEventLoginSucceeded, 
+          this::onAccountEventLoginSucceeded,
           this::onAccountEventLoginFailed);
     }
 
     if (event instanceof AccountEventLogout) {
       final AccountEventLogout event_logout = (AccountEventLogout) event;
       return event_logout.matchLogout(
-          this::onAccountEventLogoutSucceeded, 
+          this::onAccountEventLogoutSucceeded,
           this::onAccountEventLogoutFailed);
     }
 

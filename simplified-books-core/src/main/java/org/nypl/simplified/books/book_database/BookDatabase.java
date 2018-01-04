@@ -2,9 +2,9 @@ package org.nypl.simplified.books.book_database;
 
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
-import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.drm.core.AdobeAdeptLoan;
+import org.nypl.simplified.assertions.Assertions;
 import org.nypl.simplified.books.accounts.AccountID;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.files.DirectoryUtilities;
@@ -84,7 +84,7 @@ public final class BookDatabase implements BookDatabaseType {
     final ConcurrentSkipListMap<BookID, DatabaseEntry> entries = new ConcurrentSkipListMap<>();
 
     final List<Exception> errors = new ArrayList<>();
-    openAllBooks(parser, owner, directory, entries, errors);
+    openAllBooks(parser, serializer, owner, directory, entries, errors);
 
     if (!errors.isEmpty()) {
       throw new BookDatabaseException(
@@ -101,6 +101,7 @@ public final class BookDatabase implements BookDatabaseType {
 
   private static void openAllBooks(
       final OPDSJSONParserType parser,
+      final OPDSJSONSerializerType serializer,
       final AccountID account,
       final File directory,
       final ConcurrentSkipListMap<BookID, DatabaseEntry> entries,
@@ -119,7 +120,8 @@ public final class BookDatabase implements BookDatabaseType {
       for (final String book_id : book_dirs) {
         LOG.debug("opening book: {}/{}", directory, book_id);
         final File book_directory = new File(directory, book_id);
-        final DatabaseEntry entry = openOneEntry(parser, account, book_directory, errors, book_id);
+        final DatabaseEntry entry =
+            openOneEntry(parser, serializer, account, book_directory, errors, book_id);
         if (entry == null) {
           continue;
         }
@@ -130,6 +132,7 @@ public final class BookDatabase implements BookDatabaseType {
 
   private static @Nullable DatabaseEntry openOneEntry(
       final OPDSJSONParserType parser,
+      final OPDSJSONSerializerType serializer,
       final AccountID account_id,
       final File directory,
       final List<Exception> errors,
@@ -160,7 +163,7 @@ public final class BookDatabase implements BookDatabaseType {
         book_builder.setCover(file_cover);
       }
 
-      return new DatabaseEntry(directory, book_builder.build());
+      return new DatabaseEntry(directory, serializer, book_builder.build());
     } catch (final IOException e) {
       errors.add(e);
       return null;
@@ -217,7 +220,8 @@ public final class BookDatabase implements BookDatabaseType {
                 this.serializer.serializeFeedEntry(feed_entry)));
 
         final Book.Builder book_builder = Book.builder(id, this.owner, feed_entry);
-        final DatabaseEntry entry = new DatabaseEntry(book_dir, book_builder.build());
+        final DatabaseEntry entry =
+            new DatabaseEntry(book_dir, this.serializer, book_builder.build());
         this.books.put(id, entry.book());
         this.entries.put(id, entry);
         return entry;
@@ -246,28 +250,40 @@ public final class BookDatabase implements BookDatabaseType {
 
     private final File book_dir;
     private final Object book_lock;
+    private final OPDSJSONSerializerType serializer;
+    private @GuardedBy("book_lock") boolean deleted;
     private @GuardedBy("book_lock") Book book;
 
     DatabaseEntry(
         final File book_dir,
-        final Book book) {
+        OPDSJSONSerializerType serializer, final Book book) {
 
-      this.book_dir = NullCheck.notNull(book_dir, "Book directory");
-      this.book = NullCheck.notNull(book, "book");
+      this.book_dir =
+          NullCheck.notNull(book_dir, "Book directory");
+      this.serializer =
+          NullCheck.notNull(serializer, "Serializer");
+      this.book =
+          NullCheck.notNull(book, "book");
+
       this.book_lock = new Object();
+      this.deleted = false;
     }
 
     @Override
     public Book book() {
       synchronized (this.book_lock) {
+        Assertions.checkPrecondition(!this.deleted, "Entry must not have been deleted");
         return this.book;
       }
     }
 
     @Override
     public void writeEPUB(final File file) throws BookDatabaseException {
+      NullCheck.notNull(file, "File");
 
       synchronized (this.book_lock) {
+        Assertions.checkPrecondition(!this.deleted, "Entry must not have been deleted");
+
         final File file_target =
             new File(this.book_dir, "book.epub");
         final File file_target_tmp =
@@ -295,8 +311,11 @@ public final class BookDatabase implements BookDatabaseType {
 
     @Override
     public void writeAdobeLoan(final AdobeAdeptLoan loan) throws BookDatabaseException {
+      NullCheck.notNull(loan, "Loan");
 
       synchronized (this.book_lock) {
+        Assertions.checkPrecondition(!this.deleted, "Entry must not have been deleted");
+
         final File file_rights_target =
             new File(this.book_dir, "rights_adobe.xml");
         final File file_rights_target_tmp =
@@ -336,6 +355,56 @@ public final class BookDatabase implements BookDatabaseType {
           } catch (final IOException ignored) {
             LOG.error("could not delete temporary file: {}: ", file_meta_target_tmp, ignored);
           }
+        }
+      }
+    }
+
+    @Override
+    public void writeOPDSEntry(final OPDSAcquisitionFeedEntry opds_entry) throws BookDatabaseException {
+      NullCheck.notNull(opds_entry, "OPDS entry");
+
+      synchronized (this.book_lock) {
+        Assertions.checkPrecondition(!this.deleted, "Entry must not have been deleted");
+
+        final File file_meta =
+            new File(this.book_dir, "meta.json");
+        final File file_meta_tmp =
+            new File(this.book_dir, "meta.json.tmp");
+
+        try {
+          DirectoryUtilities.directoryCreate(this.book_dir);
+
+          FileUtilities.fileWriteUTF8Atomically(
+              file_meta,
+              file_meta_tmp,
+              JSONSerializerUtilities.serializeToString(
+                  this.serializer.serializeFeedEntry(opds_entry)));
+
+          this.book =
+              this.book.toBuilder()
+                  .setEntry(opds_entry)
+                  .build();
+        } catch (final IOException e) {
+          throw new BookDatabaseException(e.getMessage(), Collections.singletonList(e));
+        } finally {
+          try {
+            FileUtilities.fileDelete(file_meta_tmp);
+          } catch (final IOException ignored) {
+            LOG.error("could not delete temporary file: {}: ", file_meta_tmp, ignored);
+          }
+        }
+      }
+    }
+
+    @Override
+    public void delete() throws BookDatabaseException {
+      synchronized (this.book_lock) {
+        Assertions.checkPrecondition(!this.deleted, "Entry must not have been deleted");
+
+        try {
+          DirectoryUtilities.directoryDelete(this.book_dir);
+        } catch (final IOException e) {
+          throw new BookDatabaseException(e.getMessage(), Collections.singletonList(e));
         }
       }
     }

@@ -36,4 +36,24 @@ public interface BooksControllerType {
   void bookBorrowFailedDismiss(
       BookID id,
       AccountType account);
+
+  /**
+   * Sync all books for the given account.
+   *
+   * @param account The account
+   */
+
+  void booksSync(
+      AccountType account);
+
+  /**
+   * Revoke the given book.
+   *
+   * @param book_id The ID of the book
+   * @param account The account
+   */
+
+  void bookRevoke(
+      BookID book_id,
+      AccountType account);
 }

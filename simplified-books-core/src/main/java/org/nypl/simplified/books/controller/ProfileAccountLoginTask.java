@@ -1,11 +1,9 @@
 package org.nypl.simplified.books.controller;
 
-import com.io7m.jfunctional.FunctionType;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.PartialFunctionType;
 import com.io7m.jfunctional.Some;
-import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 
 import org.nypl.simplified.books.accounts.AccountAuthenticatedHTTP;
@@ -14,14 +12,11 @@ import org.nypl.simplified.books.accounts.AccountEvent;
 import org.nypl.simplified.books.accounts.AccountEventLogin;
 import org.nypl.simplified.books.accounts.AccountEventLogin.AccountLoginFailed;
 import org.nypl.simplified.books.accounts.AccountEventLogin.AccountLoginSucceeded;
-import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountProviderAuthenticationDescription;
-import org.nypl.simplified.books.accounts.AccountProviderCollection;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseException;
 import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
 import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
-import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 import org.nypl.simplified.books.profiles.ProfileReadableType;
 import org.nypl.simplified.books.profiles.ProfilesDatabaseType;
 import org.nypl.simplified.http.core.HTTPAuthType;
@@ -36,7 +31,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.URI;
 import java.util.concurrent.Callable;
 
 import static org.nypl.simplified.books.accounts.AccountEventLogin.AccountLoginFailed.ErrorCode.ERROR_CREDENTIALS_INCORRECT;
@@ -51,17 +45,21 @@ final class ProfileAccountLoginTask implements Callable<AccountEventLogin> {
 
   private final ProfilesDatabaseType profiles;
   private final AccountAuthenticationCredentials credentials;
+  private final BooksControllerType books_controller;
   private final HTTPType http;
   private final ObservableType<AccountEvent> account_events;
   private final PartialFunctionType<ProfileReadableType, AccountType, AccountsDatabaseNonexistentException> account_id_request;
 
   ProfileAccountLoginTask(
+      final BooksControllerType in_books_controller,
       final HTTPType http,
       final ProfilesDatabaseType profiles,
       final ObservableType<AccountEvent> account_events,
       final PartialFunctionType<ProfileReadableType, AccountType, AccountsDatabaseNonexistentException> account_id,
       final AccountAuthenticationCredentials credentials) {
 
+    this.books_controller =
+        NullCheck.notNull(in_books_controller, "Books controller");
     this.http =
         NullCheck.notNull(http, "Http");
     this.profiles =
@@ -137,6 +135,7 @@ final class ProfileAccountLoginTask implements Callable<AccountEventLogin> {
       return AccountLoginFailed.of(ERROR_PROFILE_CONFIGURATION, Option.some(e));
     }
 
+    this.books_controller.booksSync(account);
     return AccountLoginSucceeded.of(this.credentials);
   }
 
