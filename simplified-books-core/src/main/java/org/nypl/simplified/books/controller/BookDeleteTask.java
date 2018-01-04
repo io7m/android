@@ -12,10 +12,14 @@ import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
 import org.nypl.simplified.books.book_registry.BookWithStatus;
 import org.nypl.simplified.books.core.BookStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Callable;
 
 final class BookDeleteTask implements Callable<Unit> {
+
+  private static final Logger LOG = LoggerFactory.getLogger(BookDeleteTask.class);
 
   private final AccountType account;
   private final BookRegistryType book_registry;
@@ -41,6 +45,8 @@ final class BookDeleteTask implements Callable<Unit> {
   }
 
   private void execute() throws BookDatabaseException {
+    LOG.debug("[{}] deleting book", this.book_id.brief());
+
     final BookDatabaseType book_database = this.account.bookDatabase();
     final BookDatabaseEntryType entry = book_database.entry(this.book_id);
     entry.deleteEPUB();
