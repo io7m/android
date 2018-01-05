@@ -58,7 +58,6 @@ public final class CatalogFeedLane extends LinearLayout {
   private final RelativeLayout header;
   private final TextView feed_title;
   private final TextView feed_more;
-  private final AccountType account_provider;
 
   /**
    * Construct a feed lane.
@@ -79,8 +78,6 @@ public final class CatalogFeedLane extends LinearLayout {
 
     super(NullCheck.notNull(in_context));
 
-    this.account_provider =
-        NullCheck.notNull(in_account, "Account");
     this.covers =
         NullCheck.notNull(in_covers);
     this.screen =
@@ -95,34 +92,29 @@ public final class CatalogFeedLane extends LinearLayout {
     inflater.inflate(R.layout.catalog_feed_groups_lane, this, true);
 
     this.header =
-        NullCheck.notNull((RelativeLayout) this.findViewById(R.id.feed_header));
+        NullCheck.notNull(this.findViewById(R.id.feed_header));
     this.feed_title =
-        NullCheck.notNull((TextView) this.header.findViewById(R.id.feed_title), "Feed title");
+        NullCheck.notNull(this.header.findViewById(R.id.feed_title), "Feed title");
     this.feed_more =
-        NullCheck.notNull((TextView) this.header.findViewById(R.id.feed_more), "Feed more");
+        NullCheck.notNull(this.header.findViewById(R.id.feed_more), "Feed more");
 
     final int color = Color.parseColor(in_account.provider().mainColor());
     this.feed_title.setTextColor(color);
     this.feed_more.setTextColor(color);
 
     this.title =
-        NullCheck.notNull((TextView) this.findViewById(R.id.feed_title));
+        NullCheck.notNull(this.findViewById(R.id.feed_title));
     this.progress =
-        NullCheck.notNull((ProgressBar) this.findViewById(R.id.feed_progress));
-    this.scroller = NullCheck.notNull(
-        (HorizontalScrollView) this.findViewById(R.id.feed_scroller));
+        NullCheck.notNull(this.findViewById(R.id.feed_progress));
+    this.scroller =
+        NullCheck.notNull(this.findViewById(R.id.feed_scroller));
     this.scroller.setHorizontalScrollBarEnabled(false);
 
-    this.scroller_contents = NullCheck.notNull(
-        (ViewGroup) this.scroller.findViewById(R.id.feed_scroller_contents));
+    this.scroller_contents =
+        NullCheck.notNull(this.scroller.findViewById(R.id.feed_scroller_contents));
 
-    final android.view.ViewGroup.LayoutParams sp =
-        this.scroller.getLayoutParams();
+    final android.view.ViewGroup.LayoutParams sp = this.scroller.getLayoutParams();
     this.image_height = sp.height;
-  }
-
-  private static int getBrandingColor() {
-    throw new UnimplementedCodeException();
   }
 
   /**
@@ -131,22 +123,15 @@ public final class CatalogFeedLane extends LinearLayout {
    * @param in_group The group
    */
 
-  public void configureForGroup(
-      final FeedGroup in_group) {
+  public void configureForGroup(final FeedGroup in_group) {
     NullCheck.notNull(in_group);
     this.configureView(in_group);
   }
 
-  private void configureView(
-      final FeedGroup in_group) {
+  private void configureView(final FeedGroup in_group) {
+
     this.scroller.setVisibility(View.INVISIBLE);
-    this.scroller.post(
-        new Runnable() {
-          @Override
-          public void run() {
-            CatalogFeedLane.this.scroller.scrollTo(0, 0);
-          }
-        });
+    this.scroller.post(() -> this.scroller.scrollTo(0, 0));
 
     this.scroller_contents.setVisibility(View.INVISIBLE);
     this.progress.setVisibility(View.VISIBLE);
@@ -156,20 +141,15 @@ public final class CatalogFeedLane extends LinearLayout {
 
     final Resources Resources = NullCheck.notNull(this.getResources());
 
-    this.header.setContentDescription(String.format(Resources.getString(R.string.catalog_accessibility_header_show_more), this.title.getText()));
+    this.header.setContentDescription(
+        String.format(Resources.getString(R.string.catalog_accessibility_header_show_more), this.title.getText()));
     this.header.setOnClickListener(
-        new OnClickListener() {
-          @Override
-          public void onClick(
-              final @Nullable View view_title) {
-            CatalogFeedLane.this.listener.onSelectFeed(in_group);
-          }
-        });
+        view_title -> CatalogFeedLane.this.listener.onSelectFeed(in_group));
 
     final List<FeedEntryType> es =
         NullCheck.notNull(in_group.getGroupEntries());
     final ArrayList<ImageView> image_views =
-        new ArrayList<ImageView>(es.size());
+        new ArrayList<>(es.size());
 
     for (int index = 0; index < es.size(); ++index) {
       final FeedEntryType e = NullCheck.notNull(es.get(index));
@@ -195,13 +175,7 @@ public final class CatalogFeedLane extends LinearLayout {
               final OPDSAcquisitionFeedEntry eoe = eo.getFeedEntry();
               image_view.setContentDescription(eoe.getTitle());
               image_view.setOnClickListener(
-                  new OnClickListener() {
-                    @Override
-                    public void onClick(
-                        final @Nullable View v) {
-                      CatalogFeedLane.this.listener.onSelectBook(eo);
-                    }
-                  });
+                  v -> CatalogFeedLane.this.listener.onSelectBook(eo));
 
               image_views.add(image_view);
               CatalogFeedLane.this.scroller_contents.addView(image_view);

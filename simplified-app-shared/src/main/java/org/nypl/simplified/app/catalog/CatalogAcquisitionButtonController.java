@@ -102,23 +102,8 @@ public final class CatalogAcquisitionButtonController implements OnClickListener
   }
 
   private void tryBorrow(final AccountType account) {
-
-    final OPDSAcquisition.Type type = this.acquisition.getType();
-    LOG.debug("trying borrow of type {}", type);
-
-    switch (type) {
-      case ACQUISITION_BORROW:
-      case ACQUISITION_GENERIC:
-      case ACQUISITION_OPEN_ACCESS: {
-        this.books.bookBorrow(account, this.id, this.acquisition, this.entry.getFeedEntry());
-        return;
-      }
-      case ACQUISITION_BUY:
-      case ACQUISITION_SAMPLE:
-      case ACQUISITION_SUBSCRIBE: {
-        throw new UnimplementedCodeException();
-      }
-    }
+    LOG.debug("trying borrow of type {}", this.acquisition.getType());
+    this.books.bookBorrow(account, this.id, this.acquisition, this.entry.getFeedEntry());
   }
 
   private void tryLogin(final AccountType account) {
