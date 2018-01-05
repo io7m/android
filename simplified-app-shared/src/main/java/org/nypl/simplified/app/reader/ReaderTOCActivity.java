@@ -7,19 +7,29 @@ import android.view.LayoutInflater;
 
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
-import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.app.reader.ReaderTOC.TOCElement;
+import org.nypl.simplified.app.utilities.UIThread;
+import org.nypl.simplified.books.accounts.AccountID;
+import org.nypl.simplified.books.accounts.AccountType;
+import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
+import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.core.LogUtilities;
+import org.nypl.simplified.books.profiles.ProfileEvent;
+import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
+import org.nypl.simplified.books.profiles.ProfilePreferencesChanged;
+import org.nypl.simplified.books.reader.ReaderPreferences;
+import org.nypl.simplified.observable.ObservableSubscriptionType;
 import org.slf4j.Logger;
 
 /**
  * Activity for displaying the table of contents on devices with small screens.
  */
 
-public final class ReaderTOCActivity extends Activity
-    implements ReaderSettingsListenerType, ReaderTOCViewSelectionListenerType {
+public final class ReaderTOCActivity
+    extends Activity implements ReaderTOCViewSelectionListenerType {
+
   /**
    * The name of the argument containing the TOC.
    */
@@ -41,15 +51,18 @@ public final class ReaderTOCActivity extends Activity
 
   private static final Logger LOG;
 
+  private static final String ACCOUNT_ID;
+
   static {
     LOG = LogUtilities.getLog(ReaderTOCActivity.class);
     TOC_SELECTION_REQUEST_CODE = 23;
     TOC_ID = "org.nypl.simplified.app.reader.ReaderTOCActivity.toc";
-    TOC_SELECTED_ID =
-        "org.nypl.simplified.app.reader.ReaderTOCActivity.toc_selected";
+    ACCOUNT_ID = "org.nypl.simplified.app.reader.ReaderTOCActivity.account";
+    TOC_SELECTED_ID = "org.nypl.simplified.app.reader.ReaderTOCActivity.toc_selected";
   }
 
-  private @Nullable ReaderTOCView view;
+  private ReaderTOCView view;
+  private ObservableSubscriptionType<ProfileEvent> profile_event_subscription;
 
   /**
    * Construct an activity.
@@ -70,16 +83,18 @@ public final class ReaderTOCActivity extends Activity
 
   public static void startActivityForResult(
       final Activity from,
+      final AccountType account,
       final ReaderTOC toc) {
+
     NullCheck.notNull(from);
+    NullCheck.notNull(account, "Account");
     NullCheck.notNull(toc);
 
     final Intent i = new Intent(Intent.ACTION_PICK);
     i.setClass(from, ReaderTOCActivity.class);
-    i.putExtra(ReaderTOCActivity.TOC_ID, toc);
-
-    from.startActivityForResult(
-        i, ReaderTOCActivity.TOC_SELECTION_REQUEST_CODE);
+    i.putExtra(TOC_ID, toc);
+    i.putExtra(ACCOUNT_ID, account.id());
+    from.startActivityForResult(i, TOC_SELECTION_REQUEST_CODE);
   }
 
   @Override
@@ -89,43 +104,62 @@ public final class ReaderTOCActivity extends Activity
   }
 
   @Override
-  protected void onCreate(
-      final @Nullable Bundle state) {
+  protected void onCreate(final @Nullable Bundle state) {
     this.setTheme(Simplified.getCurrentTheme());
     super.onCreate(state);
 
-    ReaderTOCActivity.LOG.debug("onCreate");
+    LOG.debug("onCreate");
 
-    final ReaderSettingsType settings = getSettings();
-    settings.addListener(this);
+    final Intent input =
+        NullCheck.notNull(this.getIntent());
+    final Bundle args =
+        NullCheck.notNull(input.getExtras());
+    final ReaderTOC in_toc =
+        NullCheck.notNull((ReaderTOC) args.getSerializable(TOC_ID));
+    final AccountID in_account_id =
+        NullCheck.notNull((AccountID) args.getSerializable(ACCOUNT_ID));
 
-    final Intent input = NullCheck.notNull(this.getIntent());
-    final Bundle args = NullCheck.notNull(input.getExtras());
+    try {
+      final ProfilesControllerType profiles =
+          Simplified.getProfilesController();
+      final AccountType account =
+          profiles.profileCurrent().account(in_account_id);
 
-    final ReaderTOC in_toc = NullCheck.notNull(
-        (ReaderTOC) args.getSerializable(ReaderTOCActivity.TOC_ID));
+      final LayoutInflater inflater =
+          NullCheck.notNull(this.getLayoutInflater());
+      this.view =
+          new ReaderTOCView(profiles, account, inflater, this, in_toc, this);
 
-    final LayoutInflater inflater = NullCheck.notNull(this.getLayoutInflater());
-    this.view = new ReaderTOCView(inflater, this, in_toc, this);
-    this.setContentView(this.view.getLayoutView());
-  }
+      this.setContentView(this.view.getLayoutView());
 
-  private static ReaderSettingsType getSettings() {
-    throw new UnimplementedCodeException();
+      this.profile_event_subscription =
+          profiles.profileEvents().subscribe(this::onProfileEvent);
+    } catch (final AccountsDatabaseNonexistentException | ProfileNoneCurrentException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   @Override
   protected void onDestroy() {
     super.onDestroy();
-    ReaderTOCActivity.LOG.debug("onDestroy");
 
-    NullCheck.notNull(this.view).onTOCViewDestroy();
+    this.profile_event_subscription.unsubscribe();
   }
 
-  @Override
-  public void onReaderSettingsChanged(
-      final ReaderSettingsType s) {
-    NullCheck.notNull(this.view).onReaderSettingsChanged(s);
+  private void onProfileEvent(final ProfileEvent event) {
+    if (event instanceof ProfilePreferencesChanged) {
+      try {
+        final ReaderPreferences prefs =
+            Simplified.getProfilesController()
+                .profileCurrent()
+                .preferences()
+                .readerPreferences();
+
+        UIThread.runOnUIThread(() -> this.view.onProfilePreferencesChanged(prefs));
+      } catch (final ProfileNoneCurrentException e) {
+        throw new IllegalStateException(e);
+      }
+    }
   }
 
   @Override
@@ -134,10 +168,9 @@ public final class ReaderTOCActivity extends Activity
   }
 
   @Override
-  public void onTOCItemSelected(
-      final TOCElement e) {
+  public void onTOCItemSelected(final TOCElement e) {
     final Intent intent = new Intent();
-    intent.putExtra(ReaderTOCActivity.TOC_SELECTED_ID, e);
+    intent.putExtra(TOC_SELECTED_ID, e);
     this.setResult(Activity.RESULT_OK, intent);
     this.finish();
   }

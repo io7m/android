@@ -6,10 +6,13 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.io7m.jfunctional.FunctionType;
 import com.io7m.jfunctional.None;
+import com.io7m.jfunctional.Option;
+import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.OptionVisitorType;
 import com.io7m.jfunctional.Some;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
+import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.joda.time.LocalDate;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
@@ -32,10 +35,12 @@ import org.nypl.simplified.books.profiles.ProfileEvent;
 import org.nypl.simplified.books.profiles.ProfileID;
 import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
 import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
+import org.nypl.simplified.books.profiles.ProfilePreferences;
 import org.nypl.simplified.books.profiles.ProfileReadableType;
 import org.nypl.simplified.books.profiles.ProfileType;
 import org.nypl.simplified.books.profiles.ProfilesDatabaseType;
 import org.nypl.simplified.books.profiles.ProfilesDatabaseType.AnonymousProfileEnabled;
+import org.nypl.simplified.books.reader.ReaderBookLocation;
 import org.nypl.simplified.downloader.core.DownloadType;
 import org.nypl.simplified.downloader.core.DownloaderType;
 import org.nypl.simplified.http.core.HTTPType;
@@ -300,6 +305,42 @@ public final class Controller implements BooksControllerType, ProfilesController
         return account.provider().catalogURIForAge(age);
       }
     });
+  }
+
+  @Override
+  public void profileBookmarkSet(
+      final BookID book_id,
+      final ReaderBookLocation new_location)
+      throws ProfileNoneCurrentException {
+
+    NullCheck.notNull(book_id, "Book ID");
+    NullCheck.notNull(new_location, "Location");
+
+    final ProfileType profile = this.profiles.currentProfileUnsafe();
+    this.exec.submit(new ProfileBookmarkSetTask(profile, this.profile_events, book_id, new_location));
+  }
+
+  @Override
+  public OptionType<ReaderBookLocation> profileBookmarkGet(final BookID book_id)
+      throws ProfileNoneCurrentException {
+
+    NullCheck.notNull(book_id, "Book ID");
+    return Option.of(this.profiles.currentProfileUnsafe().preferences()
+        .readerBookmarks()
+        .bookmarks()
+        .get(book_id));
+  }
+
+  @Override
+  public void profilePreferencesUpdate(final ProfilePreferences preferences)
+      throws ProfileNoneCurrentException {
+
+    NullCheck.notNull(preferences, "Preferences");
+
+    this.exec.submit(new ProfilePreferencesUpdateTask(
+        this.profile_events,
+        this.profiles.currentProfileUnsafe(),
+        preferences));
   }
 
   @Override

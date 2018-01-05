@@ -21,6 +21,7 @@ import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 
 import org.nypl.simplified.app.catalog.MainCatalogActivity;
+import org.nypl.simplified.app.utilities.ErrorDialogUtilities;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.core.LogUtilities;
@@ -107,21 +108,16 @@ public final class ProfileSelectionActivity extends Activity {
   private void onProfileSelectionFailed(final Throwable e) {
     LOG.error("onProfileSelectionFailed: {}", e);
 
-    UIThread.runOnUIThread(() -> {
+    /*
+     * XXX: What exactly can anyone do about this? It's made worse by the fact that if this
+     * happens here, the user can't even get into the program to report a bug directly...
+     */
 
-      /*
-       * XXX: What exactly can anyone do about this? It's made worse by the fact that if this
-       * happens here, the user can't even get into the program to report a bug directly...
-       */
-
-      final AlertDialog.Builder alert_builder =
-          new AlertDialog.Builder(ProfileSelectionActivity.this);
-      alert_builder.setMessage("Unable to select profile!");
-      alert_builder.setCancelable(true);
-
-      final AlertDialog alert = alert_builder.create();
-      alert.show();
-    });
+    ErrorDialogUtilities.showError(
+        this,
+        LOG,
+        this.getResources().getString(R.string.profiles_selection_error_general),
+        null);
   }
 
   private void onProfileSelectionSucceeded(final Unit ignored) {

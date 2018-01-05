@@ -1,4 +1,4 @@
-package org.nypl.simplified.app.reader;
+package org.nypl.simplified.books.reader;
 
 /**
  * The type of font selected for the reader.

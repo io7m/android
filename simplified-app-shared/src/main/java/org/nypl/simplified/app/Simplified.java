@@ -86,12 +86,8 @@ import java.util.concurrent.ThreadFactory;
 
 public final class Simplified extends Application {
 
-  private static final Logger LOG;
+  private static final Logger LOG = LogUtilities.getLog(Simplified.class);
   private static volatile Simplified INSTANCE;
-
-  static {
-    LOG = LogUtilities.getLog(Simplified.class);
-  }
 
   private CardCreator cardcreator;
   private ExecutorService exec_catalog_feeds;
@@ -125,7 +121,6 @@ public final class Simplified extends Application {
   private BookRegistryType book_registry;
   private Controller book_controller;
   private ListeningExecutorService exec_background;
-
 
   /**
    * Construct the application.
@@ -240,6 +235,24 @@ public final class Simplified extends Application {
   public static OptionType<HelpstackType> getHelpStack() {
     final Simplified i = Simplified.checkInitialized();
     return i.helpstack;
+  }
+
+  /**
+   * @return The EPUB loader
+   */
+
+  public static ReaderReadiumEPUBLoaderType getReadiumEPUBLoader() {
+    final Simplified i = Simplified.checkInitialized();
+    return i.epub_loader;
+  }
+
+  /**
+   * @return The HTTP server for the reader
+   */
+
+  public static ReaderHTTPServerType getReaderHTTPServer() {
+    final Simplified i = Simplified.checkInitialized();
+    return i.httpd;
   }
 
   @NonNull

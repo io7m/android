@@ -3,6 +3,7 @@ package org.nypl.simplified.app.reader;
 import android.content.Context;
 import android.content.res.Resources;
 import android.database.DataSetObserver;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -22,7 +23,12 @@ import org.nypl.simplified.app.ScreenSizeInformationType;
 import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.app.reader.ReaderTOC.TOCElement;
 import org.nypl.simplified.app.utilities.UIThread;
+import org.nypl.simplified.books.accounts.AccountType;
+import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.core.LogUtilities;
+import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
+import org.nypl.simplified.books.reader.ReaderColorScheme;
+import org.nypl.simplified.books.reader.ReaderPreferences;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -31,121 +37,110 @@ import java.util.List;
  * A re-usable view of a table of contents.
  */
 
-@SuppressWarnings("synthetic-access") public final class ReaderTOCView
-  implements ListAdapter, ReaderSettingsListenerType
-{
-  private static final Logger LOG;
+public final class ReaderTOCView implements ListAdapter {
 
-  static {
-    LOG = LogUtilities.getLog(ReaderTOCView.class);
-  }
+  private static final Logger LOG = LogUtilities.getLog(ReaderTOCView.class);
 
-  private final ArrayAdapter<TOCElement>           adapter;
-  private final Context                            context;
-  private final LayoutInflater                     inflater;
+  private final ArrayAdapter<TOCElement> adapter;
+  private final LayoutInflater inflater;
   private final ReaderTOCViewSelectionListenerType listener;
-  private final ViewGroup                          view_layout;
-  private final ViewGroup                          view_root;
-  private final TextView                           view_title;
+  private final ViewGroup view_layout;
+  private final ViewGroup view_root;
+  private final TextView view_title;
+  private final ProfilesControllerType profiles;
+  private final AccountType account;
 
   /**
    * Construct a TOC view.
-   *
-   * @param in_inflater A layout inflater
-   * @param in_context  A context
-   * @param in_toc      The table of contents
-   * @param in_listener A selection listener
    */
 
   public ReaderTOCView(
-    final LayoutInflater in_inflater,
-    final Context in_context,
-    final ReaderTOC in_toc,
-    final ReaderTOCViewSelectionListenerType in_listener)
-  {
-    NullCheck.notNull(in_inflater);
-    NullCheck.notNull(in_context);
-    NullCheck.notNull(in_toc);
-    NullCheck.notNull(in_listener);
+      final ProfilesControllerType in_profiles,
+      final AccountType in_account,
+      final LayoutInflater in_inflater,
+      final Context in_context,
+      final ReaderTOC in_toc,
+      final ReaderTOCViewSelectionListenerType in_listener) {
 
-    final ReaderSettingsType settings = getSettings();
-    settings.addListener(this);
+    this.profiles =
+        NullCheck.notNull(in_profiles, "Profiles");
+    this.account =
+        NullCheck.notNull(in_account, "Account");
+    this.inflater =
+        NullCheck.notNull(in_inflater, "Inflator");
+    this.listener =
+        NullCheck.notNull(in_listener, "Listener");
 
-    final ViewGroup in_layout = NullCheck.notNull(
-      (ViewGroup) in_inflater.inflate(
-        R.layout.reader_toc, null));
+    NullCheck.notNull(in_context, "Context");
+    NullCheck.notNull(in_profiles, "Profiles");
+    NullCheck.notNull(in_toc, "TOC");
 
-    final ListView in_list_view = NullCheck.notNull(
-      (ListView) in_layout.findViewById(R.id.reader_toc_list));
-    final TextView in_title = NullCheck.notNull(
-      (TextView) in_layout.findViewById(R.id.reader_toc_title));
+    final ViewGroup in_layout =
+        NullCheck.notNull((ViewGroup) in_inflater.inflate(R.layout.reader_toc, null));
+    final ListView in_list_view =
+        NullCheck.notNull(in_layout.findViewById(R.id.reader_toc_list));
+    final TextView in_title =
+        NullCheck.notNull(in_layout.findViewById(R.id.reader_toc_title));
     final ViewGroup in_root =
-      NullCheck.notNull((ViewGroup) in_list_view.getRootView());
+        NullCheck.notNull((ViewGroup) in_list_view.getRootView());
 
-    final List<TOCElement> es = in_toc.getElements();
-    this.adapter = new ArrayAdapter<TOCElement>(in_context, 0, es);
-
-    in_list_view.setAdapter(this);
-
-    this.context = in_context;
     this.view_layout = in_layout;
     this.view_root = in_root;
     this.view_title = in_title;
-    this.inflater = in_inflater;
-    this.listener = in_listener;
 
-    this.applyColorScheme(
-      NullCheck.notNull(in_context.getResources()), settings.getColorScheme());
+    final List<TOCElement> es = in_toc.getElements();
+    this.adapter = new ArrayAdapter<>(in_context, 0, es);
+
+    in_list_view.setAdapter(this);
+
+    try {
+      this.applyColorScheme(
+          profiles.profileCurrent()
+              .preferences()
+              .readerPreferences()
+              .colorScheme());
+    } catch (final ProfileNoneCurrentException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
-  private static ReaderSettingsType getSettings() {
-    throw new UnimplementedCodeException();
-  }
-
-  private void applyColorScheme(
-    final Resources r,
-    final ReaderColorScheme cs)
-  {
+  private void applyColorScheme(final ReaderColorScheme cs) {
     UIThread.checkIsUIThread();
 
     final int main_color = getBrandingColor();
     final TextView in_title = NullCheck.notNull(this.view_title);
     final ViewGroup in_root = NullCheck.notNull(this.view_root);
 
-    in_root.setBackgroundColor(cs.getBackgroundColor());
+    in_root.setBackgroundColor(ReaderColorSchemes.background(cs));
     in_title.setTextColor(main_color);
   }
 
-  private static int getBrandingColor() {
-    throw new UnimplementedCodeException();
+  private int getBrandingColor() {
+    return Color.parseColor(this.account.provider().mainColor());
   }
 
-  @Override public boolean areAllItemsEnabled()
-  {
+  @Override
+  public boolean areAllItemsEnabled() {
     return NullCheck.notNull(this.adapter).areAllItemsEnabled();
   }
 
-  @Override public int getCount()
-  {
+  @Override
+  public int getCount() {
     return NullCheck.notNull(this.adapter).getCount();
   }
 
-  @Override public TOCElement getItem(
-    final int position)
-  {
-    return NullCheck.notNull(
-      NullCheck.notNull(this.adapter).getItem(position));
+  @Override
+  public TOCElement getItem(final int position) {
+    return NullCheck.notNull(NullCheck.notNull(this.adapter).getItem(position));
   }
 
-  @Override public long getItemId(
-    final int position)
-  {
+  @Override
+  public long getItemId(final int position) {
     return NullCheck.notNull(this.adapter).getItemId(position);
   }
 
-  @Override public int getItemViewType(
-    final int position)
-  {
+  @Override
+  public int getItemViewType(final int position) {
     return NullCheck.notNull(this.adapter).getItemViewType(position);
   }
 
@@ -153,22 +148,22 @@ import java.util.List;
    * @return The view group containing the main layout
    */
 
-  public ViewGroup getLayoutView()
-  {
+  public ViewGroup getLayoutView() {
     return this.view_layout;
   }
 
-  @Override public View getView(
-    final int position,
-    final @Nullable View reuse,
-    final @Nullable ViewGroup parent)
-  {
+  @Override
+  public View getView(
+      final int position,
+      final @Nullable View reuse,
+      final @Nullable ViewGroup parent) {
+
     final ViewGroup item_view;
     if (reuse != null) {
       item_view = (ViewGroup) reuse;
     } else {
       item_view = (ViewGroup) this.inflater.inflate(
-        R.layout.reader_toc_element, parent, false);
+          R.layout.reader_toc_element, parent, false);
     }
 
     /*
@@ -176,43 +171,43 @@ import java.util.List;
      * indentation level.
      */
 
-    final TextView text_view = NullCheck.notNull(
-      (TextView) item_view.findViewById(R.id.reader_toc_element_text));
-    final TOCElement e = NullCheck.notNull(this.adapter).getItem(position);
+    final TextView text_view =
+        NullCheck.notNull(item_view.findViewById(R.id.reader_toc_element_text));
+    final TOCElement e =
+        NullCheck.notNull(this.adapter).getItem(position);
+
     text_view.setText(e.getTitle());
 
-    final ReaderSettingsType settings = getSettings();
+    final ReaderColorScheme color_scheme;
+    try {
+      color_scheme = profiles.profileCurrent()
+          .preferences()
+          .readerPreferences()
+          .colorScheme();
+    } catch (final ProfileNoneCurrentException ex) {
+      throw new IllegalStateException(ex);
+    }
 
     final RelativeLayout.LayoutParams p =
         new RelativeLayout.LayoutParams(
-      android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
-      android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
 
     final ScreenSizeInformationType screen = Simplified.getScreenSizeInformation();
     p.setMargins((int) screen.screenDPToPixels(e.getIndent() * 16), 0, 0, 0);
     text_view.setLayoutParams(p);
-    text_view.setTextColor(settings.getColorScheme().getForegroundColor());
-
-    item_view.setOnClickListener(
-      new OnClickListener()
-      {
-        @Override public void onClick(
-          final @Nullable View v)
-        {
-          ReaderTOCView.this.listener.onTOCItemSelected(e);
-        }
-      });
-
+    text_view.setTextColor(ReaderColorSchemes.foreground(color_scheme));
+    item_view.setOnClickListener(v -> this.listener.onTOCItemSelected(e));
     return item_view;
   }
 
-  @Override public int getViewTypeCount()
-  {
+  @Override
+  public int getViewTypeCount() {
     return NullCheck.notNull(this.adapter).getViewTypeCount();
   }
 
-  @Override public boolean hasStableIds()
-  {
+  @Override
+  public boolean hasStableIds() {
     return NullCheck.notNull(this.adapter).hasStableIds();
   }
 
@@ -220,53 +215,28 @@ import java.util.List;
    * Hide the back button!
    */
 
-  @Override public boolean isEmpty()
-  {
+  @Override
+  public boolean isEmpty() {
     return NullCheck.notNull(this.adapter).isEmpty();
   }
 
-  @Override public boolean isEnabled(
-    final int position)
-  {
+  @Override
+  public boolean isEnabled(final int position) {
     return NullCheck.notNull(this.adapter).isEnabled(position);
   }
 
-  @Override public void onReaderSettingsChanged(
-    final ReaderSettingsType s)
-  {
-    UIThread.runOnUIThread(
-      new Runnable()
-      {
-        @Override public void run()
-        {
-          ReaderTOCView.this.applyColorScheme(
-            NullCheck.notNull(ReaderTOCView.this.context.getResources()),
-            s.getColorScheme());
-        }
-      });
-  }
-
-  /**
-   * Called when a table of contents is destroyed.
-   */
-
-  public void onTOCViewDestroy()
-  {
-    ReaderTOCView.LOG.debug("onTOCViewDestroy");
-
-    final ReaderSettingsType settings = getSettings();
-    settings.removeListener(this);
-  }
-
-  @Override public void registerDataSetObserver(
-    final @Nullable DataSetObserver observer)
-  {
+  @Override
+  public void registerDataSetObserver(final @Nullable DataSetObserver observer) {
     NullCheck.notNull(this.adapter).registerDataSetObserver(observer);
   }
 
-  @Override public void unregisterDataSetObserver(
-    final @Nullable DataSetObserver observer)
-  {
+  @Override
+  public void unregisterDataSetObserver(final @Nullable DataSetObserver observer) {
     NullCheck.notNull(this.adapter).unregisterDataSetObserver(observer);
+  }
+
+  void onProfilePreferencesChanged(final ReaderPreferences prefs) {
+    UIThread.checkIsUIThread();
+    this.applyColorScheme(prefs.colorScheme());
   }
 }

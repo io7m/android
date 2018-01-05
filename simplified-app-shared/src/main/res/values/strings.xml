@@ -200,6 +200,11 @@
   <!-- Reader strings -->
   <string name="reader">Reader</string>
   <string name="reader_toc">Table Of Contents</string>
+  <string name="reader_error_book_database">There was a problem with the book database.</string>
+  <string name="reader_error_account_database">There was a problem with the accounts database.</string>
+  <string name="reader_error_epub_error">The given EPUB file could not be loaded.</string>
+  <string name="reader_error_epub_missing">The given EPUB file appears to be missing and therefore cannot be loaded.</string>
+  <string name="reader_error_general">An error occurred whilst trying to set up the reader.</string>
 
   <!-- Accessibility strings used for content descriptions (Reader) -->
   <string name="reader_accessibility_toc">Show table of contents</string>
@@ -209,7 +214,6 @@
   <string name="reader_accessibility_media_previous">Go to previous media item</string>
   <string name="reader_accessibility_media_next">Go to next media item</string>
   <string name="reader_accessibility_media_play">Play or pause current media item</string>
-
 
   <string name="reader_accessibility_settings_sans_font">Sans font</string>
   <string name="reader_accessibility_settings_serif_font">Serif font</string>
@@ -242,6 +246,7 @@
   <string name="profiles_create">Create</string>
   <string name="profiles_please_enter">Please enter your name and date of birth.</string>
   <string name="profiles_name_field">Name</string>
+  <string name="profiles_selection_error_general">An error occurred whilst trying to select your profile.</string>
   <string name="profiles_creation_error_name_already_used">That name has already been used. Please pick another.</string>
   <string name="profiles_creation_error_general">An error occurred whilst trying to create your profile.</string>
   <string name="profiles_account_selection_error_general">An error occurred whilst trying to select an account.</string>

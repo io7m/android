@@ -3,15 +3,23 @@ package org.nypl.simplified.books.profiles;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableMap;
+import com.io7m.jfunctional.None;
 import com.io7m.jfunctional.OptionType;
+import com.io7m.jfunctional.OptionVisitorType;
 import com.io7m.jfunctional.PartialFunctionType;
 import com.io7m.jfunctional.ProcedureType;
+import com.io7m.jfunctional.Some;
 import com.io7m.jnull.NullCheck;
 import com.io7m.junreachable.UnreachableCodeException;
 
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.DateTimeFormatterBuilder;
+import org.nypl.simplified.books.reader.ReaderBookmarks;
+import org.nypl.simplified.books.reader.ReaderBookmarksJSON;
+import org.nypl.simplified.books.reader.ReaderPreferences;
+import org.nypl.simplified.books.reader.ReaderPreferencesJSON;
 import org.nypl.simplified.files.FileUtilities;
 import org.nypl.simplified.json.core.JSONParseException;
 import org.nypl.simplified.json.core.JSONParserUtilities;
@@ -44,6 +52,7 @@ public final class ProfilePreferencesJSON {
       final ObjectMapper jom,
       final File file)
       throws IOException {
+
     NullCheck.notNull(jom, "Object mapper");
     NullCheck.notNull(file, "File");
     return deserializeFromText(jom, FileUtilities.fileReadUTF8(file));
@@ -61,6 +70,7 @@ public final class ProfilePreferencesJSON {
   public static ProfilePreferences deserializeFromText(
       final ObjectMapper jom,
       final String text) throws IOException {
+
     NullCheck.notNull(jom, "Object mapper");
     NullCheck.notNull(text, "Text");
     return deserializeFromJSON(jom, jom.readTree(text));
@@ -79,6 +89,7 @@ public final class ProfilePreferencesJSON {
       final ObjectMapper jom,
       final JsonNode node)
       throws JSONParseException {
+
     NullCheck.notNull(jom, "Object mapper");
     NullCheck.notNull(node, "JSON");
 
@@ -89,21 +100,48 @@ public final class ProfilePreferencesJSON {
 
     final OptionType<LocalDate> date_of_birth =
         JSONParserUtilities.getStringOptional(obj, "date-of-birth")
-            .mapPartial(new PartialFunctionType<String, LocalDate, JSONParseException>() {
+            .mapPartial(text -> {
+              try {
+                return LocalDate.parse(text, date_formatter);
+              } catch (final IllegalArgumentException e) {
+                throw new JSONParseException(e);
+              }
+            });
+
+    final ReaderPreferences reader_prefs =
+        JSONParserUtilities.getObjectOptional(obj, "reader-preferences")
+            .mapPartial(prefs_node -> ReaderPreferencesJSON.deserializeFromJSON(jom, prefs_node))
+            .accept(new OptionVisitorType<ReaderPreferences, ReaderPreferences>() {
               @Override
-              public LocalDate call(
-                  final String text)
-                  throws JSONParseException {
-                try {
-                  return LocalDate.parse(text, date_formatter);
-                } catch (final IllegalArgumentException e) {
-                  throw new JSONParseException(e);
-                }
+              public ReaderPreferences none(final None<ReaderPreferences> none) {
+                return ReaderPreferences.builder().build();
+              }
+
+              @Override
+              public ReaderPreferences some(final Some<ReaderPreferences> some) {
+                return some.get();
+              }
+            });
+
+    final ReaderBookmarks reader_bookmarks =
+        JSONParserUtilities.getObjectOptional(obj, "reader-bookmarks")
+            .mapPartial(marks_node -> ReaderBookmarksJSON.deserializeFromJSON(jom, marks_node))
+            .accept(new OptionVisitorType<ReaderBookmarks, ReaderBookmarks>() {
+              @Override
+              public ReaderBookmarks none(final None<ReaderBookmarks> none) {
+                return ReaderBookmarks.create(ImmutableMap.of());
+              }
+
+              @Override
+              public ReaderBookmarks some(final Some<ReaderBookmarks> some) {
+                return some.get();
               }
             });
 
     return ProfilePreferences.builder()
         .setDateOfBirth(date_of_birth)
+        .setReaderPreferences(reader_prefs)
+        .setReaderBookmarks(reader_bookmarks)
         .build();
   }
 
@@ -127,19 +165,18 @@ public final class ProfilePreferencesJSON {
   public static ObjectNode serializeToJSON(
       final ObjectMapper jom,
       final ProfilePreferences description) {
+
     NullCheck.notNull(jom, "Object mapper");
     NullCheck.notNull(description, "Description");
 
     final DateTimeFormatter date_formatter = standardDateFormatter();
     final ObjectNode jo = jom.createObjectNode();
 
-    description.dateOfBirth().map_(new ProcedureType<LocalDate>() {
-      @Override
-      public void call(final LocalDate date) {
-        jo.put("date-of-birth", date_formatter.print(date));
-      }
-    });
+    description.dateOfBirth().map_(
+        date -> jo.put("date-of-birth", date_formatter.print(date)));
 
+    jo.set("reader-preferences", ReaderPreferencesJSON.serializeToJSON(jom, description.readerPreferences()));
+    jo.set("reader-bookmarks", ReaderBookmarksJSON.serializeToJSON(jom, description.readerBookmarks()));
     return jo;
   }
 
@@ -155,6 +192,7 @@ public final class ProfilePreferencesJSON {
       final ObjectMapper jom,
       final ProfilePreferences description)
       throws IOException {
+
     final ObjectNode jo = serializeToJSON(jom, description);
     final ByteArrayOutputStream bao = new ByteArrayOutputStream(1024);
     JSONSerializerUtilities.serialize(jo, bao);

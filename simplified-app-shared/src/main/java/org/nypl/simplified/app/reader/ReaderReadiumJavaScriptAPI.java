@@ -2,6 +2,9 @@ package org.nypl.simplified.app.reader;
 
 import android.webkit.ValueCallback;
 import android.webkit.WebView;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.Some;
 import com.io7m.jnull.NullCheck;
@@ -15,6 +18,10 @@ import org.nypl.simplified.app.reader.ReaderReadiumViewerSettings
 import org.nypl.simplified.app.utilities.TextUtilities;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.core.LogUtilities;
+import org.nypl.simplified.books.reader.ReaderBookLocation;
+import org.nypl.simplified.books.reader.ReaderBookLocationJSON;
+import org.nypl.simplified.books.reader.ReaderColorScheme;
+import org.nypl.simplified.books.reader.ReaderPreferences;
 import org.slf4j.Logger;
 
 /**
@@ -22,21 +29,18 @@ import org.slf4j.Logger;
  * interface.
  */
 
-public final class ReaderReadiumJavaScriptAPI
-  implements ReaderReadiumJavaScriptAPIType
+public final class ReaderReadiumJavaScriptAPI implements ReaderReadiumJavaScriptAPIType
 {
-  private static final Logger LOG;
-
-  static {
-    LOG = LogUtilities.getLog(ReaderReadiumJavaScriptAPI.class);
-  }
+  private static final Logger LOG = LogUtilities.getLog(ReaderReadiumJavaScriptAPI.class);
 
   private final WebView web_view;
+  private final ObjectMapper object_mapper;
 
   private ReaderReadiumJavaScriptAPI(
     final WebView wv)
   {
     this.web_view = NullCheck.notNull(wv);
+    this.object_mapper = new ObjectMapper();
   }
 
   /**
@@ -56,34 +60,16 @@ public final class ReaderReadiumJavaScriptAPI
   private void evaluate(
     final String script)
   {
-    ReaderReadiumJavaScriptAPI.LOG.debug("sending javascript: {}", script);
-
-    final WebView wv = this.web_view;
-    UIThread.runOnUIThread(
-      new Runnable()
-      {
-        @Override public void run()
-        {
-          wv.evaluateJavascript(script, null);
-        }
-      });
+    LOG.debug("sending javascript: {}", script);
+    UIThread.runOnUIThread(() -> this.web_view.evaluateJavascript(script, null));
   }
 
   private void evaluateWithResult(
     final String script,
     final ValueCallback<String> callback)
   {
-    ReaderReadiumJavaScriptAPI.LOG.debug("sending javascript: {}", script);
-
-    final WebView wv = this.web_view;
-    UIThread.runOnUIThread(
-      new Runnable()
-      {
-        @Override public void run()
-        {
-          wv.evaluateJavascript(script, callback);
-        }
-      });
+    LOG.debug("sending javascript: {}", script);
+    UIThread.runOnUIThread(() -> this.web_view.evaluateJavascript(script, callback));
   }
 
   @Override public void getCurrentPage(
@@ -92,22 +78,29 @@ public final class ReaderReadiumJavaScriptAPI
     NullCheck.notNull(l);
 
     this.evaluateWithResult(
-      "ReadiumSDK.reader.bookmarkCurrentPage()", new ValueCallback<String>()
-      {
-        @Override public void onReceiveValue(
-          final @Nullable String value)
-        {
+      "ReadiumSDK.reader.bookmarkCurrentPage()", value -> {
+        try {
+          LOG.debug("getCurrentPage: {}", value);
+
+          /*
+           * The received value is inside one layer of quoting, so it's necessary to first strip
+           * off that layer before the result can be parsed as a JSON object.
+           *
+           * XXX: Readium sometimes passes the literal string "null" here. This needs to be
+           * dealt with.
+           */
+
+          final JsonNode unquoted =
+              this.object_mapper.readTree(value);
+          final ReaderBookLocation location =
+              ReaderBookLocationJSON.deserializeFromString(this.object_mapper, unquoted.asText());
+
+          l.onCurrentPageReceived(location);
+        } catch (final Throwable x) {
           try {
-            final JSONObject o =
-              new JSONObject(TextUtilities.unquote(NullCheck.notNull(value)));
-            final ReaderBookLocation loc = ReaderBookLocation.fromJSON(o);
-            l.onCurrentPageReceived(loc);
-          } catch (final Throwable x) {
-            try {
-              l.onCurrentPageError(x);
-            } catch (final Throwable x1) {
-              ReaderReadiumJavaScriptAPI.LOG.error("{}", x1.getMessage(), x1);
-            }
+            l.onCurrentPageError(x);
+          } catch (final Throwable x1) {
+            LOG.error("{}", x1.getMessage(), x1);
           }
         }
       });
@@ -144,8 +137,7 @@ public final class ReaderReadiumJavaScriptAPI
         o.put("openPageRequest", some.get().toJSON());
       }
 
-      this.evaluate(
-        NullCheck.notNull(String.format("ReadiumSDK.reader.openBook(%s)", o)));
+      this.evaluate(NullCheck.notNull(String.format("ReadiumSDK.reader.openBook(%s)", o)));
     } catch (final JSONException e) {
       throw new IllegalArgumentException(e);
     }
@@ -177,26 +169,28 @@ public final class ReaderReadiumJavaScriptAPI
   }
 
   @Override public void setPageStyleSettings(
-    final ReaderSettingsType r)
+    final ReaderPreferences r)
   {
     try {
-      final ReaderColorScheme cs = r.getColorScheme();
-      final String color = NullCheck.notNull(
-        String.format("#%06x", cs.getForegroundColor() & 0xffffff));
-      final String background = NullCheck.notNull(
-        String.format("#%06x", cs.getBackgroundColor() & 0xffffff));
+      final ReaderColorScheme cs = r.colorScheme();
+
+      final String color =
+          NullCheck.notNull(String.format("#%06x", ReaderColorSchemes.foreground(cs) & 0xffffff));
+      final String background =
+          NullCheck.notNull(String.format("#%06x", ReaderColorSchemes.background(cs) & 0xffffff));
 
       final JSONObject decls = new JSONObject();
       decls.put("color", color);
       decls.put("backgroundColor", background);
 
-      switch (r.getFontFamily()) {
+      switch (r.fontFamily()) {
         case READER_FONT_SANS_SERIF: {
           decls.put("font-family", "sans-serif");
           break;
         }
         case READER_FONT_OPEN_DYSLEXIC: {
-          /**
+
+          /*
            * This is defined as a custom CSS font family inside
            * OpenDyslexic.css, which is referenced from the initially
            * loaded reader.html file.
@@ -230,7 +224,7 @@ public final class ReaderReadiumJavaScriptAPI
       final ReaderReadiumViewerSettings vs = new ReaderReadiumViewerSettings(
         SyntheticSpreadMode.SINGLE,
         ScrollMode.AUTO,
-        (int) r.getFontScale(),
+        (int) r.fontScale(),
         20);
 
       this.evaluate(
@@ -238,8 +232,7 @@ public final class ReaderReadiumJavaScriptAPI
           String.format("ReadiumSDK.reader.updateSettings(%s);", vs.toJSON())));
 
     } catch (final JSONException e) {
-      ReaderReadiumJavaScriptAPI.LOG.error(
-        "error constructing json: {}", e.getMessage(), e);
+      LOG.error("error constructing json: {}", e.getMessage(), e);
     }
   }
 
@@ -262,8 +255,7 @@ public final class ReaderReadiumJavaScriptAPI
 
       this.evaluate(script.toString());
     } catch (final JSONException e) {
-      ReaderReadiumJavaScriptAPI.LOG.error(
-        "error constructing json: {}", e.getMessage(), e);
+      LOG.error("error constructing json: {}", e.getMessage(), e);
     }
   }
 
@@ -273,20 +265,15 @@ public final class ReaderReadiumJavaScriptAPI
     NullCheck.notNull(l);
 
     this.evaluateWithResult(
-      "ReadiumSDK.reader.isMediaOverlayAvailable()", new ValueCallback<String>()
-      {
-        @Override public void onReceiveValue(
-          final @Nullable String value)
-        {
+      "ReadiumSDK.reader.isMediaOverlayAvailable()", value -> {
+        try {
+          final boolean available = Boolean.valueOf(value);
+          l.onMediaOverlayIsAvailable(available);
+        } catch (final Throwable x) {
           try {
-            final boolean available = Boolean.valueOf(value).booleanValue();
-            l.onMediaOverlayIsAvailable(available);
-          } catch (final Throwable x) {
-            try {
-              l.onMediaOverlayIsAvailableError(x);
-            } catch (final Throwable x1) {
-              ReaderReadiumJavaScriptAPI.LOG.error("{}", x1.getMessage(), x1);
-            }
+            l.onMediaOverlayIsAvailableError(x);
+          } catch (final Throwable x1) {
+            LOG.error("{}", x1.getMessage(), x1);
           }
         }
       });

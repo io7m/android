@@ -480,7 +480,6 @@ public final class CatalogBookDetailView
     this.book_download_buttons.addView(
         new CatalogBookReadButton(
             this.activity,
-            this.books_controller,
             this.account,
             d.getID(),
             this.entry.get()),

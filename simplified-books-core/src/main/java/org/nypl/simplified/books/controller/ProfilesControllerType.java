@@ -2,6 +2,7 @@ package org.nypl.simplified.books.controller;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.Unit;
 
 import org.joda.time.LocalDate;
@@ -15,14 +16,17 @@ import org.nypl.simplified.books.accounts.AccountID;
 import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
+import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent;
 import org.nypl.simplified.books.profiles.ProfileCreationEvent;
 import org.nypl.simplified.books.profiles.ProfileEvent;
 import org.nypl.simplified.books.profiles.ProfileID;
 import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
 import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
+import org.nypl.simplified.books.profiles.ProfilePreferences;
 import org.nypl.simplified.books.profiles.ProfileReadableType;
 import org.nypl.simplified.books.profiles.ProfilesDatabaseType;
+import org.nypl.simplified.books.reader.ReaderBookLocation;
 import org.nypl.simplified.observable.ObservableReadableType;
 
 import java.net.URI;
@@ -204,4 +208,45 @@ public interface ProfilesControllerType {
    */
 
   URI profileAccountCurrentCatalogRootURI() throws ProfileNoneCurrentException;
+
+  /**
+   * Set a bookmark.
+   *
+   * @param book_id      The book ID
+   * @param new_location The book location
+   * @throws ProfileNoneCurrentException If the anonymous profile is disabled and no profile has been selected
+   * @see #profileSelect(ProfileID)
+   * @see #profileAnonymousEnabled()
+   */
+
+  void profileBookmarkSet(
+      BookID book_id,
+      ReaderBookLocation new_location)
+      throws ProfileNoneCurrentException;
+
+  /**
+   * Retrieve the last bookmark for a given book.
+   *
+   * @param book_id The book ID
+   * @throws ProfileNoneCurrentException If the anonymous profile is disabled and no profile has been selected
+   * @see #profileSelect(ProfileID)
+   * @see #profileAnonymousEnabled()
+   */
+
+  OptionType<ReaderBookLocation> profileBookmarkGet(
+      BookID book_id)
+      throws ProfileNoneCurrentException;
+
+  /**
+   * Update preferences for the current profile.
+   *
+   * @param preferences The new preferences
+   * @throws ProfileNoneCurrentException If the anonymous profile is disabled and no profile has been selected
+   * @see #profileSelect(ProfileID)
+   * @see #profileAnonymousEnabled()
+   */
+
+  void profilePreferencesUpdate(
+      ProfilePreferences preferences)
+      throws ProfileNoneCurrentException;
 }

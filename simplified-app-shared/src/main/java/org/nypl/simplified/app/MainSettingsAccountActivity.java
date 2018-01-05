@@ -35,6 +35,7 @@ import com.io7m.jnull.Nullable;
 import com.tenmiles.helpstack.HSHelpStack;
 import com.tenmiles.helpstack.gears.HSDeskGear;
 
+import org.nypl.simplified.app.utilities.ErrorDialogUtilities;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountBarcode;
@@ -413,14 +414,13 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity {
   private Unit onAccountEventLoginFailed(final AccountLoginFailed failed) {
     LOG.debug("onLoginFailed: {}", failed);
 
-    UIThread.runOnUIThread(() -> {
-      final AlertDialog.Builder alert_builder = new AlertDialog.Builder(this);
-      alert_builder.setMessage(LoginDialog.loginErrorCodeToLocalizedMessage(this.getResources(), failed.errorCode()));
-      alert_builder.setCancelable(true);
-      final AlertDialog alert = alert_builder.create();
-      alert.show();
-      this.login.setEnabled(true);
-    });
+    ErrorDialogUtilities.showErrorWithRunnable(
+        this,
+        LOG,
+        LoginDialog.loginErrorCodeToLocalizedMessage(this.getResources(), failed.errorCode()),
+        null,
+        () -> this.login.setEnabled(true));
+
     return Unit.unit();
   }
 
@@ -434,14 +434,13 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity {
   private Unit onAccountEventLogoutFailed(final AccountLogoutFailed failed) {
     LOG.debug("onLogoutFailed: {}", failed);
 
-    UIThread.runOnUIThread(() -> {
-      final AlertDialog.Builder alert_builder = new AlertDialog.Builder(this);
-      alert_builder.setMessage(R.string.settings_logout_failed);
-      alert_builder.setCancelable(true);
-      final AlertDialog alert = alert_builder.create();
-      alert.show();
-      this.login.setEnabled(true);
-    });
+    ErrorDialogUtilities.showErrorWithRunnable(
+        this,
+        LOG,
+        this.getResources().getString(R.string.settings_logout_failed),
+        null,
+        () -> this.login.setEnabled(true));
+
     return Unit.unit();
   }
 

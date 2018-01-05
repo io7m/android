@@ -327,7 +327,6 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
     this.cell_buttons.addView(
         new CatalogBookReadButton(
             this.activity,
-            this.books_controller,
             this.account,
             book_id,
             this.entry.get()),

@@ -279,8 +279,8 @@ public final class BookDatabase implements BookDatabaseType {
     }
 
     @Override
-    public void writeEPUB(final File file) throws BookDatabaseException {
-      NullCheck.notNull(file, "File");
+    public void writeEPUB(final File file_source) throws BookDatabaseException {
+      NullCheck.notNull(file_source, "File");
 
       synchronized (this.book_lock) {
         Assertions.checkPrecondition(!this.deleted, "Entry must not have been deleted");
@@ -292,11 +292,11 @@ public final class BookDatabase implements BookDatabaseType {
 
         try {
           DirectoryUtilities.directoryCreate(this.book_dir);
-          FileUtilities.fileCopy(file, file_target_tmp);
+          FileUtilities.fileCopy(file_source, file_target_tmp);
           FileUtilities.fileRename(file_target_tmp, file_target);
           this.book =
               this.book.toBuilder()
-                  .setFile(file)
+                  .setFile(file_target)
                   .build();
         } catch (final IOException e) {
           throw new BookDatabaseException(e.getMessage(), Collections.singletonList(e));

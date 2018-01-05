@@ -20,6 +20,7 @@ import com.io7m.jnull.NullCheck;
 import com.io7m.junreachable.UnreachableCodeException;
 
 import org.joda.time.LocalDate;
+import org.nypl.simplified.app.utilities.ErrorDialogUtilities;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.accounts.AccountProviderCollection;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
@@ -49,8 +50,7 @@ public final class ProfileCreationActivity extends Activity {
   }
 
   @Override
-  protected void onCreate(
-      final @Nullable Bundle state) {
+  protected void onCreate(final @Nullable Bundle state) {
 
     this.setTheme(Simplified.getCurrentTheme());
     super.onCreate(state);
@@ -68,26 +68,20 @@ public final class ProfileCreationActivity extends Activity {
     this.name.addTextChangedListener(new ButtonTextWatcher(button));
   }
 
-  private Unit onProfileCreationFailed(
-      final ProfileCreationFailed e) {
-
+  private Unit onProfileCreationFailed(final ProfileCreationFailed e) {
     LOG.debug("onProfileCreationFailed: {}", e);
 
-    UIThread.runOnUIThread(() -> {
-      button.setEnabled(true);
-      final AlertDialog.Builder alert_builder =
-          new AlertDialog.Builder(ProfileCreationActivity.this);
-      alert_builder.setMessage(messageForErrorCode(e.errorCode()));
-      alert_builder.setCancelable(true);
-      final AlertDialog alert = alert_builder.create();
-      alert.show();
-    });
+    ErrorDialogUtilities.showErrorWithRunnable(
+        this,
+        LOG,
+        this.getResources().getString(messageForErrorCode(e.errorCode())),
+        null,
+        () -> this.button.setEnabled(true));
 
     return Unit.unit();
   }
 
-  private int messageForErrorCode(
-      final ProfileCreationFailed.ErrorCode code) {
+  private int messageForErrorCode(final ProfileCreationFailed.ErrorCode code) {
     switch (code) {
       case ERROR_DISPLAY_NAME_ALREADY_USED:
         return R.string.profiles_creation_error_name_already_used;
@@ -97,17 +91,13 @@ public final class ProfileCreationActivity extends Activity {
     throw new UnreachableCodeException();
   }
 
-  private Unit onProfileCreationSucceeded(
-      final ProfileCreationSucceeded e) {
-
+  private Unit onProfileCreationSucceeded(final ProfileCreationSucceeded e) {
     LOG.debug("onProfileCreationSucceeded: {}", e);
     UIThread.runOnUIThread(this::openSelectionActivity);
     return Unit.unit();
   }
 
-  private Unit onProfileEvent(
-      final ProfileEvent event) {
-
+  private Unit onProfileEvent(final ProfileEvent event) {
     LOG.debug("onProfileEvent: {}", event);
     if (event instanceof ProfileCreationEvent) {
       final ProfileCreationEvent event_create = (ProfileCreationEvent) event;

@@ -1,10 +1,13 @@
 package org.nypl.simplified.books.profiles;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableMap;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
 
 import org.joda.time.LocalDate;
+import org.nypl.simplified.books.reader.ReaderBookmarks;
+import org.nypl.simplified.books.reader.ReaderPreferences;
 
 /**
  * A set of preferences for a profile.
@@ -30,6 +33,29 @@ public abstract class ProfilePreferences {
   public abstract Builder toBuilder();
 
   /**
+   * @return The reader-specific preferences
+   */
+
+  public abstract ReaderPreferences readerPreferences();
+
+  /**
+   * @return The reader bookmarks
+   */
+
+  public abstract ReaderBookmarks readerBookmarks();
+
+  /**
+   * Update bookmarks.
+   *
+   * @param bookmarks The new bookmarks
+   * @return A new set of preferences based on the current preferences but with the given bookmarks
+   */
+
+  public final ProfilePreferences withReaderBookmarks(final ReaderBookmarks bookmarks) {
+    return this.toBuilder().setReaderBookmarks(bookmarks).build();
+  }
+
+  /**
    * A mutable builder for the type.
    */
 
@@ -39,6 +65,24 @@ public abstract class ProfilePreferences {
     Builder() {
 
     }
+
+    /**
+     * @param bookmarks The reader bookmarks
+     * @return The current builder
+     * @see #readerBookmarks()
+     */
+
+    public abstract Builder setReaderBookmarks(
+        ReaderBookmarks bookmarks);
+
+    /**
+     * @param prefs The reader preferences
+     * @return The current builder
+     * @see #readerPreferences()
+     */
+
+    public abstract Builder setReaderPreferences(
+        ReaderPreferences prefs);
 
     /**
      * @param date The date
@@ -55,8 +99,7 @@ public abstract class ProfilePreferences {
      * @see #dateOfBirth()
      */
 
-    public final Builder setDateOfBirth(
-        final LocalDate date) {
+    public final Builder setDateOfBirth(final LocalDate date) {
       return setDateOfBirth(Option.some(date));
     }
 
@@ -73,6 +116,10 @@ public abstract class ProfilePreferences {
 
   public static ProfilePreferences.Builder builder() {
     return new AutoValue_ProfilePreferences.Builder()
+        .setReaderPreferences(
+            ReaderPreferences.builder()
+                .build())
+        .setReaderBookmarks(ReaderBookmarks.create(ImmutableMap.of()))
         .setDateOfBirth(Option.<LocalDate>none());
   }
 }

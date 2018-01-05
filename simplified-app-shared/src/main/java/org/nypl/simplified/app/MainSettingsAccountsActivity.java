@@ -24,6 +24,7 @@ import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 
+import org.nypl.simplified.app.utilities.ErrorDialogUtilities;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.accounts.AccountEvent;
 import org.nypl.simplified.books.accounts.AccountEventCreation;
@@ -262,9 +263,12 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
   private Unit onAccountDeletionFailed(final AccountDeletionFailed event) {
     LOG.debug("onAccountDeletionFailed: {}", event);
 
-    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-    builder.setMessage(R.string.profiles_account_deletion_error_general);
-    builder.create().show();
+    ErrorDialogUtilities.showError(
+        this,
+        LOG,
+        this.getResources().getString(R.string.profiles_account_deletion_error_general),
+        null);
+
     return Unit.unit();
   }
 
@@ -281,9 +285,12 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
   private Unit onAccountCreationFailed(final AccountCreationFailed event) {
     LOG.debug("onAccountCreationFailed: {}", event);
 
-    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-    builder.setMessage(R.string.profiles_account_creation_error_general);
-    builder.create().show();
+    ErrorDialogUtilities.showError(
+        this,
+        LOG,
+        this.getResources().getString(R.string.profiles_account_creation_error_general),
+        null);
+
     return Unit.unit();
   }
 
@@ -311,9 +318,12 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
   private Unit onProfileAccountSelectFailed(final ProfileAccountSelectFailed event) {
     LOG.debug("onProfileAccountSelectFailed: {}", event);
 
-    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-    builder.setMessage(R.string.profiles_account_selection_error_general);
-    builder.create().show();
+    ErrorDialogUtilities.showError(
+        this,
+        LOG,
+        this.getResources().getString(R.string.profiles_account_selection_error_general),
+        null);
+
     return Unit.unit();
   }
 
