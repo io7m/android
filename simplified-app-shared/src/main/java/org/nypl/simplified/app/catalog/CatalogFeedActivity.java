@@ -39,7 +39,6 @@ import org.nypl.simplified.app.SimplifiedActivity;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.assertions.Assertions;
 import org.nypl.simplified.books.book_registry.BookStatusEvent;
-import org.nypl.simplified.books.core.BookFeedListenerType;
 import org.nypl.simplified.books.core.BooksFeedSelection;
 import org.nypl.simplified.books.core.DocumentStoreType;
 import org.nypl.simplified.books.core.EULAType;
@@ -65,7 +64,6 @@ import org.nypl.simplified.books.feeds.FeedWithoutGroups;
 import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent.ProfileAccountSelectSucceeded;
 import org.nypl.simplified.books.profiles.ProfileEvent;
 import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
-import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 import org.nypl.simplified.http.core.HTTPAuthType;
 import org.nypl.simplified.observable.ObservableSubscriptionType;
 import org.nypl.simplified.opds.core.OPDSFacet;
@@ -87,7 +85,7 @@ import java.util.concurrent.Future;
  */
 
 public abstract class CatalogFeedActivity extends CatalogActivity
-    implements BookFeedListenerType,
+    implements
     FeedMatcherType<Unit, UnreachableCodeException>,
     FeedLoaderListenerType {
 
@@ -427,25 +425,6 @@ public abstract class CatalogFeedActivity extends CatalogActivity
       final CatalogFeedArgumentsType args) {
     final ImmutableStack<CatalogFeedArgumentsType> up_stack = this.getUpStack();
     return up_stack.push(args);
-  }
-
-  @Override
-  public void onBookFeedFailure(final Throwable e) {
-
-    if (e instanceof CancellationException) {
-      LOG.debug("Cancelled feed");
-      return;
-    }
-
-    UIThread.runOnUIThread(() -> onFeedLoadingFailureUI(e));
-  }
-
-  @Override
-  public void onBookFeedSuccess(final FeedWithoutGroups f) {
-
-    LOG.debug("received locally generated feed: {}", f.getFeedID());
-    this.feed = f;
-    this.onFeedWithoutGroups(f);
   }
 
   @Override

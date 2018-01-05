@@ -4,7 +4,7 @@ import android.support.test.filters.SmallTest;
 import android.support.test.runner.AndroidJUnit4;
 
 import org.junit.runner.RunWith;
-import org.nypl.simplified.tests.books.BookDatabaseContract;
+import org.nypl.simplified.tests.books.book_database.BookDatabaseContract;
 
 @RunWith(AndroidJUnit4.class)
 @SmallTest

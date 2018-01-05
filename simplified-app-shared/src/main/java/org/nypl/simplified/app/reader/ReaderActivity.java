@@ -272,9 +272,16 @@ public final class ReaderActivity extends Activity implements
       return;
     }
 
+    final BookDatabaseEntryType db_entry;
     final File epub_file;
     try {
-      epub_file = findEPUBFileForBook(this.account, this.book_id);
+      db_entry = account.bookDatabase().entry(book_id);
+      final OptionType<File> file_opt = db_entry.book().file();
+      if (file_opt.isSome()) {
+        epub_file = ((Some<File>) file_opt).get();
+      } else {
+        throw new ReaderMissingEPUBException();
+      }
     } catch (final BookDatabaseException | ReaderMissingEPUBException e) {
       this.failWithErrorMessage(this.getResources(), e);
       return;
@@ -399,7 +406,10 @@ public final class ReaderActivity extends Activity implements
     in_title_text.setText("");
 
     final ReaderReadiumEPUBLoaderType pl = Simplified.getReadiumEPUBLoader();
-    pl.loadEPUB(epub_file, this);
+    pl.loadEPUB(
+        ReaderReadiumEPUBLoadRequest.builder(epub_file)
+            .setAdobeRightsFile(db_entry.book().adobeRightsFile())
+            .build(), this);
     this.applyViewerColorFilters();
 
     this.settings_subscription =
@@ -466,19 +476,6 @@ public final class ReaderActivity extends Activity implements
     ErrorDialogUtilities.showErrorWithRunnable(this, LOG, message, e, ReaderActivity.this::finish);
   }
 
-  private static File findEPUBFileForBook(
-      final AccountType account,
-      final BookID book_id)
-      throws BookDatabaseException, ReaderMissingEPUBException {
-
-    final BookDatabaseEntryType db_entry = account.bookDatabase().entry(book_id);
-    final OptionType<File> file_opt = db_entry.book().file();
-    if (file_opt.isSome()) {
-      return ((Some<File>) file_opt).get();
-    }
-
-    throw new ReaderMissingEPUBException();
-  }
 
   @Override
   public void onCurrentPageError(final Throwable x) {

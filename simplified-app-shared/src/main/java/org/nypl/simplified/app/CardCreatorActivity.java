@@ -25,21 +25,15 @@ import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.TextView;
 
-import com.io7m.jfunctional.Option;
-import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 import com.io7m.junreachable.UnimplementedCodeException;
 
-import org.nypl.drm.core.AdobeVendorID;
 import org.nypl.simplified.app.catalog.MainCatalogActivity;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountAuthenticationProvider;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
-import org.nypl.simplified.books.core.AccountLoginListenerType;
-import org.nypl.simplified.books.book_database.BookID;
-import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.cardcreator.fragments.AddressFragment;
 import org.nypl.simplified.cardcreator.fragments.AgeFragment;
 import org.nypl.simplified.cardcreator.fragments.ConfirmationFragment;
@@ -67,16 +61,15 @@ import org.nypl.simplified.prefs.Prefs;
 
 import java.util.List;
 
-
 /**
  *
  */
+
 public class CardCreatorActivity extends FragmentActivity implements
   InputListenerType,
   AddressListenerType,
   UsernameListenerType,
   AccountListenerType,
-  AccountLoginListenerType,
   LocationListenerType {
 
 
@@ -769,7 +762,6 @@ public class CardCreatorActivity extends FragmentActivity implements
     findViewById(R.id.next_button).setEnabled(this.prefs.getBoolean(this.getResources().getString(R.string.SHOW_NEXT_BUTTON)));
 
     final Resources rr = NullCheck.notNull(CardCreatorActivity.this.getResources());
-    final BooksType books = getBooksType();
 
     final AccountBarcode barcode = AccountBarcode.create(this.prefs.getString(this.getResources().getString(R.string.USERNAME_DATA_KEY)));
     final AccountPIN pin = AccountPIN.create(this.prefs.getString(this.getResources().getString(R.string.PIN_DATA_KEY)));
@@ -791,10 +783,6 @@ public class CardCreatorActivity extends FragmentActivity implements
     // books.accountLogin(creds, CardCreatorActivity.this);
 
     this.showProgress(false);
-    throw new UnimplementedCodeException();
-  }
-
-  private BooksType getBooksType() {
     throw new UnimplementedCodeException();
   }
 
@@ -824,56 +812,6 @@ public class CardCreatorActivity extends FragmentActivity implements
       im.hideSoftInputFromWindow(
         view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
     }
-  }
-
-  @Override
-  public void onAccountLoginFailureCredentialsIncorrect() {
-    // Nothing
-  }
-
-  @Override
-  public void onAccountLoginFailureServerError(final int code) {
-    // Nothing
-  }
-
-  @Override
-  public void onAccountLoginFailureLocalError(final OptionType<Throwable> error, final String message) {
-    // Nothing
-  }
-
-  @Override
-  public void onAccountLoginSuccess(final AccountAuthenticationCredentials credentials) {
-    // Nothing
-  }
-
-  @Override
-  public void onAccountLoginFailureDeviceActivationError(final String message) {
-    // Nothing
-  }
-
-  @Override
-  public void onAccountSyncAuthenticationFailure(final String message) {
-    // Nothing
-  }
-
-  @Override
-  public void onAccountSyncBook(final BookID book) {
-    // Nothing
-  }
-
-  @Override
-  public void onAccountSyncFailure(final OptionType<Throwable> error, final String message) {
-    // Nothing
-  }
-
-  @Override
-  public void onAccountSyncSuccess() {
-    // Nothing
-  }
-
-  @Override
-  public void onAccountSyncBookDeleted(final BookID book) {
-    // Nothing
   }
 
   @Override

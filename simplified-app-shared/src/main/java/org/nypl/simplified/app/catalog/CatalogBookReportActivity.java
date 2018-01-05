@@ -23,12 +23,12 @@ import com.io7m.junreachable.UnimplementedCodeException;
 import org.nypl.simplified.app.R;
 import org.nypl.simplified.app.SimplifiedActivity;
 import org.nypl.simplified.app.SimplifiedPart;
-import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 
 /**
  * An activity showing options for reporting
  */
+
 public class CatalogBookReportActivity extends SimplifiedActivity
 {
   private static final String FEED_ENTRY;
@@ -37,7 +37,6 @@ public class CatalogBookReportActivity extends SimplifiedActivity
     FEED_ENTRY = "org.nypl.simplified.app.CatalogBookReportActivity.feed_entry";
   }
 
-  private @Nullable BooksType books;
   private @Nullable FeedEntryOPDS feed_entry;
   private OptionType<CheckBox> current_check_box;
 
@@ -84,9 +83,7 @@ public class CatalogBookReportActivity extends SimplifiedActivity
       bar.setDisplayHomeAsUpEnabled(false);
       bar.setHomeButtonEnabled(true);
       bar.setIcon(R.drawable.ic_arrow_back);
-    }
-    else
-    {
+    } else {
       bar.setHomeAsUpIndicator(R.drawable.ic_arrow_back);
       bar.setDisplayHomeAsUpEnabled(true);
       bar.setHomeButtonEnabled(false);
@@ -118,12 +115,9 @@ public class CatalogBookReportActivity extends SimplifiedActivity
     this.configureUpButton();
   }
 
-  @Override protected void onCreate(
-      final @Nullable Bundle state)
+  @Override protected void onCreate(final @Nullable Bundle state)
   {
     super.onCreate(state);
-
-    this.books = getBooks();
 
     final Intent intent = NullCheck.notNull(this.getIntent());
     final Bundle a = NullCheck.notNull(intent.getExtras());
@@ -176,19 +170,14 @@ public class CatalogBookReportActivity extends SimplifiedActivity
     });
   }
 
-  private BooksType getBooks() {
-    throw new UnimplementedCodeException();
-  }
-
   private void submitReport()
   {
-    if (CatalogBookReportActivity.this.current_check_box.isSome()) {
-      final Some<CheckBox> check_box_some = (Some<CheckBox>) CatalogBookReportActivity.this.current_check_box;
+    if (this.current_check_box.isSome()) {
+      final Some<CheckBox> check_box_some = (Some<CheckBox>) this.current_check_box;
       final CheckBox check_box = check_box_some.get();
       if (check_box.isChecked()) {
         final String type = NullCheck.notNull((String) check_box.getTag());
-        this.books.bookReport(this.feed_entry, type);
-        this.finish();
+        throw new UnimplementedCodeException();
       }
     }
   }

@@ -1,20 +1,12 @@
 package org.nypl.simplified.app.catalog;
 
 import android.app.Activity;
-import android.app.FragmentManager;
-import android.content.res.Resources;
-import android.view.View;
 
-import com.io7m.jfunctional.OptionType;
-import com.io7m.jfunctional.Some;
 import com.io7m.jnull.NullCheck;
-import com.io7m.jnull.Nullable;
 import com.io7m.junreachable.UnimplementedCodeException;
 
-import org.nypl.simplified.app.R;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.controller.BooksControllerType;
-import org.nypl.simplified.books.core.BookDatabaseEntrySnapshot;
 
 /**
  * A button for revoking loans or holds.

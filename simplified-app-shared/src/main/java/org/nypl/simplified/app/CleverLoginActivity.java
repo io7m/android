@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Build;
@@ -15,23 +14,17 @@ import android.webkit.CookieSyncManager;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 import com.io7m.junreachable.UnimplementedCodeException;
 
-import org.nypl.drm.core.AdobeVendorID;
 import org.nypl.simplified.app.utilities.UIThread;
-import org.nypl.simplified.books.accounts.AccountAuthenticationAdobeClientToken;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountAuthenticationProvider;
 import org.nypl.simplified.books.accounts.AccountBarcode;
 import org.nypl.simplified.books.accounts.AccountPIN;
 import org.nypl.simplified.books.accounts.AccountPatron;
-import org.nypl.simplified.books.core.AccountLoginListenerType;
-import org.nypl.simplified.books.book_database.BookID;
-import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.http.core.HTTPOAuthToken;
 import org.nypl.simplified.http.core.HTTPProblemReport;
@@ -47,7 +40,7 @@ import java.util.StringTokenizer;
  * view.
  */
 
-public final class CleverLoginActivity extends SimplifiedActivity implements AccountLoginListenerType {
+public final class CleverLoginActivity extends SimplifiedActivity {
 
   private static final Logger LOG;
 
@@ -220,8 +213,6 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
           }
 
           if (error == null) {
-            final BooksType books = getBooks();
-
             final AccountBarcode barcode =
                 AccountBarcode.create("");
             final AccountPIN pin =
@@ -296,10 +287,6 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
 
   }
 
-  private static BooksType getBooks() {
-    throw new UnimplementedCodeException();
-  }
-
   /**
    * Set the listener that will be used to receive the results of the login
    * attempt.
@@ -312,97 +299,6 @@ public final class CleverLoginActivity extends SimplifiedActivity implements Acc
     this.listener = NullCheck.notNull(in_listener);
   }
 
-  @Override
-  public void onAccountSyncAuthenticationFailure(final String message) {
-    // Nothing
-  }
-
-  @Override
-  public void onAccountSyncBook(final BookID book) {
-    // Nothing
-  }
-
-  @Override
-  public void onAccountSyncFailure(
-      final OptionType<Throwable> error,
-      final String message) {
-    LogUtilities.errorWithOptionalException(CleverLoginActivity.LOG, message, error);
-  }
-
-  @Override
-  public void onAccountSyncSuccess() {
-    // Nothing
-  }
-
-  @Override
-  public void onAccountSyncBookDeleted(final BookID book) {
-    // Nothing
-  }
-
-  @Override
-  public void onAccountLoginFailureCredentialsIncorrect() {
-    CleverLoginActivity.LOG.error("onAccountLoginFailureCredentialsIncorrect");
-
-    final Resources rr = NullCheck.notNull(this.getResources());
-    final OptionType<Throwable> none = Option.none();
-    this.onAccountLoginFailure(
-        none, rr.getString(R.string.settings_login_failed_credentials));
-  }
-
-  @Override
-  public void onAccountLoginFailureServerError(final int code) {
-    CleverLoginActivity.LOG.error(
-        "onAccountLoginFailureServerError: {}", code);
-
-    final Resources rr = NullCheck.notNull(this.getResources());
-    final OptionType<Throwable> none = Option.none();
-    this.onAccountLoginFailure(
-        none, rr.getString(R.string.settings_login_failed_server));
-  }
-
-  @Override
-  public void onAccountLoginFailureLocalError(
-      final OptionType<Throwable> error,
-      final String message) {
-    CleverLoginActivity.LOG.error("onAccountLoginFailureLocalError: {}", message);
-
-    final Resources rr = NullCheck.notNull(this.getResources());
-    this.onAccountLoginFailure(
-        error, rr.getString(R.string.settings_login_failed_server));
-  }
-
-  @Override
-  public void onAccountLoginSuccess(
-      final AccountAuthenticationCredentials creds) {
-    CleverLoginActivity.LOG.debug("login succeeded");
-
-
-    final Intent result = getIntent();
-//    result.putExtra("result", url);
-    setResult(1, result);
-    finish();
-
-
-//    final LoginListenerType ls = this.listener;
-//    if (ls != null) {
-//      try {
-//        ls.onLoginSuccess(creds);
-//      } catch (final Throwable e) {
-//        CleverLoginActivity.LOG.debug("{}", e.getMessage(), e);
-//      }
-//    }
-  }
-
-  @Override
-  public void onAccountLoginFailureDeviceActivationError(final String message) {
-    CleverLoginActivity.LOG.error(
-        "onAccountLoginFailureDeviceActivationError: {}", message);
-
-    final OptionType<Throwable> none = Option.none();
-    this.onAccountLoginFailure(
-        none, CleverLoginActivity.getDeviceActivationErrorMessage(
-            this.getResources(), message));
-  }
 
   private void onAccountLoginFailure(
       final OptionType<Throwable> error,

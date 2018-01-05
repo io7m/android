@@ -1,27 +1,17 @@
 package org.nypl.simplified.app;
 
 import android.app.Activity;
-import android.app.FragmentManager;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
 
-import com.io7m.jfunctional.OptionType;
-import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.simplified.app.catalog.MainCatalogActivity;
-import org.nypl.simplified.app.utilities.UIThread;
-import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
-import org.nypl.simplified.books.accounts.AccountBarcode;
-import org.nypl.simplified.books.accounts.AccountPIN;
-import org.nypl.simplified.books.core.BooksType;
 import org.nypl.simplified.books.core.LogUtilities;
-import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
-import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 import org.slf4j.Logger;
 
 /**
@@ -89,12 +79,6 @@ public final class LoginActivity extends Activity {
     super.onActivityResult(request_code, result_code, data);
     if (result_code == 1) {
       this.openCatalog();
-      final BooksType books = getBooks();
-      books.fulfillExistingBooks();
     }
-  }
-
-  private static BooksType getBooks() {
-    throw new UnimplementedCodeException();
   }
 }

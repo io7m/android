@@ -15,11 +15,7 @@ import org.slf4j.Logger;
  */
 public final class CatalogBookReport implements View.OnClickListener {
 
-  private static final Logger LOG;
-
-  static {
-    LOG = LogUtilities.getLog(CatalogBookRead.class);
-  }
+  private static final Logger LOG = LogUtilities.getLog(CatalogBookReport.class);
 
   private final Activity activity;
   private final FeedEntryOPDS feed_entry;
@@ -40,8 +36,7 @@ public final class CatalogBookReport implements View.OnClickListener {
   }
 
   @Override
-  public void onClick(
-    final @Nullable View v) {
+  public void onClick(final @Nullable View v) {
     CatalogBookReportActivity.startActivity(this.activity, this.feed_entry);
   }
 }

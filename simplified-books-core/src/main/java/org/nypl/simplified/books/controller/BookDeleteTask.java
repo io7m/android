@@ -11,7 +11,7 @@ import org.nypl.simplified.books.book_database.BookDatabaseType;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
 import org.nypl.simplified.books.book_registry.BookWithStatus;
-import org.nypl.simplified.books.core.BookStatus;
+import org.nypl.simplified.books.book_registry.BookStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

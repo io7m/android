@@ -3,7 +3,6 @@ package org.nypl.simplified.books.book_registry;
 import com.google.auto.value.AutoValue;
 
 import org.nypl.simplified.books.book_database.Book;
-import org.nypl.simplified.books.core.BookStatusType;
 
 @AutoValue
 public abstract class BookWithStatus {

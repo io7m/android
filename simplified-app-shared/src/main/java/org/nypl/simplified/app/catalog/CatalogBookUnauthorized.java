@@ -5,8 +5,8 @@ import com.io7m.jfunctional.Some;
 import com.io7m.jnull.NullCheck;
 import com.io7m.junreachable.UnreachableCodeException;
 
-import org.nypl.simplified.books.core.BookStatusDownloadFailed;
-import org.nypl.simplified.books.core.BookStatusRevokeFailed;
+import org.nypl.simplified.books.book_registry.BookStatusDownloadFailed;
+import org.nypl.simplified.books.book_registry.BookStatusRevokeFailed;
 import org.nypl.simplified.books.feeds.FeedHTTPTransportException;
 import org.nypl.simplified.http.core.HTTPProblemReport;
 
