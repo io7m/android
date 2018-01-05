@@ -37,6 +37,7 @@ import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
 import org.nypl.simplified.books.profiles.ProfileNonexistentAccountProviderException;
 import org.nypl.simplified.books.profiles.ProfilePreferences;
 import org.nypl.simplified.books.profiles.ProfileReadableType;
+import org.nypl.simplified.books.profiles.ProfileSelected;
 import org.nypl.simplified.books.profiles.ProfileType;
 import org.nypl.simplified.books.profiles.ProfilesDatabaseType;
 import org.nypl.simplified.books.profiles.ProfilesDatabaseType.AnonymousProfileEnabled;
@@ -46,10 +47,13 @@ import org.nypl.simplified.downloader.core.DownloaderType;
 import org.nypl.simplified.http.core.HTTPType;
 import org.nypl.simplified.observable.Observable;
 import org.nypl.simplified.observable.ObservableReadableType;
+import org.nypl.simplified.observable.ObservableSubscriptionType;
 import org.nypl.simplified.observable.ObservableType;
 import org.nypl.simplified.opds.core.OPDSAcquisition;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 import org.nypl.simplified.opds.core.OPDSFeedParserType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -63,6 +67,8 @@ import java.util.concurrent.ExecutorService;
 
 public final class Controller implements BooksControllerType, ProfilesControllerType {
 
+  private static final Logger LOG = LoggerFactory.getLogger(Controller.class);
+
   private final ListeningExecutorService exec;
   private final ProfilesDatabaseType profiles;
   private final BookRegistryType book_registry;
@@ -74,6 +80,7 @@ public final class Controller implements BooksControllerType, ProfilesController
   private final OPDSFeedParserType feed_parser;
   private final FeedLoaderType feed_loader;
   private final DownloaderType downloader;
+  private final ObservableSubscriptionType<ProfileEvent> profile_event_subscription;
 
   private Controller(
       final ExecutorService in_exec,
@@ -105,6 +112,27 @@ public final class Controller implements BooksControllerType, ProfilesController
     this.downloads = new ConcurrentHashMap<>(32);
     this.profile_events = Observable.create();
     this.account_events = Observable.create();
+    this.profile_event_subscription = this.profile_events.subscribe(this::onProfileEvent);
+  }
+
+  private void onProfileEvent(final ProfileEvent e) {
+    if (e instanceof ProfileSelected) {
+      onProfileEventSelected((ProfileSelected) e);
+      return;
+    }
+  }
+
+  private void onProfileEventSelected(final ProfileSelected ev) {
+    LOG.debug("onProfileEventSelected: {}", ev);
+
+    LOG.debug("clearing the book registry");
+    this.book_registry.clear();
+    try {
+      this.exec.execute(
+          new ProfileDataLoadTask(this.profiles.currentProfileUnsafe(), this.book_registry));
+    } catch (final ProfileNoneCurrentException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   public static Controller createBookController(
@@ -175,7 +203,7 @@ public final class Controller implements BooksControllerType, ProfilesController
   @Override
   public ListenableFuture<Unit> profileSelect(final ProfileID id) {
     NullCheck.notNull(id, "ID");
-    return this.exec.submit(new ProfileSelectionTask(this.profiles, id));
+    return this.exec.submit(new ProfileSelectionTask(this.profiles, this.profile_events, id));
   }
 
   @Override

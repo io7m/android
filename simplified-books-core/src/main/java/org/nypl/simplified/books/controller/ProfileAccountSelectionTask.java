@@ -55,8 +55,7 @@ final class ProfileAccountSelectionTask implements Callable<ProfileAccountSelect
       final AccountProvider provider = providers.providers().get(provider_id);
       if (provider != null) {
         profile.selectAccount(provider);
-        return ProfileAccountSelectSucceeded.of(
-            id_then, profile.accountCurrent().id());
+        return ProfileAccountSelectSucceeded.of(id_then, profile.accountCurrent().id());
       }
 
       return ProfileAccountSelectFailed.of(ErrorCode.ERROR_ACCOUNT_PROVIDER_UNKNOWN, Option.none());

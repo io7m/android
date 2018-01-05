@@ -1,6 +1,5 @@
 package org.nypl.simplified.books.book_registry;
 
-import com.io7m.jfunctional.FunctionType;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;
@@ -37,7 +36,7 @@ public final class BookRegistry implements BookRegistryType {
   }
 
   public static BookRegistryType create() {
-    return new BookRegistry(new ConcurrentSkipListMap<BookID, BookWithStatus>());
+    return new BookRegistry(new ConcurrentSkipListMap<>());
   }
 
   @Override
@@ -53,12 +52,7 @@ public final class BookRegistry implements BookRegistryType {
   @Override
   public OptionType<BookStatusType> bookStatus(final BookID id) {
     return Option.of(this.books.get(NullCheck.notNull(id, "id")))
-        .map(new FunctionType<BookWithStatus, BookStatusType>() {
-          @Override
-          public BookStatusType call(BookWithStatus with_status) {
-            return with_status.status();
-          }
-        });
+        .map(BookWithStatus::status);
   }
 
   @Override
