@@ -98,10 +98,6 @@ public final class CatalogFeedLane extends LinearLayout {
     this.feed_more =
         NullCheck.notNull(this.header.findViewById(R.id.feed_more), "Feed more");
 
-    final int color = Color.parseColor(in_account.provider().mainColor());
-    this.feed_title.setTextColor(color);
-    this.feed_more.setTextColor(color);
-
     this.title =
         NullCheck.notNull(this.findViewById(R.id.feed_title));
     this.progress =

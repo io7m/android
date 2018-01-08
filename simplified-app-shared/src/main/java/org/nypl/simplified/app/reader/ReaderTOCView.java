@@ -107,16 +107,8 @@ public final class ReaderTOCView implements ListAdapter {
   private void applyColorScheme(final ReaderColorScheme cs) {
     UIThread.checkIsUIThread();
 
-    final int main_color = getBrandingColor();
-    final TextView in_title = NullCheck.notNull(this.view_title);
     final ViewGroup in_root = NullCheck.notNull(this.view_root);
-
     in_root.setBackgroundColor(ReaderColorSchemes.background(cs));
-    in_title.setTextColor(main_color);
-  }
-
-  private int getBrandingColor() {
-    return Color.parseColor(this.account.provider().mainColor());
   }
 
   @Override

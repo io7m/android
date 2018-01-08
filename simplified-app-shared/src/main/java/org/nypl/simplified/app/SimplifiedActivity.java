@@ -762,7 +762,6 @@ public abstract class SimplifiedActivity extends Activity
 
         final AccountProvider account_provider = account.provider();
         text_view.setText(account_provider.displayName());
-        text_view.setTextColor(Color.parseColor(account_provider.mainColor()));
         SimplifiedIconViews.configureIconViewFromURI(
             this.assets, icon_view, account_provider.logo());
 

@@ -181,13 +181,8 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
         NullCheck.notNull(this.cell_downloading_failed.findViewById(R.id.cell_downloading_failed_retry));
 
     this.cell_downloading_cancel.setBackgroundResource(R.drawable.simplified_button);
-    this.cell_downloading_cancel.setTextColor(getBrandingColor());
-
     this.cell_downloading_failed_dismiss.setBackgroundResource(R.drawable.simplified_button);
-    this.cell_downloading_failed_dismiss.setTextColor(getBrandingColor());
-
     this.cell_downloading_failed_retry.setBackgroundResource(R.drawable.simplified_button);
-    this.cell_downloading_failed_retry.setTextColor(getBrandingColor());
 
     this.cell_corrupt =
         NullCheck.notNull(this.findViewById(R.id.cell_corrupt));
@@ -222,9 +217,6 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
         this.cell_cover_layout.findViewById(
             R.id.cell_cover_loading));
 
-    this.cell_cover_progress.getIndeterminateDrawable()
-        .setColorFilter(getBrandingColor(), android.graphics.PorterDuff.Mode.SRC_IN);
-
     /*
      * The height of the row is known, so assume a roughly 4:3 aspect ratio
      * for cover images and calculate the width of the cover layout in pixels.
@@ -242,18 +234,6 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
     this.cell_corrupt.setVisibility(View.INVISIBLE);
     this.cell_downloading.setVisibility(View.INVISIBLE);
     this.cell_downloading_failed.setVisibility(View.INVISIBLE);
-  }
-
-  private int getBrandingColor() {
-    try {
-      return Color.parseColor(
-          Simplified.getProfilesController()
-              .profileAccountCurrent()
-              .provider()
-              .mainColor());
-    } catch (final ProfileNoneCurrentException e) {
-      throw new IllegalStateException(e);
-    }
   }
 
   private static String makeAuthorText(final OPDSAcquisitionFeedEntry in_e) {
@@ -423,11 +403,12 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
     this.cell_downloading_cancel.setVisibility(View.VISIBLE);
     this.cell_downloading_cancel.setEnabled(true);
-    this.cell_downloading_cancel.setOnClickListener(
-        v -> {
-          // CatalogFeedBookCellView.this.books_registry.bookDownloadCancel(book_id);
-          throw new UnimplementedCodeException();
-        });
+    this.cell_downloading_cancel.setOnClickListener(view -> {
+      // XXX: The button is set to visible here, but for some reason does not appear
+      //      on any of the devices tested
+      // CatalogFeedBookCellView.this.books_registry.bookDownloadCancel(book_id);
+      throw new UnimplementedCodeException();
+    });
 
     return Unit.unit();
   }
@@ -456,9 +437,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
               this.books_controller,
               this.account(feed_entry.getBookID()),
               s.getID(),
-              CatalogBookRevokeType.REVOKE_HOLD
-          );
-
+              CatalogBookRevokeType.REVOKE_HOLD);
       this.cell_buttons.addView(revoke, 0);
     }
 
@@ -494,8 +473,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
               this.books_controller,
               this.account(feed_entry.getBookID()),
               s.getID(),
-              CatalogBookRevokeType.REVOKE_HOLD
-          );
+              CatalogBookRevokeType.REVOKE_HOLD);
       this.cell_buttons.addView(revoke, 0);
     }
 

@@ -46,7 +46,6 @@ public final class CatalogAcquisitionButton extends CatalogLeftPaddedButton
     final OPDSAvailabilityType availability = in_entry.getFeedEntry().getAvailability();
     final TextView text_view = this.getTextView();
     text_view.setTextSize(12.0f);
-    text_view.setTextColor(Color.parseColor(in_account.provider().mainColor()));
 
     this.setBackgroundResource(R.drawable.simplified_button);
     switch (in_acquisition.getType()) {

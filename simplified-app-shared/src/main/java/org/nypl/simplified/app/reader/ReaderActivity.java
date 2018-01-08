@@ -142,36 +142,6 @@ public final class ReaderActivity extends Activity implements
     from.startActivity(i);
   }
 
-  private int brandingColor() {
-    return Color.parseColor(this.account.provider().mainColor());
-  }
-
-  private void applyViewerColorFilters() {
-    LOG.debug("applying color filters");
-
-    final TextView in_progress_text = NullCheck.notNull(this.view_progress_text);
-    final TextView in_title_text = NullCheck.notNull(this.view_title_text);
-    final ImageView in_toc = NullCheck.notNull(this.view_toc);
-    final ImageView in_settings = NullCheck.notNull(this.view_settings);
-    final ImageView in_media_play = NullCheck.notNull(this.view_media_play);
-    final ImageView in_media_next = NullCheck.notNull(this.view_media_next);
-    final ImageView in_media_prev = NullCheck.notNull(this.view_media_prev);
-
-    final int main_color = brandingColor();
-    final ColorMatrixColorFilter filter =
-        ReaderColorMatrix.getImageFilterMatrix(main_color);
-
-    UIThread.runOnUIThread(() -> {
-      in_progress_text.setTextColor(main_color);
-      in_title_text.setTextColor(main_color);
-      in_toc.setColorFilter(filter);
-      in_settings.setColorFilter(filter);
-      in_media_play.setColorFilter(filter);
-      in_media_next.setColorFilter(filter);
-      in_media_prev.setColorFilter(filter);
-    });
-  }
-
   /**
    * Apply the given color scheme to all views. Unfortunately, there does not
    * seem to be a more pleasant way, in the Android API, than manually applying
@@ -184,7 +154,6 @@ public final class ReaderActivity extends Activity implements
     final View in_root = NullCheck.notNull(this.view_root);
     UIThread.runOnUIThread(() -> {
       in_root.setBackgroundColor(ReaderColorSchemes.background(cs));
-      this.applyViewerColorFilters();
     });
   }
 
@@ -410,7 +379,6 @@ public final class ReaderActivity extends Activity implements
         ReaderReadiumEPUBLoadRequest.builder(epub_file)
             .setAdobeRightsFile(db_entry.book().adobeRightsFile())
             .build(), this);
-    this.applyViewerColorFilters();
 
     this.settings_subscription =
         Simplified.getProfilesController()
