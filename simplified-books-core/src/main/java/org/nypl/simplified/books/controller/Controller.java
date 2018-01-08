@@ -309,8 +309,7 @@ public final class Controller implements BooksControllerType, ProfilesController
     return this.exec.submit(new ProfileAccountLogoutTask(
         this.profiles,
         this.book_registry,
-        this.account_events
-    ));
+        this.account_events));
   }
 
   @Override
@@ -337,7 +336,7 @@ public final class Controller implements BooksControllerType, ProfilesController
   }
 
   @Override
-  public void profileBookmarkSet(
+  public ListenableFuture<Unit> profileBookmarkSet(
       final BookID book_id,
       final ReaderBookLocation new_location)
       throws ProfileNoneCurrentException {
@@ -346,7 +345,8 @@ public final class Controller implements BooksControllerType, ProfilesController
     NullCheck.notNull(new_location, "Location");
 
     final ProfileType profile = this.profiles.currentProfileUnsafe();
-    this.exec.submit(new ProfileBookmarkSetTask(profile, this.profile_events, book_id, new_location));
+    return this.exec.submit(
+        new ProfileBookmarkSetTask(profile, this.profile_events, book_id, new_location));
   }
 
   @Override

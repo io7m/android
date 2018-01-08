@@ -1,6 +1,7 @@
 package org.nypl.simplified.books.book_database;
 
 import com.io7m.jfunctional.Option;
+import com.io7m.jfunctional.ProcedureType;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 
@@ -38,33 +39,65 @@ public final class BookDatabase implements BookDatabaseType {
   private final AccountID owner;
   private final File directory;
   private final OPDSJSONSerializerType serializer;
-  private final Object maps_lock;
-  private final @GuardedBy("maps_lock") ConcurrentSkipListMap<BookID, Book> books;
-  private final @GuardedBy("maps_lock") SortedMap<BookID, Book> books_read;
-  private final @GuardedBy("maps_lock") ConcurrentSkipListMap<BookID, DatabaseEntry> entries;
-  private final @GuardedBy("maps_lock") SortedMap<BookID, BookDatabaseEntryType> entries_read;
+  private final BookMaps maps;
+
+  private static final class BookMaps {
+
+    private final Object maps_lock;
+    private final @GuardedBy("maps_lock") ConcurrentSkipListMap<BookID, Book> books;
+    private final @GuardedBy("maps_lock") SortedMap<BookID, Book> books_read;
+    private final @GuardedBy("maps_lock") ConcurrentSkipListMap<BookID, DatabaseEntry> entries;
+    private final @GuardedBy("maps_lock") SortedMap<BookID, BookDatabaseEntryType> entries_read;
+
+    BookMaps()
+    {
+      this.maps_lock = new Object();
+      this.books = new ConcurrentSkipListMap<>();
+      this.books_read = Collections.unmodifiableSortedMap(this.books);
+      this.entries = new ConcurrentSkipListMap<>();
+      this.entries_read = Collections.unmodifiableSortedMap(this.entries);
+    }
+
+    void clear() {
+      synchronized (this.maps_lock) {
+        LOG.debug("BookMaps.clear");
+        this.books.clear();
+        this.entries.clear();
+      }
+    }
+
+    void delete(final BookID book_id) {
+      NullCheck.notNull(book_id, "Book ID");
+      synchronized (this.maps_lock) {
+        LOG.debug("BookMaps.delete: {}", book_id.value());
+        this.books.remove(book_id);
+        this.entries.remove(book_id);
+      }
+    }
+
+    void addEntry(final DatabaseEntry entry) {
+      synchronized (this.maps_lock) {
+        LOG.debug("BookMaps.addEntry: {}", entry.id.value());
+        this.books.put(entry.id, entry.book());
+        this.entries.put(entry.id, entry);
+      }
+    }
+  }
 
   private BookDatabase(
       final AccountID in_owner,
       final File in_directory,
-      final ConcurrentSkipListMap<BookID, Book> in_books,
-      final ConcurrentSkipListMap<BookID, DatabaseEntry> in_entries,
+      final BookMaps in_maps,
       final OPDSJSONSerializerType serializer)
   {
     this.owner =
         NullCheck.notNull(in_owner, "Owner");
     this.directory =
         NullCheck.notNull(in_directory, "Directory");
-    this.books =
-        NullCheck.notNull(in_books, "Books");
-    this.entries =
-        NullCheck.notNull(in_entries, "Entries");
+    this.maps =
+        NullCheck.notNull(in_maps, "Maps");
     this.serializer =
         NullCheck.notNull(serializer, "Serializer");
-
-    this.maps_lock = new Object();
-    this.books_read = Collections.unmodifiableSortedMap(this.books);
-    this.entries_read = Collections.unmodifiableSortedMap(this.entries);
   }
 
   public static BookDatabaseType open(
@@ -81,23 +114,16 @@ public final class BookDatabase implements BookDatabaseType {
 
     LOG.debug("opening book database: {}", directory);
 
-
-    final ConcurrentSkipListMap<BookID, DatabaseEntry> entries = new ConcurrentSkipListMap<>();
-
+    final BookMaps maps = new BookMaps();
     final List<Exception> errors = new ArrayList<>();
-    openAllBooks(parser, serializer, owner, directory, entries, errors);
+    openAllBooks(parser, serializer, owner, directory, maps, errors);
 
     if (!errors.isEmpty()) {
       throw new BookDatabaseException(
           "One or more errors occurred whilst trying to open a book database.", errors);
     }
 
-    final ConcurrentSkipListMap<BookID, Book> books = new ConcurrentSkipListMap<>();
-    for (final DatabaseEntry e : entries.values()) {
-      books.put(e.book().id(), e.book());
-    }
-
-    return new BookDatabase(owner, directory, books, entries, serializer);
+    return new BookDatabase(owner, directory, maps, serializer);
   }
 
   private static void openAllBooks(
@@ -105,7 +131,7 @@ public final class BookDatabase implements BookDatabaseType {
       final OPDSJSONSerializerType serializer,
       final AccountID account,
       final File directory,
-      final ConcurrentSkipListMap<BookID, DatabaseEntry> entries,
+      final BookMaps maps,
       final List<Exception> errors) {
 
     if (!directory.exists()) {
@@ -122,11 +148,11 @@ public final class BookDatabase implements BookDatabaseType {
         LOG.debug("opening book: {}/{}", directory, book_id);
         final File book_directory = new File(directory, book_id);
         final DatabaseEntry entry =
-            openOneEntry(parser, serializer, account, book_directory, errors, book_id);
+            openOneEntry(parser, serializer, account, book_directory, maps, errors, book_id);
         if (entry == null) {
           continue;
         }
-        entries.put(entry.book().id(), entry);
+        maps.addEntry(entry);
       }
     }
   }
@@ -136,6 +162,7 @@ public final class BookDatabase implements BookDatabaseType {
       final OPDSJSONSerializerType serializer,
       final AccountID account_id,
       final File directory,
+      final BookMaps maps,
       final List<Exception> errors,
       final String name) {
 
@@ -164,7 +191,7 @@ public final class BookDatabase implements BookDatabaseType {
         book_builder.setCover(file_cover);
       }
 
-      return new DatabaseEntry(directory, serializer, book_builder.build());
+      return new DatabaseEntry(directory, serializer, book_builder.build(), () -> maps.delete(book_id));
     } catch (final IOException e) {
       errors.add(e);
       return null;
@@ -178,8 +205,8 @@ public final class BookDatabase implements BookDatabaseType {
 
   @Override
   public SortedMap<BookID, Book> books() {
-    synchronized (this.maps_lock) {
-      return this.books_read;
+    synchronized (this.maps.maps_lock) {
+      return this.maps.books_read;
     }
   }
 
@@ -191,10 +218,7 @@ public final class BookDatabase implements BookDatabaseType {
       throw new BookDatabaseException(
           "Could not delete book database", Collections.singletonList(e));
     } finally {
-      synchronized (this.maps_lock) {
-        this.books.clear();
-        this.entries.clear();
-      }
+      this.maps.clear();
     }
   }
 
@@ -206,7 +230,7 @@ public final class BookDatabase implements BookDatabaseType {
     NullCheck.notNull(id, "ID");
     NullCheck.notNull(feed_entry, "Entry");
 
-    synchronized (this.maps_lock) {
+    synchronized (this.maps.maps_lock) {
       try {
         final File book_dir = new File(this.directory, id.value());
         DirectoryUtilities.directoryCreate(book_dir);
@@ -222,9 +246,9 @@ public final class BookDatabase implements BookDatabaseType {
 
         final Book.Builder book_builder = Book.builder(id, this.owner, feed_entry);
         final DatabaseEntry entry =
-            new DatabaseEntry(book_dir, this.serializer, book_builder.build());
-        this.books.put(id, entry.book());
-        this.entries.put(id, entry);
+            new DatabaseEntry(book_dir, this.serializer, book_builder.build(), () -> maps.delete(id));
+
+        this.maps.addEntry(entry);
         return entry;
       } catch (final IOException e) {
         throw new BookDatabaseException(e.getMessage(), Collections.singletonList(e));
@@ -237,8 +261,8 @@ public final class BookDatabase implements BookDatabaseType {
 
     NullCheck.notNull(id, "ID");
 
-    synchronized (this.maps_lock) {
-      final DatabaseEntry entry = this.entries.get(id);
+    synchronized (this.maps.maps_lock) {
+      final DatabaseEntry entry = this.maps.entries.get(id);
       if (entry == null) {
         throw new BookDatabaseException(
             "Nonexistent book entry: " + id.value(), Collections.emptyList());
@@ -252,12 +276,16 @@ public final class BookDatabase implements BookDatabaseType {
     private final File book_dir;
     private final Object book_lock;
     private final OPDSJSONSerializerType serializer;
+    private final Runnable on_delete;
+    private final BookID id;
     private @GuardedBy("book_lock") boolean deleted;
     private @GuardedBy("book_lock") Book book;
 
     DatabaseEntry(
         final File book_dir,
-        OPDSJSONSerializerType serializer, final Book book) {
+        final OPDSJSONSerializerType serializer,
+        final Book book,
+        final Runnable on_delete) {
 
       this.book_dir =
           NullCheck.notNull(book_dir, "Book directory");
@@ -265,7 +293,10 @@ public final class BookDatabase implements BookDatabaseType {
           NullCheck.notNull(serializer, "Serializer");
       this.book =
           NullCheck.notNull(book, "book");
+      this.on_delete =
+          NullCheck.notNull(on_delete, "On delete");
 
+      this.id = book.id();
       this.book_lock = new Object();
       this.deleted = false;
     }
@@ -404,6 +435,7 @@ public final class BookDatabase implements BookDatabaseType {
 
         try {
           DirectoryUtilities.directoryDelete(this.book_dir);
+          this.on_delete.run();
         } catch (final IOException e) {
           throw new BookDatabaseException(e.getMessage(), Collections.singletonList(e));
         }

@@ -2,6 +2,7 @@ package org.nypl.simplified.books.controller;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListenableFutureTask;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.Unit;
 
@@ -220,7 +221,7 @@ public interface ProfilesControllerType {
    * @see #profileAnonymousEnabled()
    */
 
-  void profileBookmarkSet(
+  ListenableFuture<Unit> profileBookmarkSet(
       BookID book_id,
       ReaderBookLocation new_location)
       throws ProfileNoneCurrentException;

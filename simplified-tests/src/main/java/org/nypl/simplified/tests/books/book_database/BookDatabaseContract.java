@@ -6,6 +6,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.nypl.simplified.books.accounts.AccountID;
 import org.nypl.simplified.books.book_database.BookDatabase;
+import org.nypl.simplified.books.book_database.BookDatabaseEntryType;
 import org.nypl.simplified.books.book_database.BookDatabaseType;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.files.DirectoryUtilities;
@@ -89,5 +90,32 @@ public abstract class BookDatabaseContract {
     Assert.assertEquals(db1.books().get(id0).entry().getID(), entry0.getID());
     Assert.assertEquals(db1.books().get(id1).entry().getID(), entry1.getID());
     Assert.assertEquals(db1.books().get(id2).entry().getID(), entry2.getID());
+  }
+
+  @Test
+  public final void openCreateDelete()
+      throws Exception {
+
+    final OPDSJSONParserType parser = OPDSJSONParser.newParser();
+    final OPDSJSONSerializerType serializer = OPDSJSONSerializer.newSerializer();
+
+    final File directory =
+        DirectoryUtilities.directoryCreateTemporary();
+    final BookDatabaseType db0 =
+        BookDatabase.open(parser, serializer, AccountID.create(1), directory);
+
+    final OPDSAcquisitionFeedEntry entry0 =
+        OPDSAcquisitionFeedEntry.newBuilder(
+            "a",
+            "Title",
+            Calendar.getInstance(),
+            OPDSAvailabilityOpenAccess.get(Option.none()))
+            .build();
+
+    final BookID id0 = BookID.create("a");
+    final BookDatabaseEntryType db_entry = db0.createOrUpdate(id0, entry0);
+    Assert.assertEquals(1, db0.books().size());
+    db_entry.delete();
+    Assert.assertEquals(0, db0.books().size());
   }
 }

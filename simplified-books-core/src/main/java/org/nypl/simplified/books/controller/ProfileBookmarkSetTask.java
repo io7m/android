@@ -13,6 +13,7 @@ import org.nypl.simplified.observable.ObservableType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.concurrent.Callable;
 
 final class ProfileBookmarkSetTask implements Callable<Unit> {
@@ -41,7 +42,7 @@ final class ProfileBookmarkSetTask implements Callable<Unit> {
   }
 
   @Override
-  public Unit call() {
+  public Unit call() throws IOException {
 
     try {
       LOG.debug("[{}] saving bookmark {}", this.book_id.brief(), this.new_location);
@@ -59,6 +60,7 @@ final class ProfileBookmarkSetTask implements Callable<Unit> {
 
     } catch (final Exception e) {
       LOG.error("[{}] could not save bookmark: ", this.book_id.brief(), e);
+      throw e;
     }
 
     return Unit.unit();
