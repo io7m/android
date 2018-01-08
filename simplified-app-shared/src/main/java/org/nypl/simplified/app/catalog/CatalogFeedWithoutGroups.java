@@ -170,7 +170,6 @@ public final class CatalogFeedWithoutGroups
     } else {
       cv = new CatalogFeedBookCellView(
           this.activity,
-          this.account,
           this.book_cover_provider,
           this.books_controller,
           this.profiles_controller,

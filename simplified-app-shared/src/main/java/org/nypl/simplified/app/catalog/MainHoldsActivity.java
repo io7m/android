@@ -3,6 +3,8 @@ package org.nypl.simplified.app.catalog;
 import org.nypl.simplified.app.R;
 import org.nypl.simplified.app.SimplifiedPart;
 import org.nypl.simplified.books.core.BooksFeedSelection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An activity that displays the holds for the current user.
@@ -10,6 +12,13 @@ import org.nypl.simplified.books.core.BooksFeedSelection;
 
 public final class MainHoldsActivity extends MainLocalFeedActivity
 {
+  private static final Logger LOG = LoggerFactory.getLogger(MainHoldsActivity.class);
+
+  @Override
+  protected Logger log() {
+    return LOG;
+  }
+
   /**
    * Construct a new activity.
    */

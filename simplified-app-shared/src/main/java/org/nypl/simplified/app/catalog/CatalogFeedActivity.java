@@ -21,6 +21,8 @@ import android.widget.SearchView;
 import android.widget.SearchView.OnQueryTextListener;
 import android.widget.TextView;
 
+import com.google.common.util.concurrent.FluentFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.Some;
@@ -39,6 +41,7 @@ import org.nypl.simplified.app.SimplifiedActivity;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.assertions.Assertions;
 import org.nypl.simplified.books.book_registry.BookStatusEvent;
+import org.nypl.simplified.books.controller.ProfileFeedRequest;
 import org.nypl.simplified.books.core.BooksFeedSelection;
 import org.nypl.simplified.books.core.DocumentStoreType;
 import org.nypl.simplified.books.core.EULAType;
@@ -79,6 +82,10 @@ import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 
+import javax.annotation.concurrent.GuardedBy;
+
+import static org.nypl.simplified.books.feeds.FeedFacetPseudo.FacetType.*;
+
 /**
  * The main catalog feed activity, responsible for displaying different types of
  * feeds.
@@ -89,21 +96,18 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     FeedMatcherType<Unit, UnreachableCodeException>,
     FeedLoaderListenerType {
 
-  private static final String CATALOG_ARGS;
-  private static final String LIST_STATE_ID;
-  private static final Logger LOG;
+  private static final String CATALOG_ARGS =
+      "org.nypl.simplified.app.CatalogFeedActivity.arguments";
+  private static final String LIST_STATE_ID =
+      "org.nypl.simplified.app.CatalogFeedActivity.list_view_state";
 
-  static {
-    LOG = LogUtilities.getLog(CatalogFeedActivity.class);
-    CATALOG_ARGS = "org.nypl.simplified.app.CatalogFeedActivity.arguments";
-    LIST_STATE_ID = "org.nypl.simplified.app.CatalogFeedActivity.list_view_state";
-  }
+  private final Object feed_lock;
+  private @GuardedBy("feed_lock") FeedType feed;
 
-  private  FeedType feed;
-  private  AbsListView list_view;
-  private  SwipeRefreshLayout swipe_refresh_layout;
-  private  Future<Unit> loading;
-  private  ViewGroup progress_layout;
+  private AbsListView list_view;
+  private SwipeRefreshLayout swipe_refresh_layout;
+  private Future<Unit> loading;
+  private ViewGroup progress_layout;
   private int saved_scroll_pos;
   private boolean previously_paused;
   private SearchView search_view;
@@ -111,11 +115,17 @@ public abstract class CatalogFeedActivity extends CatalogActivity
   private ObservableSubscriptionType<BookStatusEvent> book_event_subscription;
 
   /**
+   * @return The specific logger instance provided by subclasses
+   */
+
+  protected abstract Logger log();
+
+  /**
    * Construct an activity.
    */
 
   public CatalogFeedActivity() {
-
+    this.feed_lock = new Object();
   }
 
   /**
@@ -139,16 +149,14 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     in_args.matchArguments(
         new CatalogFeedArgumentsMatcherType<Unit, UnreachableCodeException>() {
           @Override
-          public Unit onFeedArgumentsLocalBooks(
-              final CatalogFeedArgumentsLocalBooks c) {
+          public Unit onFeedArgumentsLocalBooks(final CatalogFeedArgumentsLocalBooks c) {
             SimplifiedActivity.setActivityArguments(b, false);
             CatalogActivity.setActivityArguments(b, c.getUpStack());
             return Unit.unit();
           }
 
           @Override
-          public Unit onFeedArgumentsRemote(
-              final CatalogFeedArgumentsRemote c) {
+          public Unit onFeedArgumentsRemote(final CatalogFeedArgumentsRemote c) {
             SimplifiedActivity.setActivityArguments(b, c.isDrawerOpen());
             CatalogActivity.setActivityArguments(b, c.getUpStack());
             return Unit.unit();
@@ -164,7 +172,10 @@ public abstract class CatalogFeedActivity extends CatalogActivity
    * @see EULAType
    */
 
-  private static void onPossiblyReceivedEULALink(final OptionType<URI> latest) {
+  private static void onPossiblyReceivedEULALink(
+      final Logger log,
+      final OptionType<URI> latest) {
+
     latest.map_(
         latest_actual -> {
           final DocumentStoreType docs = Simplified.getDocumentStore();
@@ -174,7 +185,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
                 try {
                   eula.documentSetLatestURL(latest_actual.toURL());
                 } catch (final MalformedURLException e) {
-                  LOG.error("could not use latest EULA link: ", e);
+                  log.error("could not use latest EULA link: ", e);
                 }
               });
         });
@@ -263,10 +274,8 @@ public abstract class CatalogFeedActivity extends CatalogActivity
        */
 
       for (final String group_name : facet_groups.keySet()) {
-        final List<FeedFacetType> group =
-            NullCheck.notNull(facet_groups.get(group_name));
-        final ArrayList<FeedFacetType> group_copy =
-            new ArrayList<FeedFacetType>(group);
+        final List<FeedFacetType> group = NullCheck.notNull(facet_groups.get(group_name));
+        final ArrayList<FeedFacetType> group_copy = new ArrayList<>(group);
 
         final LinearLayout.LayoutParams text_view_layout_params = new LinearLayout.LayoutParams(
             android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -290,12 +299,10 @@ public abstract class CatalogFeedActivity extends CatalogActivity
           search_terms = Option.none();
         }
 
-        final FeedFacetMatcherType<Unit, UnreachableCodeException>
-            facet_feed_listener =
+        final FeedFacetMatcherType<Unit, UnreachableCodeException> facet_feed_listener =
             new FeedFacetMatcherType<Unit, UnreachableCodeException>() {
               @Override
-              public Unit onFeedFacetOPDS(
-                  final FeedFacetOPDS feed_opds) {
+              public Unit onFeedFacetOPDS(final FeedFacetOPDS feed_opds) {
                 final OPDSFacet o = feed_opds.getOPDSFacet();
                 final CatalogFeedArgumentsRemote args =
                     new CatalogFeedArgumentsRemote(
@@ -310,8 +317,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
               }
 
               @Override
-              public Unit onFeedFacetPseudo(
-                  final FeedFacetPseudo fp) {
+              public Unit onFeedFacetPseudo(final FeedFacetPseudo fp) {
                 final String facet_title =
                     NullCheck.notNull(resources.getString(R.string.books_sort_by));
 
@@ -328,8 +334,10 @@ public abstract class CatalogFeedActivity extends CatalogActivity
               }
             };
 
-        final CatalogFacetSelectionListenerType facet_listener =
-            in_selected -> in_selected.matchFeedFacet(facet_feed_listener);
+        final CatalogFacetSelectionListenerType facet_listener = in_selected -> {
+          this.log().debug("selected facet: {}", in_selected);
+          in_selected.matchFeedFacet(facet_feed_listener);
+        };
 
         final CatalogFacetButton fb = new CatalogFacetButton(
             this, NullCheck.notNull(group_name), group_copy, facet_listener);
@@ -411,7 +419,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
       final FeedLoaderType feed_loader,
       final URI u) {
 
-    LOG.debug("loading feed: {}", u);
+    this.log().debug("loading feed: {}", u);
     final OptionType<HTTPAuthType> none = Option.none();
     this.loading = feed_loader.fromURIWithDatabaseEntries(u, none, this);
   }
@@ -437,15 +445,15 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     final ImmutableStack<CatalogFeedArgumentsType> stack = this.getUpStack();
     this.configureUpButton(stack, args.getTitle());
 
-    final Resources rr = NullCheck.notNull(this.getResources());
-    setTitle(args.getTitle().equals(NullCheck.notNull(rr.getString(R.string.feature_app_name))) ? rr.getString(R.string.catalog) : args.getTitle());
+    final Resources resources = NullCheck.notNull(this.getResources());
+    setTitle(args.getTitle().equals(NullCheck.notNull(resources.getString(R.string.feature_app_name))) ? resources.getString(R.string.catalog) : args.getTitle());
 
     /*
      * Attempt to restore the saved scroll position, if there is one.
      */
 
     if (state != null) {
-      LOG.debug("received state");
+      this.log().debug("received state");
       this.saved_scroll_pos = state.getInt(CatalogFeedActivity.LIST_STATE_ID);
     } else {
       this.saved_scroll_pos = 0;
@@ -529,24 +537,30 @@ public abstract class CatalogFeedActivity extends CatalogActivity
 
   @Override
   public boolean onCreateOptionsMenu(final @Nullable Menu in_menu) {
-
     final Menu menu_nn = NullCheck.notNull(in_menu);
 
-    LOG.debug("inflating menu");
+    this.log().debug("inflating menu");
     final MenuInflater inflater = this.getMenuInflater();
     inflater.inflate(R.menu.catalog, menu_nn);
 
-    if (this.feed == null) {
-      LOG.debug("menu creation requested but feed is not yet present");
-      return true;
+    final FeedType feed_ref;
+    synchronized (this.feed_lock) {
+      feed_ref = this.feed;
+      if (feed_ref == null) {
+        this.log().debug("menu creation requested but feed is not yet present");
+        return true;
+      }
     }
 
-    LOG.debug("menu creation requested and feed is present");
-    this.onCreateOptionsMenuSearchItem(menu_nn);
+    this.log().debug("menu creation requested and feed is present");
+    this.onCreateOptionsMenuSearchItem(menu_nn, feed_ref);
     return true;
   }
 
-  private void onCreateOptionsMenuSearchItem(final Menu menu_nn) {
+  private void onCreateOptionsMenuSearchItem(
+      final Menu menu_nn,
+      final FeedType feed) {
+
     final MenuItem search_item = menu_nn.findItem(R.id.catalog_action_search);
 
     /*
@@ -554,8 +568,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
      * Otherwise, disable and hide it.
      */
 
-    final FeedType feed_actual = NullCheck.notNull(this.feed);
-    final OptionType<FeedSearchType> search_opt = feed_actual.getFeedSearch();
+    final OptionType<FeedSearchType> search_opt = feed.getFeedSearch();
     boolean search_ok = false;
     if (search_opt.isSome()) {
       final Some<FeedSearchType> search_some =
@@ -572,7 +585,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
        */
 
       final CatalogFeedArgumentsType args = this.getArguments();
-      this.search_view.setQueryHint("Search " + this.feed.getFeedTitle());
+      this.search_view.setQueryHint("Search " + feed.getFeedTitle());
       if (args.getTitle().startsWith("Search")) {
         this.search_view.setQueryHint(args.getTitle());
       }
@@ -581,24 +594,22 @@ public abstract class CatalogFeedActivity extends CatalogActivity
        * Check that the search URI is of an understood type.
        */
 
-      final Resources rr = NullCheck.notNull(this.getResources());
+      final Resources resources = NullCheck.notNull(this.getResources());
       final FeedSearchType search = search_some.get();
       search_ok = search.matchSearch(
           new FeedSearchMatcherType<Boolean, UnreachableCodeException>() {
             @Override
-            public Boolean onFeedSearchOpen1_1(
-                final FeedSearchOpen1_1 fs) {
-              CatalogFeedActivity.this.search_view.setOnQueryTextListener(
-                  new OpenSearchQueryHandler(rr, args, fs.getSearch()));
-              return NullCheck.notNull(Boolean.TRUE);
+            public Boolean onFeedSearchOpen1_1(final FeedSearchOpen1_1 fs) {
+              search_view.setOnQueryTextListener(
+                  new OpenSearchQueryHandler(log(), resources, args, feed, fs.getSearch()));
+              return true;
             }
 
             @Override
-            public Boolean onFeedSearchLocal(
-                final FeedSearchLocal f) {
-              CatalogFeedActivity.this.search_view.setOnQueryTextListener(
-                  new BooksLocalSearchQueryHandler(rr, args, FacetType.SORT_BY_TITLE));
-              return NullCheck.notNull(Boolean.TRUE);
+            public Boolean onFeedSearchLocal(final FeedSearchLocal f) {
+              search_view.setOnQueryTextListener(
+                  new BooksLocalSearchQueryHandler(log(), resources, args, feed, SORT_BY_TITLE));
+              return true;
             }
           });
     }
@@ -612,7 +623,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
   @Override
   protected void onDestroy() {
     super.onDestroy();
-    LOG.debug("onDestroy");
+    this.log().debug("onDestroy");
 
     final Future<Unit> future = this.loading;
     if (future != null) {
@@ -636,10 +647,9 @@ public abstract class CatalogFeedActivity extends CatalogActivity
   }
 
   private void onFeedLoadingFailureUI(final Throwable e) {
-
     UIThread.checkIsUIThread();
 
-    LOG.info("Failed to get feed: ", e);
+    this.log().info("Failed to get feed: ", e);
     this.invalidateOptionsMenu();
 
     final FrameLayout content_area = this.getContentFrame();
@@ -660,33 +670,34 @@ public abstract class CatalogFeedActivity extends CatalogActivity
 
   @Override
   public void onFeedLoadSuccess(
-      final URI u,
-      final FeedType f) {
+      final URI feed_uri,
+      final FeedType feed_result) {
 
-    LOG.debug("received feed for {}", u);
-    this.feed = f;
+    this.log().debug("onFeedLoadSuccess: received feed for {}", feed_uri);
 
-    final CatalogFeedActivity cfa = this;
-    UIThread.runOnUIThread(() -> cfa.configureUpButton(cfa.getUpStack(), f.getFeedTitle()));
-    f.matchFeed(this);
+    synchronized (this.feed_lock) {
+      this.feed = NullCheck.notNull(feed_result, "Feed result");
+    }
+
+    UIThread.runOnUIThread(
+        () -> this.configureUpButton(this.getUpStack(), feed_result.getFeedTitle()));
+
+    feed_result.matchFeed(this);
   }
 
   @Override
-  public Unit onFeedWithGroups(final FeedWithGroups f) {
+  public Unit onFeedWithGroups(final FeedWithGroups feed) {
+    this.log().debug("onFeedWithGroups: received: {}", feed.getFeedURI());
 
-    LOG.debug("received feed with blocks: {}", f.getFeedURI());
-
-    UIThread.runOnUIThread(() -> CatalogFeedActivity.this.onFeedWithGroupsUI(f));
-    onPossiblyReceivedEULALink(f.getFeedTermsOfService());
+    UIThread.runOnUIThread(() -> this.onFeedWithGroupsUI(feed));
+    onPossiblyReceivedEULALink(this.log(), feed.getFeedTermsOfService());
     return Unit.unit();
   }
 
-  private void onFeedWithGroupsUI(final FeedWithGroups f) {
-
-    LOG.debug("received feed with blocks: {}", f.getFeedURI());
+  private void onFeedWithGroupsUI(final FeedWithGroups feed) {
+    this.log().debug("onFeedWithGroupsUI: received: {}", feed.getFeedURI());
 
     UIThread.checkIsUIThread();
-
     this.invalidateOptionsMenu();
 
     final FrameLayout content_area = this.getContentFrame();
@@ -702,7 +713,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     content_area.addView(layout);
     content_area.requestLayout();
 
-    LOG.debug("restoring scroll position: {}", this.saved_scroll_pos);
+    this.log().debug("restoring scroll position: {}", this.saved_scroll_pos);
 
     final ListView list = NullCheck.notNull(
         layout.findViewById(
@@ -740,7 +751,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
           Simplified.getScreenSizeInformation(),
           Simplified.getCoverProvider(),
           in_lane_listener,
-          f);
+          feed);
     } catch (final ProfileNoneCurrentException e) {
       throw new IllegalStateException(e);
     }
@@ -750,24 +761,19 @@ public abstract class CatalogFeedActivity extends CatalogActivity
   }
 
   @Override
-  public Unit onFeedWithoutGroups(final FeedWithoutGroups f) {
+  public Unit onFeedWithoutGroups(final FeedWithoutGroups feed) {
+    this.log().debug("onFeedWithoutGroups: received: {}", feed.getFeedURI());
 
-    LOG.debug("received feed without blocks: {}", f.getFeedURI());
-
-    UIThread.runOnUIThread(
-        () -> CatalogFeedActivity.this.onFeedWithoutGroupsUI(f));
-
-    onPossiblyReceivedEULALink(f.getFeedTermsOfService());
+    UIThread.runOnUIThread(() -> this.onFeedWithoutGroupsUI(feed));
+    onPossiblyReceivedEULALink(this.log(), feed.getFeedTermsOfService());
     return Unit.unit();
   }
 
-  private void onFeedWithoutGroupsEmptyUI(final FeedWithoutGroups f) {
-
-    LOG.debug("received feed without blocks (empty): {}", f.getFeedURI());
+  private void onFeedWithoutGroupsEmptyUI(final FeedWithoutGroups feed) {
+    this.log().debug("onFeedWithoutGroupsEmptyUI: {}", feed.getFeedURI());
 
     UIThread.checkIsUIThread();
-    Assertions.checkPrecondition(f.isEmpty(), "Feed is empty");
-
+    Assertions.checkPrecondition(feed.isEmpty(), "Feed is empty");
     this.invalidateOptionsMenu();
 
     final FrameLayout content_area = this.getContentFrame();
@@ -796,13 +802,10 @@ public abstract class CatalogFeedActivity extends CatalogActivity
   }
 
   private void onFeedWithoutGroupsNonEmptyUI(final FeedWithoutGroups feed_without_groups) {
-
-    LOG.debug("received feed without blocks (non-empty): {}", feed_without_groups.getFeedURI());
+    this.log().debug("onFeedWithoutGroupsNonEmptyUI: {}", feed_without_groups.getFeedURI());
 
     UIThread.checkIsUIThread();
-
     Assertions.checkPrecondition(!feed_without_groups.isEmpty(), "Feed is non-empty");
-
     this.invalidateOptionsMenu();
 
     final FrameLayout content_area = this.getContentFrame();
@@ -818,7 +821,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     content_area.addView(layout);
     content_area.requestLayout();
 
-    LOG.debug("restoring scroll position: {}", this.saved_scroll_pos);
+    this.log().debug("restoring scroll position: {}", this.saved_scroll_pos);
 
     final Resources resources =
         NullCheck.notNull(this.getResources());
@@ -877,8 +880,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
             .subscribe(without::onBookEvent);
   }
 
-  private void onFeedWithoutGroupsUI(
-      final FeedWithoutGroups f) {
+  private void onFeedWithoutGroupsUI(final FeedWithoutGroups f) {
     UIThread.checkIsUIThread();
 
     if (f.isEmpty()) {
@@ -897,7 +899,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
   private void onNetworkUnavailable() {
     UIThread.checkIsUIThread();
 
-    LOG.debug("network is unavailable");
+    this.log().debug("network is unavailable");
 
     final FrameLayout content_area = this.getContentFrame();
     final ViewGroup progress = NullCheck.notNull(this.progress_layout);
@@ -922,12 +924,10 @@ public abstract class CatalogFeedActivity extends CatalogActivity
   }
 
   @Override
-  protected void onSaveInstanceState(
-      final @Nullable Bundle state) {
-
+  protected void onSaveInstanceState(final @Nullable Bundle state) {
     super.onSaveInstanceState(state);
 
-    LOG.debug("saving state");
+    this.log().debug("saving state");
 
     /*
      * Save the scroll position in the hope that it can be restored later.
@@ -937,7 +937,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     final AbsListView lv = this.list_view;
     if (lv != null) {
       final int position = lv.getFirstVisiblePosition();
-      LOG.debug("saving list view position: {}", position);
+      this.log().debug("saving list view position: {}", position);
       nn_state.putInt(CatalogFeedActivity.LIST_STATE_ID, position);
     }
   }
@@ -946,7 +946,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
       final ImmutableStack<CatalogFeedArgumentsType> new_up_stack,
       final FeedEntryOPDS e) {
 
-    LOG.debug("onSelectedBook: {}", this);
+    this.log().debug("onSelectedBook: {}", this);
     CatalogBookDetailActivity.startNewActivity(
         this,
         new_up_stack,
@@ -957,7 +957,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
   private void onSelectedFeedGroup(
       final ImmutableStack<CatalogFeedArgumentsType> new_up_stack,
       final FeedGroup f) {
-    LOG.debug("onSelectFeed: {}", this);
+    this.log().debug("onSelectFeed: {}", this);
 
     final CatalogFeedArgumentsRemote remote = new CatalogFeedArgumentsRemote(
         false, new_up_stack, f.getGroupTitle(), f.getGroupURI(), false);
@@ -970,7 +970,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
 
   protected final void retryFeed() {
     final CatalogFeedArgumentsType args = this.getArguments();
-    LOG.debug("retrying feed {}", args);
+    this.log().debug("retrying feed {}", args);
 
     final FeedLoaderType loader = Simplified.getFeedLoader();
 
@@ -1012,27 +1012,34 @@ public abstract class CatalogFeedActivity extends CatalogActivity
   private void doLoadLocalFeed(final CatalogFeedArgumentsLocalBooks c) {
     final Resources resources = getResources();
 
-//    final BooksType books = getBooksType();
-//    final Calendar now = NullCheck.notNull(Calendar.getInstance());
-//    final URI dummy_uri = NullCheck.notNull(URI.create("Books"));
-//    final String dummy_id = NullCheck.notNull(resources.getString(R.string.books));
-//    final String title = NullCheck.notNull(resources.getString(R.string.books));
-//    final String facet_group = NullCheck.notNull(resources.getString(R.string.books_sort_by));
-//    final BooksFeedSelection selection = c.getSelection();
-//
-//    books.booksGetFeed(
-//        dummy_uri,
-//        dummy_id,
-//        now,
-//        title,
-//        c.getFacetType(),
-//        facet_group,
-//        new CatalogFacetPseudoTitleProvider(resources),
-//        c.getSearchTerms(),
-//        selection,
-//        this);
+    final URI books_uri = URI.create("Books");
 
-    throw new UnimplementedCodeException();
+    final ProfileFeedRequest request =
+        ProfileFeedRequest.builder(
+            books_uri,
+            resources.getString(R.string.books),
+            resources.getString(R.string.books_sort_by),
+            new CatalogFacetPseudoTitleProvider(resources))
+            .setFeedSelection(c.getSelection())
+            .setSearch(c.getSearchTerms())
+            .setFacetActive(c.getFacetType())
+            .build();
+
+    try {
+      final ListeningExecutorService exec = Simplified.getBackgroundTaskExecutor();
+      FluentFuture
+          .from(Simplified.getProfilesController().profileFeed(request))
+          .transform(feed -> {
+            this.onFeedLoadSuccess(books_uri, feed);
+            return Unit.unit();
+          }, exec)
+          .catching(Exception.class, ex -> {
+            this.onFeedLoadFailure(books_uri, ex);
+            return Unit.unit();
+          }, exec);
+    } catch (final ProfileNoneCurrentException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   /**
@@ -1054,15 +1061,26 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     private final CatalogFeedArgumentsType args;
     private final FeedFacetPseudo.FacetType facet_active;
     private final Resources resources;
+    private final FeedType feed;
+    private final Logger logger;
 
     BooksLocalSearchQueryHandler(
+        final Logger in_logger,
         final Resources in_resources,
         final CatalogFeedArgumentsType in_args,
+        final FeedType feed,
         final FeedFacetPseudo.FacetType in_facet_active) {
 
-      this.resources = NullCheck.notNull(in_resources);
-      this.args = NullCheck.notNull(in_args);
-      this.facet_active = NullCheck.notNull(in_facet_active);
+      this.logger =
+          NullCheck.notNull(in_logger, "Logger");
+      this.resources =
+          NullCheck.notNull(in_resources, "Resources");
+      this.args =
+          NullCheck.notNull(in_args, "Arguments");
+      this.feed =
+          NullCheck.notNull(feed, "Feed");
+      this.facet_active =
+          NullCheck.notNull(in_facet_active, "Facet");
     }
 
     @Override
@@ -1071,8 +1089,8 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     }
 
     @Override
-    public boolean onQueryTextSubmit(
-        final @Nullable String query) {
+    public boolean onQueryTextSubmit(final @Nullable String query) {
+      this.logger.debug("submitting local search query: {}", query);
 
       final String qnn = NullCheck.notNull(query);
       final CatalogFeedActivity cfa = CatalogFeedActivity.this;
@@ -1088,7 +1106,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
               Option.some(qnn),
               cfa.getLocalFeedTypeSelection());
 
-      if ("Search".equals(feed.getFeedTitle())) {
+      if ("Search".equals(this.feed.getFeedTitle())) {
         cfa.catalogActivityForkNewReplacing(new_args);
       } else {
         cfa.catalogActivityForkNew(new_args);
@@ -1103,28 +1121,41 @@ public abstract class CatalogFeedActivity extends CatalogActivity
    */
 
   private final class OpenSearchQueryHandler implements OnQueryTextListener {
+
     private final CatalogFeedArgumentsType args;
     private final OPDSOpenSearch1_1 search;
     private final Resources resources;
+    private final FeedType feed;
+    private final Logger logger;
 
     OpenSearchQueryHandler(
+        final Logger in_logger,
         final Resources in_resources,
         final CatalogFeedArgumentsType in_args,
+        final FeedType feed,
         final OPDSOpenSearch1_1 in_search) {
-      this.resources = NullCheck.notNull(in_resources);
-      this.args = NullCheck.notNull(in_args);
-      this.search = NullCheck.notNull(in_search);
+
+      this.logger =
+          NullCheck.notNull(in_logger, "Logger");
+      this.resources =
+          NullCheck.notNull(in_resources, "Resources");
+      this.args =
+          NullCheck.notNull(in_args, "Arguments");
+      this.feed =
+          NullCheck.notNull(feed, "Feed");
+      this.search =
+          NullCheck.notNull(in_search, "Search");
     }
 
     @Override
-    public boolean onQueryTextChange(
-        final @Nullable String s) {
+    public boolean onQueryTextChange(final @Nullable String s) {
       return true;
     }
 
     @Override
-    public boolean onQueryTextSubmit(
-        final @Nullable String query) {
+    public boolean onQueryTextSubmit(final @Nullable String query) {
+      this.logger.debug("submitting OpenSearch 1.1 query: {}", query);
+
       final String qnn = NullCheck.notNull(query);
       final URI target = this.search.getQueryURIForTerms(qnn);
 
@@ -1138,7 +1169,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
       final CatalogFeedArgumentsRemote new_args =
           new CatalogFeedArgumentsRemote(false, us, title, target, true);
 
-      if ("Search".equals(feed.getFeedTitle())) {
+      if ("Search".equals(this.feed.getFeedTitle())) {
         cfa.catalogActivityForkNewReplacing(new_args);
       } else {
         cfa.catalogActivityForkNew(new_args);

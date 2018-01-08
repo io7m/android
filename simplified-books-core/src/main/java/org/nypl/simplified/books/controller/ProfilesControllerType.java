@@ -17,6 +17,7 @@ import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
 import org.nypl.simplified.books.book_database.BookID;
+import org.nypl.simplified.books.feeds.FeedWithoutGroups;
 import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent;
 import org.nypl.simplified.books.profiles.ProfileCreationEvent;
 import org.nypl.simplified.books.profiles.ProfileEvent;
@@ -249,4 +250,29 @@ public interface ProfilesControllerType {
   void profilePreferencesUpdate(
       ProfilePreferences preferences)
       throws ProfileNoneCurrentException;
+
+  /**
+   * Produce a feed of all the books in the current profile.
+   *
+   * @throws ProfileNoneCurrentException If the anonymous profile is disabled and no profile has been selected
+   * @see #profileSelect(ProfileID)
+   * @see #profileAnonymousEnabled()
+   * @param request The feed request
+   */
+
+  ListenableFuture<FeedWithoutGroups> profileFeed(
+      ProfileFeedRequest request)
+      throws ProfileNoneCurrentException;
+
+  /**
+   * Return the account that owns the given book ID in the current profile, or assume that the
+   * current account owns the book.
+   * @param id The book ID
+   * @throws ProfileNoneCurrentException If the anonymous profile is disabled and no profile has been selected
+   * @see #profileSelect(ProfileID)
+   * @see #profileAnonymousEnabled()
+   */
+
+  AccountType profileAccountForBook(BookID id)
+      throws ProfileNoneCurrentException, AccountsDatabaseNonexistentException;
 }

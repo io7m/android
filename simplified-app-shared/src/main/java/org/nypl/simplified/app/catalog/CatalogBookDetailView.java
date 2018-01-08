@@ -481,8 +481,7 @@ public final class CatalogBookDetailView
         new CatalogBookReadButton(
             this.activity,
             this.account,
-            d.getID(),
-            this.entry.get()),
+            d.getID()),
         0);
 
     if (d.isReturnable()) {

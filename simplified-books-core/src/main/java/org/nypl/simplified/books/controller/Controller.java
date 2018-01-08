@@ -28,7 +28,9 @@ import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
+import org.nypl.simplified.books.book_registry.BookWithStatus;
 import org.nypl.simplified.books.feeds.FeedLoaderType;
+import org.nypl.simplified.books.feeds.FeedWithoutGroups;
 import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent;
 import org.nypl.simplified.books.profiles.ProfileCreationEvent;
 import org.nypl.simplified.books.profiles.ProfileEvent;
@@ -369,6 +371,32 @@ public final class Controller implements BooksControllerType, ProfilesController
         this.profile_events,
         this.profiles.currentProfileUnsafe(),
         preferences));
+  }
+
+  @Override
+  public ListenableFuture<FeedWithoutGroups> profileFeed(
+      final ProfileFeedRequest request)
+      throws ProfileNoneCurrentException {
+
+    NullCheck.notNull(request, "Request");
+    return this.exec.submit(new ProfileFeedTask(this.book_registry, request));
+  }
+
+  @Override
+  public AccountType profileAccountForBook(final BookID id)
+      throws ProfileNoneCurrentException, AccountsDatabaseNonexistentException {
+    NullCheck.notNull(id, "Book ID");
+
+    final OptionType<BookWithStatus> book_with_status =
+        book_registry.book(id);
+
+    if (book_with_status.isSome()) {
+      final AccountID account_id =
+          ((Some<BookWithStatus>) book_with_status).get().book().account();
+      return profileCurrent().account(account_id);
+    }
+
+    return profileAccountCurrent();
   }
 
   @Override

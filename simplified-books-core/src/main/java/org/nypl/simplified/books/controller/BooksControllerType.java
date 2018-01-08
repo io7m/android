@@ -1,7 +1,12 @@
 package org.nypl.simplified.books.controller;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListenableFutureTask;
+
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.book_database.BookID;
+import org.nypl.simplified.books.feeds.FeedWithoutGroups;
+import org.nypl.simplified.books.profiles.ProfileReadableType;
 import org.nypl.simplified.opds.core.OPDSAcquisition;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 
@@ -57,7 +62,6 @@ public interface BooksControllerType {
       AccountType account,
       BookID book_id);
 
-
   /**
    * Delete the given book.
    *
@@ -68,5 +72,4 @@ public interface BooksControllerType {
   void bookDelete(
       AccountType account,
       BookID book_id);
-
 }

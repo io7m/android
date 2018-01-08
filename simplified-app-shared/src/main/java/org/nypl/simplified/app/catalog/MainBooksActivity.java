@@ -2,9 +2,9 @@ package org.nypl.simplified.app.catalog;
 
 import org.nypl.simplified.app.R;
 import org.nypl.simplified.app.SimplifiedPart;
-import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.books.core.BooksFeedSelection;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The activity that displays the currently loaned and/or downloaded books.
@@ -12,10 +12,11 @@ import org.slf4j.Logger;
 
 public final class MainBooksActivity extends MainLocalFeedActivity
 {
-  private static final Logger LOG;
+  private static final Logger LOG = LoggerFactory.getLogger(MainBooksActivity.class);
 
-  static {
-    LOG = LogUtilities.getLog(MainBooksActivity.class);
+  @Override
+  protected Logger log() {
+    return LOG;
   }
 
   /**

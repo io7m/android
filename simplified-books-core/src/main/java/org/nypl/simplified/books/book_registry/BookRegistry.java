@@ -51,8 +51,12 @@ public final class BookRegistry implements BookRegistryType {
 
   @Override
   public OptionType<BookStatusType> bookStatus(final BookID id) {
-    return Option.of(this.books.get(NullCheck.notNull(id, "id")))
-        .map(BookWithStatus::status);
+    return book(id).map(BookWithStatus::status);
+  }
+
+  @Override
+  public OptionType<BookWithStatus> book(final BookID id) {
+    return Option.of(this.books.get(NullCheck.notNull(id, "id")));
   }
 
   @Override

@@ -27,6 +27,7 @@ import org.nypl.simplified.app.R;
 import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.accounts.AccountType;
+import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
 import org.nypl.simplified.books.controller.BooksControllerType;
@@ -105,7 +106,6 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
   private final TextView cell_downloading_failed_label;
   private final BooksControllerType books_controller;
   private final ProfilesControllerType profiles_controller;
-  private final AccountType account;
   private CatalogBookSelectionListenerType book_selection_listener;
 
   /**
@@ -114,7 +114,6 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
   public CatalogFeedBookCellView(
       final Activity in_activity,
-      final AccountType in_account,
       final BookCoverProviderType in_cover_provider,
       final BooksControllerType in_books_controller,
       final ProfilesControllerType in_profiles_controller,
@@ -124,8 +123,6 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
     this.activity =
         NullCheck.notNull(in_activity, "Activity");
-    this.account =
-        NullCheck.notNull(in_account, "Account");
     this.cover_provider =
         NullCheck.notNull(in_cover_provider, "Cover provider");
     this.books_registry =
@@ -318,21 +315,24 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
     this.cell_downloading_failed.setVisibility(View.INVISIBLE);
     this.setDebugCellText("downloaded");
 
-    final FeedEntryOPDS e = NullCheck.notNull(this.entry.get());
-    this.loadImageAndSetVisibility(e);
+    final FeedEntryOPDS feed_entry = NullCheck.notNull(this.entry.get());
+    this.loadImageAndSetVisibility(feed_entry);
 
     this.cell_buttons.setVisibility(View.VISIBLE);
     this.cell_buttons.removeAllViews();
-
     this.cell_buttons.addView(
-        new CatalogBookReadButton(
-            this.activity,
-            this.account,
-            book_id,
-            this.entry.get()),
-        0);
+        new CatalogBookReadButton(this.activity,
+            this.account(feed_entry.getBookID()), book_id), 0);
 
     return Unit.unit();
+  }
+
+  private AccountType account(final BookID book_id) {
+    try {
+      return this.profiles_controller.profileAccountForBook(book_id);
+    } catch (final ProfileNoneCurrentException | AccountsDatabaseNonexistentException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   @Override
@@ -346,8 +346,8 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
     this.cell_downloading_failed.setVisibility(View.VISIBLE);
     this.setDebugCellText("download-failed");
 
-    final FeedEntryOPDS fe = NullCheck.notNull(this.entry.get());
-    final OPDSAcquisitionFeedEntry oe = fe.getFeedEntry();
+    final FeedEntryOPDS feed_entry = NullCheck.notNull(this.entry.get());
+    final OPDSAcquisitionFeedEntry oe = feed_entry.getFeedEntry();
 
     final Resources rr = NullCheck.notNull(this.activity.getResources());
     this.cell_downloading_failed_label.setText(
@@ -355,7 +355,8 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
     this.cell_downloading_failed_title.setText(oe.getTitle());
     this.cell_downloading_failed_dismiss.setOnClickListener(
-        view -> this.books_controller.bookBorrowFailedDismiss(this.account, f.getID()));
+        view -> this.books_controller.bookBorrowFailedDismiss(
+            this.account(feed_entry.getBookID()), f.getID()));
 
     /*
      * Manually construct an acquisition controller for the retry button.
@@ -380,9 +381,9 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
             this.profiles_controller,
             this.books_controller,
             this.books_registry,
-            fe.getBookID(),
+            feed_entry.getBookID(),
             acquisition,
-            fe);
+            feed_entry);
 
     this.cell_downloading_failed_retry.setVisibility(View.VISIBLE);
     this.cell_downloading_failed_retry.setEnabled(true);
@@ -477,7 +478,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
     CatalogAcquisitionButtons.addButtons(
         this.activity,
-        this.account,
+        this.account(feed_entry.getBookID()),
         this.cell_buttons,
         this.books_controller,
         this.profiles_controller,
@@ -516,7 +517,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
     CatalogAcquisitionButtons.addButtons(
         this.activity,
-        this.account,
+        this.account(feed_entry.getBookID()),
         this.cell_buttons,
         this.books_controller,
         this.profiles_controller,
@@ -593,7 +594,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
     CatalogAcquisitionButtons.addButtons(
         this.activity,
-        this.account,
+        this.account(feed_entry.getBookID()),
         this.cell_buttons,
         this.books_controller,
         this.profiles_controller,
@@ -627,7 +628,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
     CatalogAcquisitionButtons.addButtons(
         this.activity,
-        this.account,
+        this.account(id),
         this.cell_buttons,
         this.books_controller,
         this.profiles_controller,

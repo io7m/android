@@ -28,8 +28,7 @@ public final class CatalogBookReadButton
   public CatalogBookReadButton(
       final Activity in_activity,
       final AccountType in_account,
-      final BookID in_book_id,
-      final FeedEntryOPDS in_entry) {
+      final BookID in_book_id) {
 
     super(in_activity);
 

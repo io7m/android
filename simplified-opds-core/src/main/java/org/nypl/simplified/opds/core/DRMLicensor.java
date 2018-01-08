@@ -4,11 +4,13 @@ import com.io7m.jfunctional.OptionType;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 
+import java.io.Serializable;
+
 /**
  * DRM licensor information included in OPDS feeds.
  */
 
-public final class DRMLicensor {
+public final class DRMLicensor implements Serializable {
 
   private final String vendor;
   private final String client_token;
