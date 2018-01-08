@@ -443,8 +443,8 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
     this.cell_downloading_failed.setVisibility(View.INVISIBLE);
     this.setDebugCellText("held");
 
-    final FeedEntryOPDS fe = NullCheck.notNull(this.entry.get());
-    this.loadImageAndSetVisibility(fe);
+    final FeedEntryOPDS feed_entry = NullCheck.notNull(this.entry.get());
+    this.loadImageAndSetVisibility(feed_entry);
 
     this.cell_buttons.setVisibility(View.VISIBLE);
     this.cell_buttons.removeAllViews();
@@ -453,9 +453,11 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
       final CatalogBookRevokeButton revoke =
           new CatalogBookRevokeButton(
               this.activity,
+              this.books_controller,
+              this.account(feed_entry.getBookID()),
               s.getID(),
-              CatalogBookRevokeType.REVOKE_HOLD,
-              this.books_controller);
+              CatalogBookRevokeType.REVOKE_HOLD
+          );
 
       this.cell_buttons.addView(revoke, 0);
     }
@@ -489,9 +491,11 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
       final CatalogBookRevokeButton revoke =
           new CatalogBookRevokeButton(
               this.activity,
+              this.books_controller,
+              this.account(feed_entry.getBookID()),
               s.getID(),
-              CatalogBookRevokeType.REVOKE_HOLD,
-              this.books_controller);
+              CatalogBookRevokeType.REVOKE_HOLD
+          );
       this.cell_buttons.addView(revoke, 0);
     }
 
@@ -550,10 +554,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
     this.cell_downloading_failed_label.setText(R.string.catalog_revoke_failed);
     this.cell_downloading_failed_title.setText(oe.getTitle());
     this.cell_downloading_failed_dismiss.setOnClickListener(
-        v -> {
-          // CatalogFeedBookCellView.this.books_registry.bookGetLatestStatusFromDisk(s.getID());
-          throw new UnimplementedCodeException();
-        });
+        view -> books_controller.bookRevokeFailedDismiss(account(s.getID()), s.getID()));
 
     this.cell_downloading_failed_retry.setVisibility(View.GONE);
     this.cell_downloading_failed_retry.setEnabled(false);
@@ -605,8 +606,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
   }
 
   @Override
-  public Unit onBookStatusLoanedType(
-      final BookStatusLoanedType o) {
+  public Unit onBookStatusLoanedType(final BookStatusLoanedType o) {
     return o.matchBookLoanedStatus(this);
   }
 

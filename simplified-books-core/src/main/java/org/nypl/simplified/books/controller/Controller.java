@@ -12,7 +12,6 @@ import com.io7m.jfunctional.OptionVisitorType;
 import com.io7m.jfunctional.Some;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
-import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.joda.time.LocalDate;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
@@ -460,9 +459,10 @@ public final class Controller implements BooksControllerType, ProfilesController
     NullCheck.notNull(book_id, "Book ID");
 
     this.exec.submit(new BookRevokeTask(
-        account,
         this.book_registry,
-        this.http));
+        this.feed_loader,
+        account,
+        book_id));
   }
 
   @Override
@@ -475,6 +475,20 @@ public final class Controller implements BooksControllerType, ProfilesController
 
     this.exec.submit(new BookDeleteTask(
         account,
+        this.book_registry,
+        book_id));
+  }
+
+  @Override
+  public void bookRevokeFailedDismiss(
+      final AccountType account,
+      final BookID book_id) {
+
+    NullCheck.notNull(account, "Account");
+    NullCheck.notNull(book_id, "Book ID");
+
+    this.exec.submit(new BookRevokeFailedDismissTask(
+        account.bookDatabase(),
         this.book_registry,
         book_id));
   }

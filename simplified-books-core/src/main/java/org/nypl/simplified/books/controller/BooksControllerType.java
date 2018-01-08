@@ -72,4 +72,15 @@ public interface BooksControllerType {
   void bookDelete(
       AccountType account,
       BookID book_id);
+
+  /**
+   * Dismiss a failed book revocation.
+   *
+   * @param account The account that failed to revoke the book
+   * @param id      The ID of the book
+   */
+
+  void bookRevokeFailedDismiss(
+      AccountType account,
+      BookID id);
 }

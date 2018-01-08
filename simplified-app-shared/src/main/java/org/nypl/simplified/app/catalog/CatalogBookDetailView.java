@@ -488,9 +488,11 @@ public final class CatalogBookDetailView
       final CatalogBookRevokeButton revoke =
           new CatalogBookRevokeButton(
               this.activity,
+              this.books_controller,
+              this.account,
               d.getID(),
-              CatalogBookRevokeType.REVOKE_LOAN,
-              this.books_controller);
+              CatalogBookRevokeType.REVOKE_LOAN
+          );
 
       this.book_download_buttons.addView(revoke, 1);
     } else if (this.entry.get().getFeedEntry().getAvailability() instanceof OPDSAvailabilityOpenAccess) {
@@ -638,9 +640,11 @@ public final class CatalogBookDetailView
       final CatalogBookRevokeButton revoke =
           new CatalogBookRevokeButton(
               this.activity,
+              this.books_controller,
+              this.account,
               s.getID(),
-              CatalogBookRevokeType.REVOKE_HOLD,
-              this.books_controller);
+              CatalogBookRevokeType.REVOKE_HOLD
+          );
 
       this.book_download_buttons.addView(revoke, 0);
     }
@@ -687,9 +691,11 @@ public final class CatalogBookDetailView
       final CatalogBookRevokeButton revoke =
           new CatalogBookRevokeButton(
               this.activity,
+              this.books_controller,
+              this.account,
               s.getID(),
-              CatalogBookRevokeType.REVOKE_HOLD,
-              this.books_controller);
+              CatalogBookRevokeType.REVOKE_HOLD
+          );
 
       this.book_download_buttons.addView(revoke, 0);
     }
@@ -742,7 +748,27 @@ public final class CatalogBookDetailView
 
   @Override
   public Unit onBookStatusRevokeFailed(final BookStatusRevokeFailed s) {
-    throw new UnimplementedCodeException();
+    UIThread.checkIsUIThread();
+
+    this.book_debug_status.setText("revoke failed");
+    this.book_download.setVisibility(View.INVISIBLE);
+    this.book_downloading.setVisibility(View.INVISIBLE);
+    this.book_downloading_cancel.setVisibility(View.INVISIBLE);
+    this.book_downloading_failed.setVisibility(View.VISIBLE);
+    this.book_downloading_failed_buttons.setVisibility(View.VISIBLE);
+
+    final TextView failed = NullCheck.notNull(this.book_downloading_failed_text);
+    failed.setText(R.string.catalog_revoke_failed);
+
+    final Button dismiss = NullCheck.notNull(this.book_downloading_failed_dismiss);
+    final Button retry = NullCheck.notNull(this.book_downloading_failed_retry);
+
+    dismiss.setOnClickListener(
+        view -> books_controller.bookRevokeFailedDismiss(account, s.getID()));
+
+    retry.setEnabled(false);
+    retry.setVisibility(View.GONE);
+    return Unit.unit();
   }
 
   @Override
@@ -767,9 +793,11 @@ public final class CatalogBookDetailView
     final CatalogBookRevokeButton revoke =
         new CatalogBookRevokeButton(
             this.activity,
+            this.books_controller,
+            this.account,
             o.getID(),
-            CatalogBookRevokeType.REVOKE_LOAN,
-            this.books_controller);
+            CatalogBookRevokeType.REVOKE_LOAN
+        );
     this.book_download_buttons.addView(revoke, 0);
 
     CatalogBookDetailView.configureButtonsHeight(
@@ -810,9 +838,11 @@ public final class CatalogBookDetailView
       final CatalogBookRevokeButton revoke =
           new CatalogBookRevokeButton(
               this.activity,
+              this.books_controller,
+              this.account,
               o.getID(),
-              CatalogBookRevokeType.REVOKE_LOAN,
-              this.books_controller);
+              CatalogBookRevokeType.REVOKE_LOAN
+          );
 
       this.book_download_buttons.addView(revoke, 1);
     }
@@ -1014,7 +1044,7 @@ public final class CatalogBookDetailView
           }
         }
         case BOOK_REMOVED: {
-          throw new UnimplementedCodeException();
+          UIThread.runOnUIThread(() -> this.onBookStatusNone(current_entry));
         }
       }
     }

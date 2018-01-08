@@ -34,7 +34,7 @@ public final class CatalogBookRevokeDialog extends DialogFragment
     LOG = LogUtilities.getLog(DialogFragment.class);
   }
 
-  private @Nullable Runnable   on_confirm;
+  private @Nullable Runnable on_confirm;
   private CatalogBookRevokeType type;
 
   /**
@@ -52,16 +52,18 @@ public final class CatalogBookRevokeDialog extends DialogFragment
    * @return A new dialog
    */
 
-  public static CatalogBookRevokeDialog newDialog(final CatalogBookRevokeType
-    type)
+  public static CatalogBookRevokeDialog newDialog(
+      final CatalogBookRevokeType type,
+      final Runnable on_confirm)
   {
-    NullCheck.notNull(type);
+    NullCheck.notNull(type, "Revocation type");
+    NullCheck.notNull(on_confirm, "On confirm");
 
     final CatalogBookRevokeDialog d = new CatalogBookRevokeDialog();
-
     final Bundle b = new Bundle();
     b.putSerializable(CatalogBookRevokeDialog.TYPE_KEY, type);
     d.setArguments(b);
+    d.on_confirm = on_confirm;
     return d;
   }
 
@@ -86,28 +88,22 @@ public final class CatalogBookRevokeDialog extends DialogFragment
       (ViewGroup) inflater.inflate(
         R.layout.catalog_book_revoke_confirm, container, false));
 
-    final Button in_revoke_confirm_button = NullCheck.notNull(
-      (Button) layout.findViewById(R.id.book_revoke_confirm));
+    final Button in_revoke_confirm_button =
+        NullCheck.notNull(layout.findViewById(R.id.book_revoke_confirm));
 
-    in_revoke_confirm_button.setOnClickListener(
-      new OnClickListener()
-      {
-        @Override public void onClick(
-          final @Nullable View v)
-        {
-          final Runnable r = CatalogBookRevokeDialog.this.on_confirm;
-          CatalogBookRevokeDialog.LOG.debug("runnable: {}", r);
+    in_revoke_confirm_button.setOnClickListener(view -> {
+          final Runnable r = this.on_confirm;
+          LOG.debug("runnable: {}", r);
           if (r != null) {
             r.run();
           }
-          CatalogBookRevokeDialog.this.dismiss();
-        }
-      });
+          this.dismiss();
+        });
 
     final TextView message =
-      NullCheck.notNull((TextView) layout.findViewById(R.id.book_revoke_text));
+      NullCheck.notNull(layout.findViewById(R.id.book_revoke_text));
     final Button in_revoke_cancel_button =
-      NullCheck.notNull((Button) layout.findViewById(R.id.book_revoke_cancel));
+      NullCheck.notNull(layout.findViewById(R.id.book_revoke_cancel));
 
     final Resources rr = NullCheck.notNull(this.getResources());
 
@@ -126,16 +122,7 @@ public final class CatalogBookRevokeDialog extends DialogFragment
       }
     }
 
-
-    in_revoke_cancel_button.setOnClickListener(
-      new OnClickListener()
-      {
-        @Override public void onClick(
-          final @Nullable View v)
-        {
-          CatalogBookRevokeDialog.this.dismiss();
-        }
-      });
+    in_revoke_cancel_button.setOnClickListener(view -> this.dismiss());
 
     final Dialog d = this.getDialog();
     if (d != null) {
@@ -158,17 +145,4 @@ public final class CatalogBookRevokeDialog extends DialogFragment
     window.setLayout(w, h);
     window.setGravity(Gravity.CENTER);
   }
-
-  /**
-   * Set the runnable that will be executed on confirmation.
-   *
-   * @param r The runnable
-   */
-
-  public void setOnConfirmListener(
-    final Runnable r)
-  {
-    this.on_confirm = NullCheck.notNull(r);
-  }
-
 }
