@@ -56,9 +56,9 @@ public final class Observable<T> implements ObservableType<T> {
     NullCheck.notNull(receiver, "Receiver");
 
     /*
-     * Note: This is specifically *not* a lambda, because depending on the translation
-     * strategy the compiler uses for lambdas, we might end up registering the "same"
-     * observer over and over. In other words, we cannot implicitly rely on two instances
+     * Note: This is specifically *not* a lambda because, depending on the translation
+     * strategy the compiler uses for lambdas, the use of a lambda might result in registering
+     * the "same" observer over and over. In other words, we cannot implicitly rely on two instances
      * of a lambda expression actually being different with regards to == or Object.equals().
      * See JLS section 15.27.4, Run-time Evaluation of Lambda Expressions:
      */
