@@ -612,10 +612,7 @@ public final class CatalogBookDetailView
     dc.setVisibility(View.VISIBLE);
     dc.setEnabled(true);
     dc.setOnClickListener(
-        v -> {
-          // CatalogBookDetailView.this.books.bookDownloadCancel(d.getID());
-          throw new UnimplementedCodeException();
-        });
+        view -> this.books_controller.bookDownloadCancel(this.account, d.getID()));
 
     return Unit.unit();
   }

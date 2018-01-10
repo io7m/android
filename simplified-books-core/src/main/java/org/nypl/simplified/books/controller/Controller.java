@@ -438,6 +438,22 @@ public final class Controller implements BooksControllerType, ProfilesController
   }
 
   @Override
+  public void bookDownloadCancel(
+      final AccountType account,
+      final BookID id) {
+
+    NullCheck.notNull(account, "Account");
+    NullCheck.notNull(id, "Book ID");
+
+    this.exec.submit(new BookDownloadCancelTask(
+        this.downloader,
+        this.downloads,
+        account.bookDatabase(),
+        this.book_registry,
+        id));
+  }
+
+  @Override
   public void booksSync(final AccountType account) {
 
     NullCheck.notNull(account, "Account");

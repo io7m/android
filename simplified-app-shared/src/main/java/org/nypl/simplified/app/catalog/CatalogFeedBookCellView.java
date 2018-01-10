@@ -403,12 +403,8 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
     this.cell_downloading_cancel.setVisibility(View.VISIBLE);
     this.cell_downloading_cancel.setEnabled(true);
-    this.cell_downloading_cancel.setOnClickListener(view -> {
-      // XXX: The button is set to visible here, but for some reason does not appear
-      //      on any of the devices tested
-      // CatalogFeedBookCellView.this.books_registry.bookDownloadCancel(book_id);
-      throw new UnimplementedCodeException();
-    });
+    this.cell_downloading_cancel.setOnClickListener(
+        view -> this.books_controller.bookDownloadCancel(this.account(fe.getBookID()), d.getID()));
 
     return Unit.unit();
   }

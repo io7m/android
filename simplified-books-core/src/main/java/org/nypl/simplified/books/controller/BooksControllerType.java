@@ -43,6 +43,17 @@ public interface BooksControllerType {
       BookID id);
 
   /**
+   * Cancel a book download.
+   *
+   * @param account The account that would be receiving the book
+   * @param id      The ID of the book
+   */
+
+  void bookDownloadCancel(
+      AccountType account,
+      BookID id);
+
+  /**
    * Sync all books for the given account.
    *
    * @param account The account
