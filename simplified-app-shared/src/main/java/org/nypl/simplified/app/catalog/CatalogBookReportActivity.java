@@ -21,7 +21,7 @@ import com.io7m.jnull.Nullable;
 import com.io7m.junreachable.UnimplementedCodeException;
 
 import org.nypl.simplified.app.R;
-import org.nypl.simplified.app.SimplifiedActivity;
+import org.nypl.simplified.app.NavigationDrawerActivity;
 import org.nypl.simplified.app.SimplifiedPart;
 import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 
@@ -29,7 +29,7 @@ import org.nypl.simplified.books.feeds.FeedEntryOPDS;
  * An activity showing options for reporting
  */
 
-public class CatalogBookReportActivity extends SimplifiedActivity
+public class CatalogBookReportActivity extends NavigationDrawerActivity
 {
   private static final String FEED_ENTRY;
 
@@ -105,7 +105,6 @@ public class CatalogBookReportActivity extends SimplifiedActivity
     b.putSerializable(CatalogBookReportActivity.FEED_ENTRY, feed_entry);
     final Intent i = new Intent(from, CatalogBookReportActivity.class);
     i.putExtras(b);
-    i.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
     from.startActivity(i);
   }
 

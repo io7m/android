@@ -26,7 +26,7 @@ import org.slf4j.Logger;
  * Created by aferditamuriqi on 3/30/17.
  */
 
-public class ReportIssueActivity extends Activity {
+public class ReportIssueActivity extends SimplifiedActivity {
 
   private static final Logger LOG;
 

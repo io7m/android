@@ -1,6 +1,5 @@
 package org.nypl.simplified.app;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -37,7 +36,7 @@ import static org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCre
  * An activity that allows for the creation of profiles.
  */
 
-public final class ProfileCreationActivity extends Activity {
+public final class ProfileCreationActivity extends SimplifiedActivity {
 
   private static final Logger LOG = LogUtilities.getLog(ProfileCreationActivity.class);
 

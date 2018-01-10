@@ -342,10 +342,8 @@ public class CardCreatorActivity extends FragmentActivity implements
     i.putExtra("reload", true);
 
     this.startActivity(i);
-    this.overridePendingTransition(0, 0);
     this.finish();
     this.prefs.clearAllPreferences();
-
   }
 
   private void replace(final Fragment new_fragment) {

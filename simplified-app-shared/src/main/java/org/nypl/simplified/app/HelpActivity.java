@@ -10,7 +10,7 @@ import com.io7m.junreachable.UnimplementedCodeException;
 /**
  * The activity that shows Helpstack's main activity
  */
-public final class HelpActivity extends SimplifiedActivity {
+public final class HelpActivity extends NavigationDrawerActivity {
 
   /**
    * Construct help activity
@@ -39,7 +39,6 @@ public final class HelpActivity extends SimplifiedActivity {
           @Override
           public void call(final HelpstackType hs) {
             hs.show(HelpActivity.this);
-            HelpActivity.this.overridePendingTransition(0, 0);
             HelpActivity.this.finish();
           }
         });

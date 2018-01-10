@@ -54,7 +54,7 @@ import java.util.Collections;
  * The activity displaying the settings for the application.
  */
 
-public final class MainSettingsAccountsActivity extends SimplifiedActivity {
+public final class MainSettingsAccountsActivity extends NavigationDrawerActivity {
 
   private static final Logger LOG = LogUtilities.getLog(MainSettingsAccountsActivity.class);
 
@@ -225,12 +225,11 @@ public final class MainSettingsAccountsActivity extends SimplifiedActivity {
 
   private void openAccountSettings(final AccountID account) {
     final Bundle b = new Bundle();
-    SimplifiedActivity.setActivityArguments(b, false);
+    NavigationDrawerActivity.setActivityArguments(b, false);
     b.putSerializable(MainSettingsAccountActivity.ACCOUNT_ID, account);
 
     final Intent intent = new Intent();
     intent.setClass(this, MainSettingsAccountActivity.class);
-    intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
     intent.putExtras(b);
     this.startActivity(intent);
   }

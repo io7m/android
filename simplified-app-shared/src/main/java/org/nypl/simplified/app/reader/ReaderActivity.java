@@ -6,8 +6,6 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.graphics.Color;
-import android.graphics.ColorMatrixColorFilter;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -25,8 +23,8 @@ import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.Some;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
-import com.io7m.junreachable.UnimplementedCodeException;
 
+import org.nypl.simplified.app.SimplifiedActivity;
 import org.nypl.simplified.app.R;
 import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.app.reader.ReaderPaginationChangedEvent.OpenPage;
@@ -49,7 +47,6 @@ import org.nypl.simplified.books.profiles.ProfilePreferences;
 import org.nypl.simplified.books.profiles.ProfilePreferencesChanged;
 import org.nypl.simplified.books.profiles.ProfileReadableType;
 import org.nypl.simplified.books.reader.ReaderBookLocation;
-import org.nypl.simplified.books.reader.ReaderBookmarks;
 import org.nypl.simplified.books.reader.ReaderColorScheme;
 import org.nypl.simplified.books.reader.ReaderPreferences;
 import org.nypl.simplified.observable.ObservableSubscriptionType;
@@ -58,7 +55,6 @@ import org.readium.sdk.android.Package;
 import org.slf4j.Logger;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.net.URI;
 import java.util.List;
 
@@ -68,7 +64,7 @@ import static org.nypl.simplified.app.Simplified.WantActionBar.WANT_NO_ACTION_BA
  * The main reader activity for reading an EPUB.
  */
 
-public final class ReaderActivity extends Activity implements
+public final class ReaderActivity extends SimplifiedActivity implements
     ReaderHTTPServerStartListenerType,
     ReaderSimplifiedFeedbackListenerType,
     ReaderReadiumFeedbackListenerType,
@@ -517,7 +513,6 @@ public final class ReaderActivity extends Activity implements
     in_toc.setOnClickListener(view -> {
       final ReaderTOC sent_toc = ReaderTOC.fromPackage(p);
       ReaderTOCActivity.startActivityForResult(this, this.account, sent_toc);
-      this.overridePendingTransition(0, 0);
     });
 
     /*

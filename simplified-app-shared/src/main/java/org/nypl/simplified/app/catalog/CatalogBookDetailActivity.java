@@ -6,22 +6,16 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.widget.FrameLayout;
 
-import com.io7m.jfunctional.None;
-import com.io7m.jfunctional.OptionVisitorType;
-import com.io7m.jfunctional.Some;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 
+import org.nypl.simplified.app.NavigationDrawerActivity;
 import org.nypl.simplified.app.Simplified;
-import org.nypl.simplified.app.SimplifiedActivity;
 import org.nypl.simplified.app.SimplifiedPart;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
-import org.nypl.simplified.books.book_database.BookID;
-import org.nypl.simplified.books.book_database.BookIDs;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
 import org.nypl.simplified.books.book_registry.BookStatusEvent;
-import org.nypl.simplified.books.book_registry.BookWithStatus;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 import org.nypl.simplified.books.profiles.ProfileNoneCurrentException;
@@ -73,7 +67,7 @@ public final class CatalogBookDetailActivity extends CatalogActivity {
     NullCheck.notNull(up_stack, "Up stack");
     NullCheck.notNull(e, "Entry");
 
-    SimplifiedActivity.setActivityArguments(b, drawer_open);
+    NavigationDrawerActivity.setActivityArguments(b, drawer_open);
     CatalogActivity.setActivityArguments(b, up_stack);
     b.putSerializable(CatalogBookDetailActivity.CATALOG_BOOK_DETAIL_PART, in_part);
     b.putSerializable(CatalogBookDetailActivity.CATALOG_BOOK_DETAIL_FEED_ENTRY_ID, e);
@@ -103,7 +97,6 @@ public final class CatalogBookDetailActivity extends CatalogActivity {
     CatalogBookDetailActivity.setActivityArguments(b, false, in_part, up_stack, e);
     final Intent i = new Intent(from, CatalogBookDetailActivity.class);
     i.putExtras(b);
-    i.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
     from.startActivity(i);
   }
 

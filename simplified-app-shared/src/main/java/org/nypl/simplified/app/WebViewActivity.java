@@ -16,7 +16,7 @@ import org.slf4j.Logger;
  * view.
  */
 
-public final class WebViewActivity extends SimplifiedActivity
+public final class WebViewActivity extends NavigationDrawerActivity
 {
   /**
    * The name used to pass URIs to the activity.

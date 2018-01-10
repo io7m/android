@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 
+import org.nypl.simplified.app.SimplifiedActivity;
 import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.app.reader.ReaderTOC.TOCElement;
 import org.nypl.simplified.app.utilities.UIThread;
@@ -30,7 +31,7 @@ import static org.nypl.simplified.app.Simplified.WantActionBar.WANT_NO_ACTION_BA
  */
 
 public final class ReaderTOCActivity
-    extends Activity implements ReaderTOCViewSelectionListenerType {
+    extends SimplifiedActivity implements ReaderTOCViewSelectionListenerType {
 
   /**
    * The name of the argument containing the TOC.
@@ -97,12 +98,6 @@ public final class ReaderTOCActivity
     i.putExtra(TOC_ID, toc);
     i.putExtra(ACCOUNT_ID, account.id());
     from.startActivityForResult(i, TOC_SELECTION_REQUEST_CODE);
-  }
-
-  @Override
-  public void finish() {
-    super.finish();
-    this.overridePendingTransition(0, 0);
   }
 
   @Override

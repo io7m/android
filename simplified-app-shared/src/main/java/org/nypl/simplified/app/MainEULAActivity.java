@@ -1,7 +1,6 @@
 package org.nypl.simplified.app;
 
 import android.app.ActionBar;
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -21,7 +20,7 @@ import static org.nypl.simplified.app.Simplified.WantActionBar.WANT_ACTION_BAR;
  * agree to it.
  */
 
-public final class MainEULAActivity extends Activity
+public final class MainEULAActivity extends SimplifiedActivity
 {
   private static final Logger LOG = LogUtilities.getLog(MainEULAActivity.class);
 
@@ -92,12 +91,6 @@ public final class MainEULAActivity extends Activity
     } else {
       web_view.loadUrl("http://www.librarysimplified.org/EULA.html");
     }
-  }
-
-  @Override
-  public void onBackPressed() {
-    super.onBackPressed();
-    this.overridePendingTransition(0, 0);
   }
 
   @Override

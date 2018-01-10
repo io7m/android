@@ -9,7 +9,7 @@ import com.io7m.jnull.NullCheck;
 import com.io7m.junreachable.UnreachableCodeException;
 
 import org.nypl.simplified.app.R;
-import org.nypl.simplified.app.SimplifiedActivity;
+import org.nypl.simplified.app.NavigationDrawerActivity;
 import org.nypl.simplified.app.utilities.FadeUtilities;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.stack.ImmutableStack;
@@ -19,7 +19,7 @@ import org.slf4j.Logger;
  * An abstract activity providing <i>up</i> navigation using the home button.
  */
 
-public abstract class CatalogActivity extends SimplifiedActivity
+public abstract class CatalogActivity extends NavigationDrawerActivity
 {
   private static final String CATALOG_UP_STACK_ID;
   private static final Logger LOG;
@@ -141,7 +141,6 @@ public abstract class CatalogActivity extends SimplifiedActivity
     CatalogFeedActivity.setActivityArguments(b, args);
     final Intent i = new Intent(this, this.getFeedClassForArguments(args));
     i.putExtras(b);
-    i.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
     this.startActivity(i);
   }
 

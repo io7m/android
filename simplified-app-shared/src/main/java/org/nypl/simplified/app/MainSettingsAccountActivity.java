@@ -2,7 +2,6 @@ package org.nypl.simplified.app;
 
 import android.annotation.TargetApi;
 import android.app.ActionBar;
-import android.app.AlertDialog;
 import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.Intent;
@@ -27,7 +26,6 @@ import android.widget.Toast;
 import com.google.common.util.concurrent.FluentFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.io7m.jfunctional.OptionType;
-import com.io7m.jfunctional.Pair;
 import com.io7m.jfunctional.Some;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
@@ -48,7 +46,6 @@ import org.nypl.simplified.books.accounts.AccountEventLogout.AccountLogoutFailed
 import org.nypl.simplified.books.accounts.AccountEventLogout.AccountLogoutSucceeded;
 import org.nypl.simplified.books.accounts.AccountID;
 import org.nypl.simplified.books.accounts.AccountPIN;
-import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.core.AuthenticationDocumentType;
 import org.nypl.simplified.books.core.DocumentStoreType;
@@ -65,7 +62,7 @@ import java.net.URI;
  * The activity displaying the settings for the application.
  */
 
-public final class MainSettingsAccountActivity extends SimplifiedActivity {
+public final class MainSettingsAccountActivity extends NavigationDrawerActivity {
 
   public static final String ACCOUNT_ID =
       "org.nypl.simplified.app.MainSettingsAccountActivity.account_id";
@@ -164,7 +161,6 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity {
         final Bundle b = new Bundle();
         MainEULAActivity.setActivityArguments(b, eula_uri.toString());
         eula_intent.putExtras(b);
-        eula_intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
         this.startActivity(eula_intent);
       });
       return true;
@@ -336,8 +332,6 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity {
             "Privacy Policy",
             SimplifiedPart.PART_SETTINGS);
         intent.putExtras(b);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
         this.startActivity(intent);
       });
     } else {
@@ -359,8 +353,6 @@ public final class MainSettingsAccountActivity extends SimplifiedActivity {
             "Content Licenses",
             SimplifiedPart.PART_SETTINGS);
         intent.putExtras(b);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
         this.startActivity(intent);
       });
     } else {

@@ -29,7 +29,6 @@ import com.io7m.jfunctional.Some;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
-import com.io7m.junreachable.UnimplementedCodeException;
 import com.io7m.junreachable.UnreachableCodeException;
 
 import org.nypl.simplified.app.LoginActivity;
@@ -37,7 +36,7 @@ import org.nypl.simplified.app.NetworkConnectivityType;
 import org.nypl.simplified.app.R;
 import org.nypl.simplified.app.ScreenSizeInformationType;
 import org.nypl.simplified.app.Simplified;
-import org.nypl.simplified.app.SimplifiedActivity;
+import org.nypl.simplified.app.NavigationDrawerActivity;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.assertions.Assertions;
 import org.nypl.simplified.books.book_registry.BookStatusEvent;
@@ -45,12 +44,10 @@ import org.nypl.simplified.books.controller.ProfileFeedRequest;
 import org.nypl.simplified.books.core.BooksFeedSelection;
 import org.nypl.simplified.books.core.DocumentStoreType;
 import org.nypl.simplified.books.core.EULAType;
-import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 import org.nypl.simplified.books.feeds.FeedFacetMatcherType;
 import org.nypl.simplified.books.feeds.FeedFacetOPDS;
 import org.nypl.simplified.books.feeds.FeedFacetPseudo;
-import org.nypl.simplified.books.feeds.FeedFacetPseudo.FacetType;
 import org.nypl.simplified.books.feeds.FeedFacetType;
 import org.nypl.simplified.books.feeds.FeedGroup;
 import org.nypl.simplified.books.feeds.FeedLoaderAuthenticationListenerType;
@@ -79,7 +76,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -150,14 +146,14 @@ public abstract class CatalogFeedActivity extends CatalogActivity
         new CatalogFeedArgumentsMatcherType<Unit, UnreachableCodeException>() {
           @Override
           public Unit onFeedArgumentsLocalBooks(final CatalogFeedArgumentsLocalBooks c) {
-            SimplifiedActivity.setActivityArguments(b, false);
+            NavigationDrawerActivity.setActivityArguments(b, false);
             CatalogActivity.setActivityArguments(b, c.getUpStack());
             return Unit.unit();
           }
 
           @Override
           public Unit onFeedArgumentsRemote(final CatalogFeedArgumentsRemote c) {
-            SimplifiedActivity.setActivityArguments(b, c.isDrawerOpen());
+            NavigationDrawerActivity.setActivityArguments(b, c.isDrawerOpen());
             CatalogActivity.setActivityArguments(b, c.getUpStack());
             return Unit.unit();
           }
@@ -366,7 +362,6 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     UIThread.runOnUIThread(() -> {
       final Intent i = new Intent(CatalogFeedActivity.this, LoginActivity.class);
       this.startActivity(i);
-      this.overridePendingTransition(0, 0);
       this.finish();
     });
   }
@@ -526,10 +521,9 @@ public abstract class CatalogFeedActivity extends CatalogActivity
       UIThread.runOnUIThread(() -> {
         final Intent i = new Intent(CatalogFeedActivity.this, MainCatalogActivity.class);
         final Bundle b = new Bundle();
-        SimplifiedActivity.setActivityArguments(b, false);
+        NavigationDrawerActivity.setActivityArguments(b, false);
         i.putExtras(b);
         this.startActivity(i);
-        this.overridePendingTransition(0, 0);
         this.finish();
       });
     }

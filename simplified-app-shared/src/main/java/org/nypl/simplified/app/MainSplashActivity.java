@@ -1,6 +1,5 @@
 package org.nypl.simplified.app;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -24,7 +23,7 @@ import static org.nypl.simplified.app.Simplified.WantActionBar.WANT_NO_ACTION_BA
  * already agreed to the license.
  */
 
-public class MainSplashActivity extends Activity {
+public class MainSplashActivity extends SimplifiedActivity {
   private static final Logger LOG;
 
   static {
@@ -86,20 +85,17 @@ public class MainSplashActivity extends Activity {
   private void openEULA() {
     final Intent i = new Intent(this, MainEULAActivity.class);
     this.startActivity(i);
-    this.overridePendingTransition(0, 0);
   }
 
   private void openWelcome() {
     final Intent i = new Intent(this, MainWelcomeActivity.class);
     this.startActivity(i);
-    this.overridePendingTransition(0, 0);
     this.finish();
   }
 
   private void openCatalog() {
     final Intent i = new Intent(this, MainCatalogActivity.class);
     this.startActivity(i);
-    this.overridePendingTransition(0, 0);
     this.finish();
   }
 }

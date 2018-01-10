@@ -1,6 +1,5 @@
 package org.nypl.simplified.app;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -21,7 +20,7 @@ import static org.nypl.simplified.app.Simplified.WantActionBar.WANT_NO_ACTION_BA
  * to read the SimplyE collection.
  */
 
-public class MainWelcomeActivity extends Activity {
+public class MainWelcomeActivity extends SimplifiedActivity {
   private static final Logger LOG;
 
   static {
@@ -76,7 +75,6 @@ public class MainWelcomeActivity extends Activity {
     final Intent i = new Intent(this, MainCatalogActivity.class);
     i.putExtra("reload", true);
     this.startActivity(i);
-    this.overridePendingTransition(0, 0);
     this.finish();
   }
 }

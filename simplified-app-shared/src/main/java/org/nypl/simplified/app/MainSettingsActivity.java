@@ -9,7 +9,7 @@ import org.slf4j.Logger;
  * The activity displaying the settings for the application.
  */
 
-public final class MainSettingsActivity extends SimplifiedActivity {
+public final class MainSettingsActivity extends NavigationDrawerActivity {
 
   private static final Logger LOG;
 

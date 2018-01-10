@@ -1,7 +1,5 @@
 package org.nypl.simplified.app;
 
-import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -40,7 +38,7 @@ import static org.nypl.simplified.app.Simplified.WantActionBar.WANT_NO_ACTION_BA
  * An activity that allows users to pick from a list of profiles, or to create a new profile.
  */
 
-public final class ProfileSelectionActivity extends Activity {
+public final class ProfileSelectionActivity extends SimplifiedActivity {
 
   private static final Logger LOG = LogUtilities.getLog(ProfileSelectionActivity.class);
 
@@ -191,13 +189,11 @@ public final class ProfileSelectionActivity extends Activity {
   private void openCatalog() {
     final Intent i = new Intent(this, MainCatalogActivity.class);
     this.startActivity(i);
-    this.overridePendingTransition(0, 0);
     this.finish();
   }
 
   private void openCreationDialog() {
     final Intent i = new Intent(this, ProfileCreationActivity.class);
     this.startActivity(i);
-    this.overridePendingTransition(0, 0);
   }
 }

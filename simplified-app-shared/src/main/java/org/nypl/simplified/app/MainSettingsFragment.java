@@ -51,10 +51,9 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
         public boolean onPreferenceClick(final Preference preference) {
 
           final Bundle b = new Bundle();
-          SimplifiedActivity.setActivityArguments(b, false);
+          NavigationDrawerActivity.setActivityArguments(b, false);
           final Intent intent = new Intent();
           intent.setClass(getActivity(), MainSettingsAccountsActivity.class);
-          intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
           intent.putExtras(b);
 
           preferences.setIntent(intent);
@@ -94,7 +93,6 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
         resources.getString(R.string.settings_about),
         SimplifiedPart.PART_SETTINGS);
       intent.putExtras(b);
-      intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
 
       final Preference preferences = findPreference(resources.getString(R.string.settings_about));
       preferences.setIntent(intent);
@@ -110,7 +108,6 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
         resources.getString(R.string.settings_eula),
         SimplifiedPart.PART_SETTINGS);
       intent.putExtras(b);
-      intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
 
       final Preference preferences = findPreference(resources.getString(R.string.settings_eula));
       preferences.setIntent(intent);
@@ -131,7 +128,6 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
               resources.getString(R.string.settings_licence_software),
               SimplifiedPart.PART_SETTINGS);
             intent.putExtras(b);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
 
             final Preference preferences = findPreference(resources.getString(R.string.settings_licence_software));
             preferences.setIntent(intent);

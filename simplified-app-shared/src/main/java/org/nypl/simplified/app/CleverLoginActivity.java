@@ -40,7 +40,7 @@ import java.util.StringTokenizer;
  * view.
  */
 
-public final class CleverLoginActivity extends SimplifiedActivity {
+public final class CleverLoginActivity extends NavigationDrawerActivity {
 
   private static final Logger LOG;
 

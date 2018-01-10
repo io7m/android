@@ -58,7 +58,6 @@ public final class LoginActivity extends Activity {
     final Intent i = new Intent(this, MainCatalogActivity.class);
     i.putExtra("reload", true);
     this.startActivity(i);
-    this.overridePendingTransition(0, 0);
     this.finish();
   }
 
@@ -69,7 +68,6 @@ public final class LoginActivity extends Activity {
   public void onLoginWithClever() {
     final Intent i = new Intent(this, CleverLoginActivity.class);
     this.startActivityForResult(i, 1);
-    this.overridePendingTransition(0, 0);
   }
 
   @Override
