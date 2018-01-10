@@ -361,12 +361,12 @@ public final class Controller implements BooksControllerType, ProfilesController
   }
 
   @Override
-  public void profilePreferencesUpdate(final ProfilePreferences preferences)
+  public ListenableFuture<Unit> profilePreferencesUpdate(final ProfilePreferences preferences)
       throws ProfileNoneCurrentException {
 
     NullCheck.notNull(preferences, "Preferences");
 
-    this.exec.submit(new ProfilePreferencesUpdateTask(
+    return this.exec.submit(new ProfilePreferencesUpdateTask(
         this.profile_events,
         this.profiles.currentProfileUnsafe(),
         preferences));

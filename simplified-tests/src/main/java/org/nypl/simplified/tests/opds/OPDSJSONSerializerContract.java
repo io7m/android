@@ -1,6 +1,7 @@
 package org.nypl.simplified.tests.opds;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeed;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
@@ -45,13 +46,11 @@ public abstract class OPDSJSONSerializerContract
 
     final OPDSJSONSerializerType s = OPDSJSONSerializer.newSerializer();
 
-    final InputStream rs0 =
-      OPDSJSONSerializerContract.getResource("entry-0.xml");
+    final InputStream rs0 = OPDSJSONSerializerContract.getResource("entry-0.xml");
     final OPDSAcquisitionFeedEntry e0 = p.parseEntryStream(rs0);
 
     final ByteArrayOutputStream bao0 = new ByteArrayOutputStream();
     s.serializeToStream(s.serializeFeedEntry(e0), bao0);
-    s.serializeToStream(s.serializeFeedEntry(e0), System.out);
 
     final InputStream rs1 = new ByteArrayInputStream(bao0.toByteArray());
     final OPDSAcquisitionFeedEntry e1 =
@@ -91,7 +90,6 @@ public abstract class OPDSJSONSerializerContract
 
     final ByteArrayOutputStream bao0 = new ByteArrayOutputStream();
     s.serializeToStream(s.serializeFeed(fe0), bao0);
-    s.serializeToStream(s.serializeFeed(fe0), System.out);
 
     final InputStream rs1 = new ByteArrayInputStream(bao0.toByteArray());
     final OPDSAcquisitionFeed fe1 = jp.parseAcquisitionFeedFromStream(rs1);

@@ -28,10 +28,13 @@ import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookRegistry;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
 import org.nypl.simplified.books.controller.Controller;
+import org.nypl.simplified.books.controller.ProfileFeedRequest;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
+import org.nypl.simplified.books.feeds.FeedFacetPseudo;
 import org.nypl.simplified.books.feeds.FeedHTTPTransport;
 import org.nypl.simplified.books.feeds.FeedLoader;
 import org.nypl.simplified.books.feeds.FeedLoaderType;
+import org.nypl.simplified.books.feeds.FeedWithoutGroups;
 import org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationFailed;
 import org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationSucceeded;
 import org.nypl.simplified.books.profiles.ProfileDatabaseException;
@@ -43,6 +46,9 @@ import org.nypl.simplified.books.profiles.ProfileSelected;
 import org.nypl.simplified.books.profiles.ProfilesDatabase;
 import org.nypl.simplified.books.profiles.ProfilesDatabaseType;
 import org.nypl.simplified.books.reader.ReaderBookLocation;
+import org.nypl.simplified.books.reader.ReaderColorScheme;
+import org.nypl.simplified.books.reader.ReaderFontSelection;
+import org.nypl.simplified.books.reader.ReaderPreferences;
 import org.nypl.simplified.downloader.core.DownloaderHTTP;
 import org.nypl.simplified.downloader.core.DownloaderType;
 import org.nypl.simplified.files.DirectoryUtilities;
@@ -177,11 +183,9 @@ public abstract class ProfilesControllerContract {
     final ProfilesControllerType controller =
         controller(this.executor_books, http, this.book_registry, profiles, downloader, ProfilesControllerContract::accountProviders);
 
-    final LocalDate date = LocalDate.now();
-    controller.profileCreate(
-        accountProviders().providerDefault(), "Kermit", date).get();
-    controller.profileSelect(
-        profiles.profiles().firstKey()).get();
+    final AccountProvider account_provider = accountProviders().providerDefault();
+    controller.profileCreate(account_provider, "Kermit", LocalDate.now()).get();
+    controller.profileSelect(profiles.profiles().firstKey()).get();
 
     final ProfileReadableType p = controller.profileCurrent();
     Assert.assertEquals("Kermit", p.displayName());
@@ -237,9 +241,8 @@ public abstract class ProfilesControllerContract {
     controller.profileEvents().subscribe(this.profile_events::add);
     controller.accountEvents().subscribe(this.account_events::add);
 
-    final LocalDate date = LocalDate.now();
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
-    controller.profileCreate(provider, "Kermit", date).get();
+    controller.profileCreate(provider, "Kermit", LocalDate.now()).get();
     controller.profileSelect(profiles.profiles().firstKey()).get();
     controller.profileAccountCreate(provider.id()).get();
 
@@ -300,9 +303,8 @@ public abstract class ProfilesControllerContract {
     controller.profileEvents().subscribe(this.profile_events::add);
     controller.accountEvents().subscribe(this.account_events::add);
 
-    final LocalDate date = LocalDate.now();
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
-    controller.profileCreate(provider, "Kermit", date).get();
+    controller.profileCreate(provider, "Kermit", LocalDate.now()).get();
     controller.profileSelect(profiles.profiles().firstKey()).get();
     controller.profileAccountCreate(provider.id()).get();
 
@@ -363,9 +365,8 @@ public abstract class ProfilesControllerContract {
     controller.profileEvents().subscribe(this.profile_events::add);
     controller.accountEvents().subscribe(this.account_events::add);
 
-    final LocalDate date = LocalDate.now();
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
-    controller.profileCreate(provider, "Kermit", date).get();
+    controller.profileCreate(provider, "Kermit", LocalDate.now()).get();
     controller.profileSelect(profiles.profiles().firstKey()).get();
     controller.profileAccountCreate(provider.id()).get();
 
@@ -425,9 +426,8 @@ public abstract class ProfilesControllerContract {
     controller.profileEvents().subscribe(this.profile_events::add);
     controller.accountEvents().subscribe(this.account_events::add);
 
-    final LocalDate date = LocalDate.now();
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
-    controller.profileCreate(provider, "Kermit", date).get();
+    controller.profileCreate(provider, "Kermit", LocalDate.now()).get();
     controller.profileSelect(profiles.profiles().firstKey()).get();
     controller.profileAccountCreate(provider.id()).get();
 
@@ -487,9 +487,8 @@ public abstract class ProfilesControllerContract {
     controller.profileEvents().subscribe(this.profile_events::add);
     controller.accountEvents().subscribe(this.account_events::add);
 
-    final LocalDate date = LocalDate.now();
     final AccountProvider provider = fakeProvider("urn:fake:0");
-    controller.profileCreate(provider, "Kermit", date).get();
+    controller.profileCreate(provider, "Kermit", LocalDate.now()).get();
     controller.profileSelect(profiles.profiles().firstKey()).get();
     controller.profileAccountCreate(provider.id()).get();
 
@@ -535,9 +534,8 @@ public abstract class ProfilesControllerContract {
     final ProfilesControllerType controller =
         controller(this.executor_books, http, book_registry, profiles, downloader, ProfilesControllerContract::accountProviders);
 
-    final LocalDate date = LocalDate.now();
     final AccountProvider provider = fakeProvider("urn:fake:0");
-    controller.profileCreate(provider, "Kermit", date).get();
+    controller.profileCreate(provider, "Kermit", LocalDate.now()).get();
     controller.profileSelect(profiles.profiles().firstKey()).get();
     controller.profileAccountCreate(provider.id()).get();
     controller.profileEvents().subscribe(this.profile_events::add);
@@ -580,6 +578,96 @@ public abstract class ProfilesControllerContract {
       Assert.assertTrue("Preferences must not have changed", !change.changedReaderPreferences());
       Assert.assertTrue("Bookmarks must have changed", change.changedReaderBookmarks());
     }
+  }
+
+  /**
+   * Setting and getting preferences works.
+   *
+   * @throws Exception On errors
+   */
+
+  @Test(timeout = 3_000L)
+  public final void testProfilesPreferences() throws Exception {
+
+    final ProfilesDatabaseType profiles =
+        profilesDatabaseWithoutAnonymous(this.directory_profiles);
+    final ProfilesControllerType controller =
+        controller(this.executor_books, http, book_registry, profiles, downloader, ProfilesControllerContract::accountProviders);
+
+    final AccountProvider provider = fakeProvider("urn:fake:0");
+    controller.profileCreate(provider, "Kermit", LocalDate.now()).get();
+    controller.profileSelect(profiles.profiles().firstKey()).get();
+    controller.profileAccountCreate(provider.id()).get();
+    controller.profileEvents().subscribe(this.profile_events::add);
+
+    controller.profilePreferencesUpdate(profiles.currentProfileUnsafe().preferences()).get();
+
+    Assert.assertEquals(1L, this.profile_events.size());
+    Assert.assertThat(
+        this.profile_events.get(0),
+        IsInstanceOf.instanceOf(ProfilePreferencesChanged.class));
+
+    {
+      final ProfilePreferencesChanged change = (ProfilePreferencesChanged) this.profile_events.get(0);
+      Assert.assertTrue("Preferences must not have changed", !change.changedReaderPreferences());
+      Assert.assertTrue("Bookmarks must not have changed", !change.changedReaderBookmarks());
+    }
+
+    this.profile_events.clear();
+    controller.profilePreferencesUpdate(
+        profiles.currentProfileUnsafe()
+            .preferences()
+            .toBuilder()
+            .setReaderPreferences(
+                ReaderPreferences.builder()
+                    .setBrightness(0.2)
+                    .setColorScheme(ReaderColorScheme.SCHEME_WHITE_ON_BLACK)
+                    .setFontFamily(ReaderFontSelection.READER_FONT_OPEN_DYSLEXIC)
+                    .setFontScale(2.0)
+                    .build())
+            .build())
+        .get();
+
+    Assert.assertEquals(1L, this.profile_events.size());
+    Assert.assertThat(
+        this.profile_events.get(0),
+        IsInstanceOf.instanceOf(ProfilePreferencesChanged.class));
+
+    {
+      final ProfilePreferencesChanged change = (ProfilePreferencesChanged) this.profile_events.get(0);
+      Assert.assertTrue("Preferences must have changed", change.changedReaderPreferences());
+      Assert.assertTrue("Bookmarks must not have changed", !change.changedReaderBookmarks());
+    }
+  }
+
+  /**
+   * Retrieving an empty feed of books works.
+   *
+   * @throws Exception On errors
+   */
+
+  @Test(timeout = 3_000L)
+  public final void testProfilesFeed() throws Exception {
+
+    final ProfilesDatabaseType profiles =
+        profilesDatabaseWithoutAnonymous(this.directory_profiles);
+    final ProfilesControllerType controller =
+        controller(this.executor_books, http, book_registry, profiles, downloader, ProfilesControllerContract::accountProviders);
+
+    final AccountProvider provider = fakeProvider("urn:fake:0");
+    controller.profileCreate(provider, "Kermit", LocalDate.now()).get();
+    controller.profileSelect(profiles.profiles().firstKey()).get();
+    controller.profileAccountCreate(provider.id()).get();
+    controller.profileEvents().subscribe(this.profile_events::add);
+
+    final FeedWithoutGroups feed =
+        controller.profileFeed(
+            ProfileFeedRequest.builder(
+                URI.create("Books"), "Books", "Sort by", t -> "Sort by title")
+                .build())
+            .get();
+
+    Assert.assertEquals(0L, feed.size());
   }
 
   private ProfilesDatabaseType profilesDatabaseWithoutAnonymous(final File dir_profiles)

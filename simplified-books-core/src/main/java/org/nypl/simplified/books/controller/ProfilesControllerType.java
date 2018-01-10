@@ -248,7 +248,7 @@ public interface ProfilesControllerType {
    * @see #profileAnonymousEnabled()
    */
 
-  void profilePreferencesUpdate(
+  ListenableFuture<Unit> profilePreferencesUpdate(
       ProfilePreferences preferences)
       throws ProfileNoneCurrentException;
 
