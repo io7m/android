@@ -14,6 +14,8 @@ import com.io7m.jnull.Nullable;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.slf4j.Logger;
 
+import static org.nypl.simplified.app.Simplified.WantActionBar.WANT_ACTION_BAR;
+
 /**
  * An activity that shows a license agreement, and aborts if the user does not
  * agree to it.
@@ -58,7 +60,7 @@ public final class MainEULAActivity extends Activity
   {
     LOG.debug("onCreate");
 
-    setTheme(Simplified.getCurrentTheme());
+    setTheme(Simplified.getCurrentTheme(WANT_ACTION_BAR));
     super.onCreate(state);
 
     final ActionBar bar = this.getActionBar();

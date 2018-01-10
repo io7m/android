@@ -62,6 +62,8 @@ import java.io.FileNotFoundException;
 import java.net.URI;
 import java.util.List;
 
+import static org.nypl.simplified.app.Simplified.WantActionBar.WANT_NO_ACTION_BAR;
+
 /**
  * The main reader activity for reading an EPUB.
  */
@@ -216,7 +218,7 @@ public final class ReaderActivity extends Activity implements
   @Override
   protected void onCreate(final @Nullable Bundle state) {
 
-    this.setTheme(Simplified.getCurrentTheme());
+    this.setTheme(Simplified.getCurrentTheme(WANT_NO_ACTION_BAR));
     super.onCreate(state);
     this.setContentView(R.layout.reader);
 

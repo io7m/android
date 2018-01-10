@@ -62,6 +62,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.nypl.simplified.app.Simplified.WantActionBar.WANT_ACTION_BAR;
 import static org.nypl.simplified.app.SimplifiedPart.PART_BOOKS;
 import static org.nypl.simplified.app.SimplifiedPart.PART_CATALOG;
 import static org.nypl.simplified.app.SimplifiedPart.PART_HOLDS;
@@ -370,7 +371,7 @@ public abstract class SimplifiedActivity extends Activity
   @Override
   protected void onCreate(final @Nullable Bundle state) {
 
-    this.setTheme(Simplified.getCurrentTheme());
+    this.setTheme(Simplified.getCurrentTheme(WANT_ACTION_BAR));
     super.onCreate(state);
 
     LOG.debug("onCreate: {}", this);

@@ -14,6 +14,8 @@ import org.nypl.simplified.app.catalog.MainCatalogActivity;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.slf4j.Logger;
 
+import static org.nypl.simplified.app.Simplified.WantActionBar.WANT_NO_ACTION_BAR;
+
 /**
  *
  */
@@ -33,7 +35,7 @@ public final class LoginActivity extends Activity {
   @Override
   protected void onCreate(final Bundle state) {
 
-    this.setTheme(Simplified.getCurrentTheme());
+    this.setTheme(Simplified.getCurrentTheme(WANT_NO_ACTION_BAR));
     super.onCreate(state);
     this.setContentView(R.layout.login_view);
 

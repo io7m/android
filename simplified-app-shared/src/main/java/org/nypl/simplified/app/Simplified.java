@@ -18,6 +18,7 @@ import com.io7m.jfunctional.Some;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
+import com.io7m.junreachable.UnreachableCodeException;
 
 import org.nypl.drm.core.AdobeAdeptExecutorType;
 import org.nypl.simplified.app.catalog.CatalogBookCoverGenerator;
@@ -121,6 +122,25 @@ public final class Simplified extends Application {
   private BookRegistryType book_registry;
   private Controller book_controller;
   private ListeningExecutorService exec_background;
+
+  /**
+   * A specification of whether or not an action bar is wanted in an activity.
+   */
+
+  public enum WantActionBar {
+
+    /**
+     * An action bar is required.
+     */
+
+    WANT_ACTION_BAR,
+
+    /**
+     * No action bar is required.
+     */
+
+    WANT_NO_ACTION_BAR
+  }
 
   /**
    * Construct the application.
@@ -324,9 +344,9 @@ public final class Simplified extends Application {
     return NullCheck.notNull(Executors.newFixedThreadPool(count, named));
   }
 
-  public static int getCurrentTheme() {
+  public static int getCurrentTheme(final WantActionBar bar) {
     final Simplified i = Simplified.checkInitialized();
-    return i.currentTheme();
+    return i.currentTheme(bar);
   }
 
   public static DocumentStoreType getDocumentStore() {
@@ -472,8 +492,17 @@ public final class Simplified extends Application {
     return documents_builder.build();
   }
 
-  private int currentTheme() {
-    return R.style.SimplifiedTheme;
+  private int currentTheme(final WantActionBar bar) {
+    NullCheck.notNull(bar, "Bar");
+
+    switch (bar) {
+      case WANT_ACTION_BAR:
+        return R.style.SimplifiedTheme;
+      case WANT_NO_ACTION_BAR:
+        return R.style.SimplifiedThemeNoActionBar;
+    }
+
+    throw new UnreachableCodeException();
   }
 
   private void initBugsnag(

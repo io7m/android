@@ -23,6 +23,8 @@ import org.nypl.simplified.books.reader.ReaderPreferences;
 import org.nypl.simplified.observable.ObservableSubscriptionType;
 import org.slf4j.Logger;
 
+import static org.nypl.simplified.app.Simplified.WantActionBar.WANT_NO_ACTION_BAR;
+
 /**
  * Activity for displaying the table of contents on devices with small screens.
  */
@@ -105,7 +107,7 @@ public final class ReaderTOCActivity
 
   @Override
   protected void onCreate(final @Nullable Bundle state) {
-    this.setTheme(Simplified.getCurrentTheme());
+    this.setTheme(Simplified.getCurrentTheme(WANT_NO_ACTION_BAR));
     super.onCreate(state);
 
     LOG.debug("onCreate");

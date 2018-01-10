@@ -16,6 +16,8 @@ import org.slf4j.Logger;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static org.nypl.simplified.app.Simplified.WantActionBar.WANT_NO_ACTION_BAR;
+
 /**
  * A splash screen activity that either shows a license agreement, or simply
  * starts up another activity without displaying anything if the user has
@@ -41,7 +43,7 @@ public class MainSplashActivity extends Activity {
   protected void onCreate(
       final Bundle state) {
 
-    this.setTheme(Simplified.getCurrentTheme());
+    this.setTheme(Simplified.getCurrentTheme(WANT_NO_ACTION_BAR));
     super.onCreate(state);
     this.setContentView(R.layout.splash);
 

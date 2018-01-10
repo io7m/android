@@ -34,6 +34,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.nypl.simplified.app.Simplified.WantActionBar.WANT_NO_ACTION_BAR;
+
 /**
  * An activity that allows users to pick from a list of profiles, or to create a new profile.
  */
@@ -55,7 +57,7 @@ public final class ProfileSelectionActivity extends Activity {
   @Override
   protected void onCreate(final @Nullable Bundle state) {
 
-    this.setTheme(Simplified.getCurrentTheme());
+    this.setTheme(Simplified.getCurrentTheme(WANT_NO_ACTION_BAR));
     super.onCreate(state);
 
     this.setContentView(R.layout.profiles_selection);

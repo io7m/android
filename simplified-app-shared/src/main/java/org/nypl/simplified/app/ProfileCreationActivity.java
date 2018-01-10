@@ -1,7 +1,6 @@
 package org.nypl.simplified.app;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -31,6 +30,7 @@ import org.nypl.simplified.books.profiles.ProfileEvent;
 import org.nypl.simplified.datepicker.DatePicker;
 import org.slf4j.Logger;
 
+import static org.nypl.simplified.app.Simplified.WantActionBar.WANT_NO_ACTION_BAR;
 import static org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationFailed.ErrorCode.ERROR_GENERAL;
 
 /**
@@ -52,7 +52,7 @@ public final class ProfileCreationActivity extends Activity {
   @Override
   protected void onCreate(final @Nullable Bundle state) {
 
-    this.setTheme(Simplified.getCurrentTheme());
+    this.setTheme(Simplified.getCurrentTheme(WANT_NO_ACTION_BAR));
     super.onCreate(state);
     this.setContentView(R.layout.profiles_creation);
 

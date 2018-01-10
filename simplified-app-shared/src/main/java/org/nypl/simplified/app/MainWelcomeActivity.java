@@ -14,6 +14,8 @@ import org.nypl.simplified.books.accounts.AccountProviderCollection;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.slf4j.Logger;
 
+import static org.nypl.simplified.app.Simplified.WantActionBar.WANT_NO_ACTION_BAR;
+
 /**
  * An activity that requires the user to either pick a specific account provider, or allows them
  * to read the SimplyE collection.
@@ -39,7 +41,7 @@ public class MainWelcomeActivity extends Activity {
       final Bundle state) {
     LOG.debug("onCreate");
 
-    this.setTheme(Simplified.getCurrentTheme());
+    this.setTheme(Simplified.getCurrentTheme(WANT_NO_ACTION_BAR));
     super.onCreate(state);
     this.setContentView(R.layout.welcome);
 
