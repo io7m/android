@@ -445,12 +445,13 @@ public final class Controller implements BooksControllerType, ProfilesController
     NullCheck.notNull(account, "Account");
     NullCheck.notNull(id, "Book ID");
 
-    this.exec.submit(new BookDownloadCancelTask(
-        this.downloader,
-        this.downloads,
-        account.bookDatabase(),
-        this.book_registry,
-        id));
+    LOG.debug("[{}] download cancel", id.brief());
+    final DownloadType d = this.downloads.get(id);
+    if (d != null) {
+      LOG.debug("[{}] cancelling download {}", d);
+      d.cancel();
+      this.downloads.remove(id);
+    }
   }
 
   @Override
