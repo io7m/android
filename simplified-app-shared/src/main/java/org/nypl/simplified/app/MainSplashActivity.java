@@ -2,13 +2,12 @@ package org.nypl.simplified.app;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 
-import com.io7m.jfunctional.OptionType;
-import com.io7m.jfunctional.Some;
+import com.io7m.jnull.NullCheck;
 
 import org.nypl.simplified.app.catalog.MainCatalogActivity;
-import org.nypl.simplified.books.core.DocumentStoreType;
-import org.nypl.simplified.books.core.EULAType;
+import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.slf4j.Logger;
 
@@ -18,17 +17,16 @@ import java.util.TimerTask;
 import static org.nypl.simplified.app.Simplified.WantActionBar.WANT_NO_ACTION_BAR;
 
 /**
- * A splash screen activity that either shows a license agreement, or simply
- * starts up another activity without displaying anything if the user has
- * already agreed to the license.
+ * A splash screen activity that shows a logo and then either moves to the catalog or the
+ * profile selection screen.
  */
 
 public class MainSplashActivity extends SimplifiedActivity {
-  private static final Logger LOG;
 
-  static {
-    LOG = LogUtilities.getLog(MainSplashActivity.class);
-  }
+  private static final Logger LOG = LogUtilities.getLog(MainSplashActivity.class);
+
+  private View root;
+  private View image;
 
   /**
    * Construct an activity.
@@ -39,8 +37,7 @@ public class MainSplashActivity extends SimplifiedActivity {
   }
 
   @Override
-  protected void onCreate(
-      final Bundle state) {
+  protected void onCreate(final Bundle state) {
 
     this.setTheme(Simplified.getCurrentTheme(WANT_NO_ACTION_BAR));
     super.onCreate(state);
@@ -54,6 +51,21 @@ public class MainSplashActivity extends SimplifiedActivity {
             MainSplashActivity.this.finishSplash();
           }
         }, 2000L);
+
+    this.root =
+        NullCheck.notNull(this.findViewById(R.id.splash_root), "R.id.splash_root");
+    this.image =
+        NullCheck.notNull(this.findViewById(R.id.splash_image), "R.id.splash_image");
+
+    this.root.setOnClickListener(view -> {
+      timer.cancel();
+      this.finishSplash();
+    });
+
+    this.image.setOnClickListener(view -> {
+      timer.cancel();
+      this.finishSplash();
+    });
   }
 
   @Override
@@ -63,39 +75,33 @@ public class MainSplashActivity extends SimplifiedActivity {
   }
 
   private void finishSplash() {
-    final DocumentStoreType docs = Simplified.getDocumentStore();
-    final OptionType<EULAType> eula_opt = docs.getEULA();
+    LOG.debug("splash screen completed");
+    this.openProfilesOrCatalog();
+  }
 
-    if (eula_opt.isSome()) {
-      final Some<EULAType> some_eula = (Some<EULAType>) eula_opt;
-      final EULAType eula = some_eula.get();
-      if (eula.eulaHasAgreed()) {
-        LOG.debug("EULA: agreed");
+  private void openProfilesOrCatalog() {
+    final ProfilesControllerType profiles = Simplified.getProfilesController();
+    switch (profiles.profileAnonymousEnabled()) {
+      case ANONYMOUS_PROFILE_ENABLED: {
         this.openCatalog();
-      } else {
-        LOG.debug("EULA: not agreed");
-        this.openEULA();
+        break;
       }
-    } else {
-      LOG.debug("EULA: unavailable");
-      this.openWelcome();
+      case ANONYMOUS_PROFILE_DISABLED: {
+        this.openProfiles();
+        break;
+      }
     }
   }
 
-  private void openEULA() {
-    final Intent i = new Intent(this, MainEULAActivity.class);
-    this.startActivity(i);
-  }
-
-  private void openWelcome() {
-    final Intent i = new Intent(this, MainWelcomeActivity.class);
-    this.startActivity(i);
+  private void openProfiles() {
+    final Intent intent = new Intent(this, ProfileSelectionActivity.class);
+    this.startActivity(intent);
     this.finish();
   }
 
   private void openCatalog() {
-    final Intent i = new Intent(this, MainCatalogActivity.class);
-    this.startActivity(i);
+    final Intent intent = new Intent(this, MainCatalogActivity.class);
+    this.startActivity(intent);
     this.finish();
   }
 }

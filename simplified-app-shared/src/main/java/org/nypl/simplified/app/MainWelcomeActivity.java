@@ -21,6 +21,7 @@ import static org.nypl.simplified.app.Simplified.WantActionBar.WANT_NO_ACTION_BA
  */
 
 public class MainWelcomeActivity extends SimplifiedActivity {
+
   private static final Logger LOG;
 
   static {
@@ -36,8 +37,7 @@ public class MainWelcomeActivity extends SimplifiedActivity {
   }
 
   @Override
-  protected void onCreate(
-      final Bundle state) {
+  protected void onCreate(final Bundle state) {
     LOG.debug("onCreate");
 
     this.setTheme(Simplified.getCurrentTheme(WANT_NO_ACTION_BAR));
@@ -45,25 +45,16 @@ public class MainWelcomeActivity extends SimplifiedActivity {
     this.setContentView(R.layout.welcome);
 
     final Button library_button =
-        NullCheck.notNull((Button) findViewById(R.id.welcome_library));
+        NullCheck.notNull(findViewById(R.id.welcome_library));
     final Button instant_button =
-        NullCheck.notNull((Button) findViewById(R.id.welcome_instant));
+        NullCheck.notNull(findViewById(R.id.welcome_instant));
 
     final AccountProviderCollection account_providers =
         Simplified.getAccountProviders();
 
-    library_button.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(final View view) {
-        MainWelcomeActivity.this.openAccountsList();
-      }
-    });
+    library_button.setOnClickListener(view -> MainWelcomeActivity.this.openAccountsList());
+    instant_button.setOnClickListener(view -> {
 
-    instant_button.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(final View view) {
-
-      }
     });
   }
 

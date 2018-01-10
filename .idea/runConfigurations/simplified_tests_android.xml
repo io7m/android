@@ -43,7 +43,7 @@
       <option name="ADVANCED_PROFILING_ENABLED" value="false" />
     </Profilers>
     <method>
-      <option name="com.android.instantApps.provision.BeforeRunTask" enabled="true" clearCache="false" clearProvisionedDevices="false" myTimestamp="1515603047875" />
+      <option name="com.android.instantApps.provision.BeforeRunTask" enabled="true" clearCache="false" clearProvisionedDevices="false" myTimestamp="1515607900086" />
     </method>
   </configuration>
 </component>
