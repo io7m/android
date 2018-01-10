@@ -78,7 +78,6 @@ public abstract class NavigationDrawerActivity extends SimplifiedActivity
 
   private static final Logger LOG;
   private static final String NAVIGATION_DRAWER_OPEN_ID;
-  private static int ACTIVITY_COUNT;
 
   static {
     LOG = LogUtilities.getLog(NavigationDrawerActivity.class);
@@ -286,7 +285,7 @@ public abstract class NavigationDrawerActivity extends SimplifiedActivity
        * transition animation.
        */
 
-      if (ACTIVITY_COUNT == 1) {
+      if (isLastActivity()) {
         if (this.getClass() != MainCatalogActivity.class) {
           // got to main catalog activity
           //final DrawerLayout d = NullCheck.notNull(this.drawer);
@@ -300,11 +299,6 @@ public abstract class NavigationDrawerActivity extends SimplifiedActivity
         this.finish();
       }
     }
-  }
-
-  @Override
-  protected boolean isLastActivity() {
-    return ACTIVITY_COUNT == 1;
   }
 
   private void startSideBarActivity() {
@@ -473,9 +467,6 @@ public abstract class NavigationDrawerActivity extends SimplifiedActivity
     this.drawer_list = drawer_list_view;
     this.content_frame = frame_layout;
     this.selected = -1;
-    ACTIVITY_COUNT = ACTIVITY_COUNT + 1;
-
-    LOG.debug("activity count: {}", ACTIVITY_COUNT);
 
     this.profile_event_subscription =
         Simplified.getProfilesController()
@@ -488,8 +479,6 @@ public abstract class NavigationDrawerActivity extends SimplifiedActivity
   @Override
   protected void onDestroy() {
     super.onDestroy();
-    LOG.debug("onDestroy: {}", this);
-    ACTIVITY_COUNT = ACTIVITY_COUNT - 1;
     this.profile_event_subscription.unsubscribe();
   }
 
