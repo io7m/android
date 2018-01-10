@@ -8,7 +8,6 @@ import android.support.annotation.Nullable;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.widget.Button;
-import android.widget.DatePicker;
 import android.widget.EditText;
 
 import com.google.common.util.concurrent.FluentFuture;
@@ -29,6 +28,7 @@ import org.nypl.simplified.books.profiles.ProfileCreationEvent;
 import org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationFailed;
 import org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationSucceeded;
 import org.nypl.simplified.books.profiles.ProfileEvent;
+import org.nypl.simplified.datepicker.DatePicker;
 import org.slf4j.Logger;
 
 import static org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCreationFailed.ErrorCode.ERROR_GENERAL;
@@ -116,17 +116,9 @@ public final class ProfileCreationActivity extends Activity {
 
   private void createProfile() {
     final String name_text = name.getText().toString().trim();
-
-    /*
-     * Android numbers months starting from 0. Joda Time numbers them... correctly.
-     */
-
-    final int m_year = date.getYear();
-    final int m_month = date.getMonth() + 1;
-    final int m_day = date.getDayOfMonth();
-
+    final LocalDate date_value = this.date.getDate();
     LOG.debug("name: {}", name_text);
-    LOG.debug("date: {}-{}-{}", m_year, m_month, m_day);
+    LOG.debug("date: {}", date_value);
 
     final AccountProviderCollection providers = Simplified.getAccountProviders();
     final ProfilesControllerType profiles = Simplified.getProfilesController();
@@ -136,7 +128,7 @@ public final class ProfileCreationActivity extends Activity {
         profiles.profileCreate(
             providers.providerDefault(),
             name_text,
-            new LocalDate(m_year, m_month, m_day));
+            date_value);
 
     FluentFuture.from(task)
         .catching(Exception.class, e -> ProfileCreationFailed.of(name_text, ERROR_GENERAL, Option.some(e)), exec)

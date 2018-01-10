@@ -3,44 +3,43 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:gravity="center">
-
-  <LinearLayout
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:orientation="vertical">
+    android:layout_height="fill_parent">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
+        android:layout_centerHorizontal="true"
+        android:layout_above="@+id/profileCreationEditName"
         android:text="@string/profiles_please_enter"/>
 
     <EditText
         android:id="@+id/profileCreationEditName"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
+        android:layout_centerHorizontal="true"
+        android:layout_above="@+id/profileCreationDateSelection"
         android:ems="10"
         android:inputType="textPersonName"
         android:hint="@string/profiles_name_field"
         android:text=""/>
 
-    <DatePicker
+    <org.nypl.simplified.datepicker.DatePicker
         android:id="@+id/profileCreationDateSelection"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"/>
 
     <Button
         android:id="@+id/profileCreationCreate"
         android:layout_width="wrap_content"
         android:layout_height="35dp"
-        android:layout_gravity="center"
+        android:layout_below="@+id/profileCreationDateSelection"
+        android:layout_centerHorizontal="true"
+        android:layout_margin="16dp"
         android:background="@drawable/simplified_welcome_button"
         android:textColor="@drawable/simplified_welcome_button_text"
         android:text="@string/profiles_create"/>
-
-  </LinearLayout>
 
 </RelativeLayout>
