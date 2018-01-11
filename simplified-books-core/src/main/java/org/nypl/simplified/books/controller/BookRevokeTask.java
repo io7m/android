@@ -51,6 +51,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 
 final class BookRevokeTask implements Callable<Unit> {
 
@@ -91,9 +92,7 @@ final class BookRevokeTask implements Callable<Unit> {
       final OPDSAcquisitionFeedEntry opds_entry = book.entry();
       return revokeBasedOnAvailability(book, opds_entry.getAvailability());
     } catch (final Exception e) {
-      LOG.error("[{}] revoke failed: ", this.book_id.brief(), e);
-      this.book_registry.update(
-          BookWithStatus.create(book, new BookStatusRevokeFailed(this.book_id, Option.some(e))));
+      this.revokeFailed(book, Option.some(e), e.getMessage());
       throw e;
     } finally {
       LOG.debug("[{}] revoke finished", this.book_id.brief());
@@ -169,6 +168,7 @@ final class BookRevokeTask implements Callable<Unit> {
      * entry seen by an unauthenticated user browsing the catalog right now.
      */
 
+    final AtomicReference<Exception> exception_saved = new AtomicReference<>();
     final FeedLoaderListenerType listener = new FeedLoaderListenerType()
     {
       @Override public void onFeedLoadSuccess(
@@ -177,8 +177,8 @@ final class BookRevokeTask implements Callable<Unit> {
       {
         try {
           revokeFeedReceived(f);
-        } catch (final Throwable e) {
-          revokeFailed(book, Option.some(e), e.getMessage());
+        } catch (final Exception e) {
+          exception_saved.set(e);
         }
       }
 
@@ -192,14 +192,13 @@ final class BookRevokeTask implements Callable<Unit> {
          */
 
         listener.onAuthenticationNotProvided();
-
       }
 
       @Override public void onFeedLoadFailure(
           final URI u,
           final Throwable x)
       {
-        revokeFailed(book, Option.some(x), x.getMessage());
+        exception_saved.set(new IOException(x));
       }
     };
 
@@ -208,6 +207,11 @@ final class BookRevokeTask implements Callable<Unit> {
       this.feed_loader.fromURIRefreshing(revoke, Option.some(http_auth), "PUT", listener).get();
     } catch (final InterruptedException e) {
       Thread.currentThread().interrupt();
+    }
+
+    final Exception restored = exception_saved.get();
+    if (restored != null) {
+      throw restored;
     }
     return Unit.unit();
   }

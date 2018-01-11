@@ -26,8 +26,11 @@ import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookRegistry;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
 import org.nypl.simplified.books.book_registry.BookStatusEvent;
+import org.nypl.simplified.books.book_registry.BookStatusRevokeFailed;
 import org.nypl.simplified.books.controller.BooksControllerType;
 import org.nypl.simplified.books.controller.Controller;
+import org.nypl.simplified.books.core.BookRevokeExceptionNoCredentials;
+import org.nypl.simplified.books.core.BookRevokeExceptionNoURI;
 import org.nypl.simplified.books.feeds.FeedHTTPTransport;
 import org.nypl.simplified.books.feeds.FeedLoader;
 import org.nypl.simplified.books.feeds.FeedLoaderType;
@@ -124,6 +127,13 @@ public abstract class BooksControllerContract {
         .build();
   }
 
+  private static OptionType<AccountAuthenticationCredentials> correctCredentials() {
+    return Option.of(
+        AccountAuthenticationCredentials.builder(
+            AccountPIN.create("1234"), AccountBarcode.create("abcd"))
+            .build());
+  }
+
   private BooksControllerType controller(
       final ExecutorService exec,
       final HTTPType http,
@@ -187,10 +197,7 @@ public abstract class BooksControllerContract {
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
     this.profiles.setProfileCurrent(profile.id());
     final AccountType account = profile.createAccount(provider);
-    account.setCredentials(Option.of(
-        AccountAuthenticationCredentials.builder(
-            AccountPIN.create("1234"), AccountBarcode.create("abcd"))
-            .build()));
+    account.setCredentials(correctCredentials());
 
     this.http.addResponse(
         "urn:fake-auth:0",
@@ -224,10 +231,7 @@ public abstract class BooksControllerContract {
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
     this.profiles.setProfileCurrent(profile.id());
     final AccountType account = profile.createAccount(provider);
-    account.setCredentials(Option.of(
-        AccountAuthenticationCredentials.builder(
-            AccountPIN.create("1234"), AccountBarcode.create("abcd"))
-            .build()));
+    account.setCredentials(correctCredentials());
 
     Assert.assertTrue(account.credentials().isSome());
 
@@ -263,10 +267,7 @@ public abstract class BooksControllerContract {
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
     this.profiles.setProfileCurrent(profile.id());
     final AccountType account = profile.createAccount(provider);
-    account.setCredentials(Option.of(
-        AccountAuthenticationCredentials.builder(
-            AccountPIN.create("1234"), AccountBarcode.create("abcd"))
-            .build()));
+    account.setCredentials(correctCredentials());
 
     Assert.assertTrue(account.credentials().isSome());
     controller.booksSync(account).get();
@@ -311,10 +312,7 @@ public abstract class BooksControllerContract {
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
     this.profiles.setProfileCurrent(profile.id());
     final AccountType account = profile.createAccount(provider);
-    account.setCredentials(Option.of(
-        AccountAuthenticationCredentials.builder(
-            AccountPIN.create("1234"), AccountBarcode.create("abcd"))
-            .build()));
+    account.setCredentials(correctCredentials());
 
     this.http.addResponse(
         "urn:fake-auth:0",
@@ -347,10 +345,7 @@ public abstract class BooksControllerContract {
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
     this.profiles.setProfileCurrent(profile.id());
     final AccountType account = profile.createAccount(provider);
-    account.setCredentials(Option.of(
-        AccountAuthenticationCredentials.builder(
-            AccountPIN.create("1234"), AccountBarcode.create("abcd"))
-            .build()));
+    account.setCredentials(correctCredentials());
 
     this.http.addResponse(
         "urn:fake-auth:0",
@@ -408,10 +403,7 @@ public abstract class BooksControllerContract {
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
     this.profiles.setProfileCurrent(profile.id());
     final AccountType account = profile.createAccount(provider);
-    account.setCredentials(Option.of(
-        AccountAuthenticationCredentials.builder(
-            AccountPIN.create("1234"), AccountBarcode.create("abcd"))
-            .build()));
+    account.setCredentials(correctCredentials());
 
     /*
      * Populate the database by syncing against a feed that contains books.
@@ -474,21 +466,285 @@ public abstract class BooksControllerContract {
     this.book_registry.bookOrException(
         BookID.create("39434e1c3ea5620fdcc2303c878da54cc421175eb09ce1a6709b54589eb8711f"));
 
+    checkBookIsNotInRegistry("f9a7536a61caa60f870b3fbe9d4304b2d59ea03c71cbaee82609e3779d1e6e0f");
+    checkBookIsNotInRegistry("251cc5f69cd2a329bb6074b47a26062e59f5bb01d09d14626f41073f63690113");
+  }
+
+  private void checkBookIsNotInRegistry(final String id) {
     try {
-      this.book_registry.bookOrException(
-          BookID.create("f9a7536a61caa60f870b3fbe9d4304b2d59ea03c71cbaee82609e3779d1e6e0f"));
+      this.book_registry.bookOrException(BookID.create(id));
       Assert.fail("Book should not exist!");
     } catch (final NoSuchElementException e) {
       // Correctly raised
     }
+  }
+
+  /**
+   * Revoking a book causes a request to be made to the revocation URI.
+   *
+   * @throws Exception On errors
+   */
+
+  @Test(timeout = 3_000L)
+  public final void testBooksRevokeCorrectURI() throws Exception {
+
+    final BooksControllerType controller =
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+
+    final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
+    final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
+    this.profiles.setProfileCurrent(profile.id());
+    final AccountType account = profile.createAccount(provider);
+    account.setCredentials(correctCredentials());
+
+    this.http.addResponse(
+        "urn:fake-auth:0",
+        new HTTPResultOK<>(
+            "OK",
+            200,
+            resource("testBooksRevokeCorrectURI.xml"),
+            resourceSize("testBooksRevokeCorrectURI.xml"),
+            new HashMap<>(),
+            0L));
+
+    this.http.addResponse(
+        "urn:book:0:revoke",
+        new HTTPResultOK<>(
+            "OK",
+            200,
+            resource("testBooksRevokeCorrectURI_Response.xml"),
+            resourceSize("testBooksRevokeCorrectURI_Response.xml"),
+            new HashMap<>(),
+            0L));
+
+    controller.booksSync(account).get();
+
+    this.book_registry.bookEvents().subscribe(this.book_events::add);
+    controller.bookRevoke(account, BookID.create("39434e1c3ea5620fdcc2303c878da54cc421175eb09ce1a6709b54589eb8711f")).get();
+
+    EventAssertions.isTypeAndMatches(
+        BookStatusEvent.class,
+        this.book_events,
+        0,
+        e -> Assert.assertEquals(e.type(), BookStatusEvent.Type.BOOK_CHANGED));
+    EventAssertions.isTypeAndMatches(
+        BookStatusEvent.class,
+        this.book_events,
+        1,
+        e -> Assert.assertEquals(e.type(), BookStatusEvent.Type.BOOK_REMOVED));
+
+    checkBookIsNotInRegistry("39434e1c3ea5620fdcc2303c878da54cc421175eb09ce1a6709b54589eb8711f");
+  }
+
+  /**
+   * Revoking a book without credentials fails.
+   *
+   * @throws Exception On errors
+   */
+
+  @Test(timeout = 3_000L)
+  public final void testBooksRevokeWithoutCredentials() throws Exception {
+
+    final BooksControllerType controller =
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+
+    final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
+    final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
+    this.profiles.setProfileCurrent(profile.id());
+    final AccountType account = profile.createAccount(provider);
+    account.setCredentials(correctCredentials());
+
+    this.http.addResponse(
+        "urn:fake-auth:0",
+        new HTTPResultOK<>(
+            "OK",
+            200,
+            resource("testBooksRevokeCorrectURI.xml"),
+            resourceSize("testBooksRevokeCorrectURI.xml"),
+            new HashMap<>(),
+            0L));
+
+    this.http.addResponse(
+        "urn:book:0:revoke",
+        new HTTPResultOK<>(
+            "OK",
+            200,
+            resource("testBooksRevokeCorrectURI_Response.xml"),
+            resourceSize("testBooksRevokeCorrectURI_Response.xml"),
+            new HashMap<>(),
+            0L));
+
+    controller.booksSync(account).get();
+    account.setCredentials(Option.none());
+
+    final BookID book_id =
+        BookID.create("39434e1c3ea5620fdcc2303c878da54cc421175eb09ce1a6709b54589eb8711f");
 
     try {
-      this.book_registry.bookOrException(
-          BookID.create("251cc5f69cd2a329bb6074b47a26062e59f5bb01d09d14626f41073f63690113"));
-      Assert.fail("Book should not exist!");
-    } catch (final NoSuchElementException e) {
-      // Correctly raised
+      controller.bookRevoke(account, book_id).get();
+      Assert.fail("Exception must be raised");
+    } catch (final ExecutionException e) {
+      Assert.assertThat(e.getCause(), IsInstanceOf.instanceOf(BookRevokeExceptionNoCredentials.class));
     }
+
+    Assert.assertThat(
+        this.book_registry.bookOrException(book_id).status(),
+        IsInstanceOf.instanceOf(BookStatusRevokeFailed.class));
+  }
+
+  /**
+   * Revoking a book that has no revocation URI fails.
+   *
+   * @throws Exception On errors
+   */
+
+  @Test(timeout = 3_000L)
+  public final void testBooksRevokeWithoutURI() throws Exception {
+
+    final BooksControllerType controller =
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+
+    final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
+    final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
+    this.profiles.setProfileCurrent(profile.id());
+    final AccountType account = profile.createAccount(provider);
+    account.setCredentials(correctCredentials());
+
+    this.http.addResponse(
+        "urn:fake-auth:0",
+        new HTTPResultOK<>(
+            "OK",
+            200,
+            resource("testBooksRevokeWithoutURI.xml"),
+            resourceSize("testBooksRevokeWithoutURI.xml"),
+            new HashMap<>(),
+            0L));
+
+    controller.booksSync(account).get();
+
+    final BookID book_id =
+        BookID.create("39434e1c3ea5620fdcc2303c878da54cc421175eb09ce1a6709b54589eb8711f");
+
+    try {
+      controller.bookRevoke(account, book_id).get();
+      Assert.fail("Exception must be raised");
+    } catch (final ExecutionException e) {
+      Assert.assertThat(e.getCause(), IsInstanceOf.instanceOf(BookRevokeExceptionNoURI.class));
+    }
+
+    Assert.assertThat(
+        this.book_registry.bookOrException(book_id).status(),
+        IsInstanceOf.instanceOf(BookStatusRevokeFailed.class));
+  }
+
+  /**
+   * If the server returns an empty feed in response to a revocation, revocation fails.
+   *
+   * @throws Exception On errors
+   */
+
+  @Test(timeout = 3_000L)
+  public final void testBooksRevokeEmptyFeed() throws Exception {
+
+    final BooksControllerType controller =
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+
+    final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
+    final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
+    this.profiles.setProfileCurrent(profile.id());
+    final AccountType account = profile.createAccount(provider);
+    account.setCredentials(correctCredentials());
+
+    this.http.addResponse(
+        "urn:fake-auth:0",
+        new HTTPResultOK<>(
+            "OK",
+            200,
+            resource("testBooksRevokeCorrectURI.xml"),
+            resourceSize("testBooksRevokeCorrectURI.xml"),
+            new HashMap<>(),
+            0L));
+
+    this.http.addResponse(
+        "urn:book:0:revoke",
+        new HTTPResultOK<>(
+            "OK",
+            200,
+            resource("testBooksRevokeEmptyFeed.xml"),
+            resourceSize("testBooksRevokeEmptyFeed.xml"),
+            new HashMap<>(),
+            0L));
+
+    controller.booksSync(account).get();
+
+    final BookID book_id =
+        BookID.create("39434e1c3ea5620fdcc2303c878da54cc421175eb09ce1a6709b54589eb8711f");
+
+    try {
+      controller.bookRevoke(account, book_id).get();
+      Assert.fail("Exception must be raised");
+    } catch (final ExecutionException e) {
+      Assert.assertThat(e.getCause(), IsInstanceOf.instanceOf(IOException.class));
+    }
+
+    Assert.assertThat(
+        this.book_registry.bookOrException(book_id).status(),
+        IsInstanceOf.instanceOf(BookStatusRevokeFailed.class));
+  }
+
+  /**
+   * If the server returns a garbage in response to a revocation, revocation fails.
+   *
+   * @throws Exception On errors
+   */
+
+  @Test(timeout = 3_000L)
+  public final void testBooksRevokeGarbage() throws Exception {
+
+    final BooksControllerType controller =
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+
+    final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
+    final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
+    this.profiles.setProfileCurrent(profile.id());
+    final AccountType account = profile.createAccount(provider);
+    account.setCredentials(correctCredentials());
+
+    this.http.addResponse(
+        "urn:fake-auth:0",
+        new HTTPResultOK<>(
+            "OK",
+            200,
+            resource("testBooksRevokeCorrectURI.xml"),
+            resourceSize("testBooksRevokeCorrectURI.xml"),
+            new HashMap<>(),
+            0L));
+
+    this.http.addResponse(
+        "urn:book:0:revoke",
+        new HTTPResultOK<>(
+            "OK",
+            200,
+            new ByteArrayInputStream(new byte[0]),
+            0L,
+            new HashMap<>(),
+            0L));
+
+    controller.booksSync(account).get();
+
+    final BookID book_id =
+        BookID.create("39434e1c3ea5620fdcc2303c878da54cc421175eb09ce1a6709b54589eb8711f");
+
+    try {
+      controller.bookRevoke(account, book_id).get();
+      Assert.fail("Exception must be raised");
+    } catch (final ExecutionException e) {
+      Assert.assertThat(e.getCause(), IsInstanceOf.instanceOf(IOException.class));
+    }
+
+    Assert.assertThat(
+        this.book_registry.bookOrException(book_id).status(),
+        IsInstanceOf.instanceOf(BookStatusRevokeFailed.class));
   }
 
   private InputStream resource(final String file) {

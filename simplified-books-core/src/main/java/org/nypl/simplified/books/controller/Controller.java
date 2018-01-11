@@ -468,14 +468,14 @@ public final class Controller implements BooksControllerType, ProfilesController
   }
 
   @Override
-  public void bookRevoke(
+  public ListenableFuture<Unit> bookRevoke(
       final AccountType account,
       final BookID book_id) {
 
     NullCheck.notNull(account, "Account");
     NullCheck.notNull(book_id, "Book ID");
 
-    this.exec.submit(new BookRevokeTask(
+    return this.exec.submit(new BookRevokeTask(
         this.book_registry,
         this.feed_loader,
         account,

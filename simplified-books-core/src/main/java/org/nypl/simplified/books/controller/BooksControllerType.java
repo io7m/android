@@ -67,7 +67,7 @@ public interface BooksControllerType {
    * @param book_id The ID of the book
    */
 
-  void bookRevoke(
+  ListenableFuture<Unit> bookRevoke(
       AccountType account,
       BookID book_id);
 
