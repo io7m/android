@@ -9,6 +9,7 @@ import android.widget.AbsListView.OnScrollListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.Pair;
@@ -64,7 +65,7 @@ public final class CatalogFeedWithoutGroups
   private final CatalogBookSelectionListenerType book_select_listener;
   private final FeedWithoutGroups feed;
   private final FeedLoaderType feed_loader;
-  private final AtomicReference<Pair<Future<Unit>, URI>> loading;
+  private final AtomicReference<Pair<ListenableFuture<FeedType>, URI>> loading;
   private final AtomicReference<OptionType<URI>> uri_next;
   private final BookRegistryReadableType books_registry;
   private final BooksControllerType books_controller;
@@ -209,14 +210,13 @@ public final class CatalogFeedWithoutGroups
    */
 
   private @Nullable
-  Future<Unit> loadNext(
-      final AtomicReference<OptionType<URI>> next_ref) {
+  Future<FeedType> loadNext(final AtomicReference<OptionType<URI>> next_ref) {
     final OptionType<URI> next_opt = next_ref.get();
     if (next_opt.isSome()) {
       final Some<URI> next_some = (Some<URI>) next_opt;
       final URI next = next_some.get();
 
-      final Pair<Future<Unit>, URI> in_loading = this.loading.get();
+      final Pair<ListenableFuture<FeedType>, URI> in_loading = this.loading.get();
       if (in_loading == null) {
         LOG.debug("no feed currently loading; loading next feed: {}", next);
         return this.loadNextActual(next);
@@ -234,12 +234,11 @@ public final class CatalogFeedWithoutGroups
     return null;
   }
 
-  private Future<Unit> loadNextActual(
-      final URI next) {
+  private ListenableFuture<FeedType> loadNextActual(final URI next) {
     LOG.debug("loading: {}", next);
     final OptionType<HTTPAuthType> none = Option.none();
-    final Future<Unit> r = this.feed_loader.fromURIWithDatabaseEntries(
-        next, none, this);
+    final ListenableFuture<FeedType> r =
+        this.feed_loader.fromURIWithBookRegistryEntries(next, none, this);
     this.loading.set(Pair.pair(r, next));
     return r;
   }

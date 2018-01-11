@@ -205,6 +205,12 @@ final class BookRevokeTask implements Callable<Unit> {
     LOG.debug("[{}] contacting revoke URI {}", this.book_id.brief(), revoke);
     try {
       this.feed_loader.fromURIRefreshing(revoke, Option.some(http_auth), "PUT", listener).get();
+    } catch (final ExecutionException e) {
+      final Throwable cause = e.getCause();
+      if (cause instanceof Exception) {
+        throw (Exception) cause;
+      }
+      throw e;
     } catch (final InterruptedException e) {
       Thread.currentThread().interrupt();
     }

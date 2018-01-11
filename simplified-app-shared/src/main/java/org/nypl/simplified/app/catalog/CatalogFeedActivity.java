@@ -22,6 +22,7 @@ import android.widget.SearchView.OnQueryTextListener;
 import android.widget.TextView;
 
 import com.google.common.util.concurrent.FluentFuture;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
@@ -32,11 +33,11 @@ import com.io7m.jnull.Nullable;
 import com.io7m.junreachable.UnreachableCodeException;
 
 import org.nypl.simplified.app.LoginActivity;
+import org.nypl.simplified.app.NavigationDrawerActivity;
 import org.nypl.simplified.app.NetworkConnectivityType;
 import org.nypl.simplified.app.R;
 import org.nypl.simplified.app.ScreenSizeInformationType;
 import org.nypl.simplified.app.Simplified;
-import org.nypl.simplified.app.NavigationDrawerActivity;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.assertions.Assertions;
 import org.nypl.simplified.books.book_registry.BookStatusEvent;
@@ -80,7 +81,7 @@ import java.util.concurrent.Future;
 
 import javax.annotation.concurrent.GuardedBy;
 
-import static org.nypl.simplified.books.feeds.FeedFacetPseudo.FacetType.*;
+import static org.nypl.simplified.books.feeds.FeedFacetPseudo.FacetType.SORT_BY_TITLE;
 
 /**
  * The main catalog feed activity, responsible for displaying different types of
@@ -102,7 +103,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
 
   private AbsListView list_view;
   private SwipeRefreshLayout swipe_refresh_layout;
-  private Future<Unit> loading;
+  private ListenableFuture<FeedType> loading;
   private ViewGroup progress_layout;
   private int saved_scroll_pos;
   private boolean previously_paused;
@@ -416,7 +417,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
 
     this.log().debug("loading feed: {}", u);
     final OptionType<HTTPAuthType> none = Option.none();
-    this.loading = feed_loader.fromURIWithDatabaseEntries(u, none, this);
+    this.loading = feed_loader.fromURIWithBookRegistryEntries(u, none, this);
   }
 
   @Override
@@ -619,7 +620,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     super.onDestroy();
     this.log().debug("onDestroy");
 
-    final Future<Unit> future = this.loading;
+    final ListenableFuture<FeedType> future = this.loading;
     if (future != null) {
       future.cancel(true);
     }
