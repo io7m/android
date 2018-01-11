@@ -252,5 +252,7 @@
   <string name="profiles_account_selection_error_general">An error occurred whilst trying to select an account.</string>
   <string name="profiles_account_creation_error_general">An error occurred whilst trying to create the account.</string>
   <string name="profiles_account_deletion_error_general">An error occurred whilst trying to delete the account.</string>
+  <string name="profiles_switch">Switch Profile</string>
+  <string name="profiles_switch_confirm">Are you sure you want to switch profiles?</string>
 
 </resources>

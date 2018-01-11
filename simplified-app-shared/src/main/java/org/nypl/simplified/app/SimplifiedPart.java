@@ -14,11 +14,10 @@ import com.io7m.junreachable.UnreachableCodeException;
 
 public enum SimplifiedPart
 {
-
-
   /**
    *
    */
+
   PART_SWITCHER,
 
   /**
@@ -61,7 +60,13 @@ public enum SimplifiedPart
    * The help section.
    */
 
-  PART_HELP;
+  PART_HELP,
+
+  /**
+   * The profile selection screen.
+   */
+
+  PART_PROFILES;
 
   /**
    * @param r The application resources
@@ -91,6 +96,9 @@ public enum SimplifiedPart
       }
       case PART_ACCOUNT: {
         return NullCheck.notNull(r.getString(R.string.settings_account));
+      }
+      case PART_PROFILES: {
+        return NullCheck.notNull(r.getString(R.string.profiles_title));
       }
       case PART_SWITCHER: {
         return "current library";

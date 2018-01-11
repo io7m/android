@@ -3,6 +3,7 @@ package org.nypl.simplified.app;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.FragmentManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -66,6 +67,7 @@ import static org.nypl.simplified.app.SimplifiedPart.PART_BOOKS;
 import static org.nypl.simplified.app.SimplifiedPart.PART_CATALOG;
 import static org.nypl.simplified.app.SimplifiedPart.PART_HOLDS;
 import static org.nypl.simplified.app.SimplifiedPart.PART_MANAGE_ACCOUNTS;
+import static org.nypl.simplified.app.SimplifiedPart.PART_PROFILES;
 import static org.nypl.simplified.app.SimplifiedPart.PART_SETTINGS;
 import static org.nypl.simplified.app.SimplifiedPart.PART_SWITCHER;
 
@@ -120,6 +122,7 @@ public abstract class NavigationDrawerActivity extends SimplifiedActivity
 
   private static ImmutableMap<SimplifiedPart, FunctionType<Bundle, Unit>> calculateDrawerActions(
       final Resources resources,
+      final FragmentManager fragments,
       final boolean holds_enabled) {
 
     final ImmutableMap.Builder<SimplifiedPart, FunctionType<Bundle, Unit>> drawer_actions =
@@ -191,6 +194,8 @@ public abstract class NavigationDrawerActivity extends SimplifiedActivity
           return Unit.unit();
         });
 
+    drawer_actions.put(PART_PROFILES, b -> Unit.unit());
+
     return drawer_actions.build();
   }
 
@@ -211,6 +216,7 @@ public abstract class NavigationDrawerActivity extends SimplifiedActivity
       classes_by_name.put(PART_HOLDS, MainHoldsActivity.class);
     }
     classes_by_name.put(PART_SETTINGS, MainSettingsActivity.class);
+    classes_by_name.put(PART_PROFILES, ProfileSelectionActivity.class);
     return classes_by_name.build();
   }
 
@@ -229,6 +235,7 @@ public abstract class NavigationDrawerActivity extends SimplifiedActivity
       drawer_items.add(PART_HOLDS);
     }
     drawer_items.add(PART_SETTINGS);
+    drawer_items.add(PART_PROFILES);
     return drawer_items.build();
   }
 
@@ -436,7 +443,7 @@ public abstract class NavigationDrawerActivity extends SimplifiedActivity
     final ImmutableMap<SimplifiedPart, Class<? extends Activity>> classes_by_name =
         calculateActivityClassesByPart(holds_enabled);
     final ImmutableMap<SimplifiedPart, FunctionType<Bundle, Unit>> drawer_actions =
-        calculateDrawerActions(resources, holds_enabled);
+        calculateDrawerActions(resources, this.getFragmentManager(), holds_enabled);
 
     /*
      * Show or hide the three dashes next to the home button.
@@ -748,8 +755,10 @@ public abstract class NavigationDrawerActivity extends SimplifiedActivity
             icon_view.setImageResource(R.drawable.menu_icon_holds_white);
           } else if (PART_SETTINGS == part) {
             icon_view.setImageResource(R.drawable.menu_icon_settings_white);
+          } else if (PART_PROFILES == part) {
+            icon_view.setImageResource(R.drawable.menu_icon_profile_logout);
+            text_view.setText(R.string.profiles_switch);
           }
-
         } else {
           if (PART_CATALOG == part) {
             icon_view.setImageResource(R.drawable.menu_icon_catalog);
@@ -759,8 +768,10 @@ public abstract class NavigationDrawerActivity extends SimplifiedActivity
             icon_view.setImageResource(R.drawable.menu_icon_holds);
           } else if (PART_SETTINGS == part) {
             icon_view.setImageResource(R.drawable.menu_icon_settings);
+          } else if (PART_PROFILES == part) {
+            icon_view.setImageResource(R.drawable.menu_icon_profile_logout);
+            text_view.setText(R.string.profiles_switch);
           }
-
         }
       }
 
