@@ -136,7 +136,7 @@ public final class Controller implements BooksControllerType, ProfilesController
     }
   }
 
-  public static Controller createBookController(
+  public static Controller create(
       final ExecutorService in_exec,
       final HTTPType in_http,
       final OPDSFeedParserType in_feed_parser,
@@ -455,11 +455,11 @@ public final class Controller implements BooksControllerType, ProfilesController
   }
 
   @Override
-  public void booksSync(final AccountType account) {
+  public ListenableFuture<Unit> booksSync(final AccountType account) {
 
     NullCheck.notNull(account, "Account");
 
-    this.exec.submit(new BookSyncTask(
+    return this.exec.submit(new BookSyncTask(
         this,
         account,
         this.book_registry,

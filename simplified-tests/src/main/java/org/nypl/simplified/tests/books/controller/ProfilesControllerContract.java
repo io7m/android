@@ -30,7 +30,6 @@ import org.nypl.simplified.books.book_registry.BookRegistryType;
 import org.nypl.simplified.books.controller.Controller;
 import org.nypl.simplified.books.controller.ProfileFeedRequest;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
-import org.nypl.simplified.books.feeds.FeedFacetPseudo;
 import org.nypl.simplified.books.feeds.FeedHTTPTransport;
 import org.nypl.simplified.books.feeds.FeedLoader;
 import org.nypl.simplified.books.feeds.FeedLoaderType;
@@ -117,7 +116,7 @@ public abstract class ProfilesControllerContract {
     final FeedLoaderType feed_loader =
         FeedLoader.newFeedLoader(exec, books, parser, transport, OPDSSearchParser.newParser());
 
-    return Controller.createBookController(
+    return Controller.create(
         exec,
         http,
         parser,

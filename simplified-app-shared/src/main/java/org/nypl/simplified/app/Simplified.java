@@ -629,7 +629,7 @@ public final class Simplified extends Application {
         this.feed_search_parser);
 
     LOG.debug("initializing book controller");
-    this.book_controller = Controller.createBookController(
+    this.book_controller = Controller.create(
         this.exec_books,
         this.http,
         this.feed_parser,

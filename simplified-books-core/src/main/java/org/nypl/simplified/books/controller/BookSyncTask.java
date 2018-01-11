@@ -110,23 +110,17 @@ final class BookSyncTask implements Callable<Unit> {
     return result.matchResult(
         new HTTPResultMatcherType<InputStream, Unit, Exception>() {
           @Override
-          public Unit onHTTPError(
-              final HTTPResultError<InputStream> e)
-              throws Exception {
+          public Unit onHTTPError(final HTTPResultError<InputStream> e) throws Exception {
             return BookSyncTask.this.onHTTPError(e, provider_auth);
           }
 
           @Override
-          public Unit onHTTPException(
-              final HTTPResultException<InputStream> e)
-              throws Exception {
+          public Unit onHTTPException(final HTTPResultException<InputStream> e) throws Exception {
             throw e.getError();
           }
 
           @Override
-          public Unit onHTTPOK(
-              final HTTPResultOKType<InputStream> e)
-              throws Exception {
+          public Unit onHTTPOK(final HTTPResultOKType<InputStream> e) throws Exception {
             return BookSyncTask.this.onHTTPOK(e, provider_auth);
           }
         });
