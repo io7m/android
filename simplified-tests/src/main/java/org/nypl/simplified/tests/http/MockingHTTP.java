@@ -15,20 +15,30 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+/**
+ * A trivial implementation of the {@link HTTPType} that simply returns preconfigured responses
+ * when requests are made of given URIs.
+ */
+
 public final class MockingHTTP implements HTTPType {
 
   private static final Logger LOG = LoggerFactory.getLogger(MockingHTTP.class);
   private final HashMap<URI, List<HTTPResultType<InputStream>>> responses;
 
-  public MockingHTTP()
-  {
+  public MockingHTTP() {
     this.responses = new HashMap<>();
   }
 
+  /**
+   * Set that the next request made for {@code uri} will receive {@code result}.
+   *
+   * @param uri    The request
+   * @param result The result
+   */
+
   public void addResponse(
       final URI uri,
-      final HTTPResultType<InputStream> result)
-  {
+      final HTTPResultType<InputStream> result) {
     NullCheck.notNull(uri, "uri");
     NullCheck.notNull(result, "result");
 
@@ -44,10 +54,16 @@ public final class MockingHTTP implements HTTPType {
     }
   }
 
+  /**
+   * Set that the next request made for {@code uri} will receive {@code result}.
+   *
+   * @param uri    The request
+   * @param result The result
+   */
+
   public void addResponse(
       final String uri,
-      final HTTPResultType<InputStream> result)
-  {
+      final HTTPResultType<InputStream> result) {
     NullCheck.notNull(uri, "uri");
     NullCheck.notNull(result, "result");
     addResponse(URI.create(uri), result);
