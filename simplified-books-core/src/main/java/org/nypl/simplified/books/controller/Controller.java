@@ -497,14 +497,14 @@ public final class Controller implements BooksControllerType, ProfilesController
   }
 
   @Override
-  public void bookRevokeFailedDismiss(
+  public ListenableFuture<Unit> bookRevokeFailedDismiss(
       final AccountType account,
       final BookID book_id) {
 
     NullCheck.notNull(account, "Account");
     NullCheck.notNull(book_id, "Book ID");
 
-    this.exec.submit(new BookRevokeFailedDismissTask(
+    return this.exec.submit(new BookRevokeFailedDismissTask(
         account.bookDatabase(),
         this.book_registry,
         book_id));

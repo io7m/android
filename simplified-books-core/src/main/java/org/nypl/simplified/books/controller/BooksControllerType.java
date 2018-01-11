@@ -89,7 +89,7 @@ public interface BooksControllerType {
    * @param id      The ID of the book
    */
 
-  void bookRevokeFailedDismiss(
+  ListenableFuture<Unit> bookRevokeFailedDismiss(
       AccountType account,
       BookID id);
 }

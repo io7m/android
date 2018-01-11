@@ -29,7 +29,9 @@ import org.nypl.simplified.books.book_registry.BookRegistry;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
 import org.nypl.simplified.books.book_registry.BookStatus;
 import org.nypl.simplified.books.book_registry.BookStatusEvent;
+import org.nypl.simplified.books.book_registry.BookStatusLoaned;
 import org.nypl.simplified.books.book_registry.BookStatusRevokeFailed;
+import org.nypl.simplified.books.book_registry.BookStatusType;
 import org.nypl.simplified.books.book_registry.BookWithStatus;
 import org.nypl.simplified.books.controller.BooksControllerType;
 import org.nypl.simplified.books.controller.Controller;
@@ -824,6 +826,109 @@ public abstract class BooksControllerContract {
             .isNone());
 
     Assert.assertFalse("EPUB must not exist", file.exists());
+  }
+
+  /**
+   * Dismissing a failed revocation works.
+   *
+   * @throws Exception On errors
+   */
+
+  @Test(timeout = 3_000L)
+  public final void testBooksRevokeDismissOK() throws Exception {
+
+    final BooksControllerType controller =
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+
+    final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
+    final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
+    this.profiles.setProfileCurrent(profile.id());
+    final AccountType account = profile.createAccount(provider);
+    account.setCredentials(correctCredentials());
+
+    this.http.addResponse(
+        "urn:fake-auth:0",
+        new HTTPResultOK<>(
+            "OK",
+            200,
+            resource("testBooksRevokeCorrectURI.xml"),
+            resourceSize("testBooksRevokeCorrectURI.xml"),
+            new HashMap<>(),
+            0L));
+
+    this.http.addResponse(
+        "urn:book:0:revoke",
+        new HTTPResultOK<>(
+            "OK",
+            200,
+            new ByteArrayInputStream(new byte[0]),
+            0L,
+            new HashMap<>(),
+            0L));
+
+    controller.booksSync(account).get();
+
+    final BookID book_id =
+        BookID.create("39434e1c3ea5620fdcc2303c878da54cc421175eb09ce1a6709b54589eb8711f");
+
+    try {
+      controller.bookRevoke(account, book_id).get();
+      Assert.fail("Exception must be raised");
+    } catch (final ExecutionException e) {
+      Assert.assertThat(e.getCause(), IsInstanceOf.instanceOf(IOException.class));
+    }
+
+    Assert.assertThat(
+        this.book_registry.bookOrException(book_id).status(),
+        IsInstanceOf.instanceOf(BookStatusRevokeFailed.class));
+
+    controller.bookRevokeFailedDismiss(account, book_id).get();
+
+    Assert.assertThat(
+        this.book_registry.bookOrException(book_id).status(),
+        IsInstanceOf.instanceOf(BookStatusLoaned.class));
+  }
+
+  /**
+   * Dismissing a failed revocation that didn't actually fail does nothing.
+   *
+   * @throws Exception On errors
+   */
+
+  @Test(timeout = 3_000L)
+  public final void testBooksRevokeDismissHasNotFailed() throws Exception {
+
+    final BooksControllerType controller =
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+
+    final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
+    final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
+    this.profiles.setProfileCurrent(profile.id());
+    final AccountType account = profile.createAccount(provider);
+    account.setCredentials(correctCredentials());
+
+    this.http.addResponse(
+        "urn:fake-auth:0",
+        new HTTPResultOK<>(
+            "OK",
+            200,
+            resource("testBooksSyncNewEntries.xml"),
+            resourceSize("testBooksSyncNewEntries.xml"),
+            new HashMap<>(),
+            0L));
+
+    controller.booksSync(account).get();
+
+    final BookID book_id =
+        BookID.create("39434e1c3ea5620fdcc2303c878da54cc421175eb09ce1a6709b54589eb8711f");
+
+    final BookStatusType status_before = this.book_registry.bookOrException(book_id).status();
+    Assert.assertThat(status_before, IsInstanceOf.instanceOf(BookStatusLoaned.class));
+
+    controller.bookRevokeFailedDismiss(account, book_id).get();
+
+    final BookStatusType status_after = this.book_registry.bookOrException(book_id).status();
+    Assert.assertEquals(status_before, status_after);
   }
 
   private InputStream resource(final String file) {
