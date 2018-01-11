@@ -21,8 +21,11 @@ import org.nypl.simplified.books.accounts.AccountProviderAuthenticationDescripti
 import org.nypl.simplified.books.accounts.AccountProviderCollection;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabases;
+import org.nypl.simplified.books.book_database.BookEvent;
+import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookRegistry;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
+import org.nypl.simplified.books.book_registry.BookStatusEvent;
 import org.nypl.simplified.books.controller.BooksControllerType;
 import org.nypl.simplified.books.controller.Controller;
 import org.nypl.simplified.books.feeds.FeedHTTPTransport;
@@ -46,16 +49,19 @@ import org.nypl.simplified.opds.core.OPDSFeedParserType;
 import org.nypl.simplified.opds.core.OPDSFeedTransportType;
 import org.nypl.simplified.opds.core.OPDSParseException;
 import org.nypl.simplified.opds.core.OPDSSearchParser;
+import org.nypl.simplified.tests.EventAssertions;
 import org.nypl.simplified.tests.http.MockingHTTP;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
@@ -76,6 +82,7 @@ public abstract class BooksControllerContract {
   private DownloaderType downloader;
   private BookRegistryType book_registry;
   private ProfilesDatabaseType profiles;
+  private List<BookEvent> book_events;
 
   private static AccountProvider fakeProvider(final String provider_id) {
     return AccountProvider.builder()
@@ -153,6 +160,7 @@ public abstract class BooksControllerContract {
     this.profile_events = Collections.synchronizedList(new ArrayList<ProfileEvent>());
     this.profiles = profilesDatabaseWithoutAnonymous(this.directory_profiles);
     this.account_events = Collections.synchronizedList(new ArrayList<AccountEvent>());
+    this.book_events = Collections.synchronizedList(new ArrayList<BookEvent>());
     this.book_registry = BookRegistry.create();
     this.downloader = DownloaderHTTP.newDownloader(this.executor_downloads, this.directory_downloads, this.http);
   }
@@ -321,6 +329,185 @@ public abstract class BooksControllerContract {
     this.expected.expect(ExecutionException.class);
     this.expected.expectCause(IsInstanceOf.instanceOf(OPDSParseException.class));
     controller.booksSync(account).get();
+  }
+
+  /**
+   * If the remote side returns books the account doesn't have, new database entries are created.
+   *
+   * @throws Exception On errors
+   */
+
+  @Test(timeout = 3_000L)
+  public final void testBooksSyncNewEntries() throws Exception {
+
+    final BooksControllerType controller =
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+
+    final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
+    final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
+    this.profiles.setProfileCurrent(profile.id());
+    final AccountType account = profile.createAccount(provider);
+    account.setCredentials(Option.of(
+        AccountAuthenticationCredentials.builder(
+            AccountPIN.create("1234"), AccountBarcode.create("abcd"))
+            .build()));
+
+    this.http.addResponse(
+        "urn:fake-auth:0",
+        new HTTPResultOK<>(
+            "OK",
+            200,
+            resource("testBooksSyncNewEntries.xml"),
+            resourceSize("testBooksSyncNewEntries.xml"),
+            new HashMap<>(),
+            0L));
+
+    this.book_registry.bookEvents().subscribe(this.book_events::add);
+
+    Assert.assertEquals(0L, this.book_registry.books().size());
+    controller.booksSync(account).get();
+    Assert.assertEquals(3L, this.book_registry.books().size());
+
+    this.book_registry.bookOrException(
+        BookID.create("39434e1c3ea5620fdcc2303c878da54cc421175eb09ce1a6709b54589eb8711f"));
+    this.book_registry.bookOrException(
+        BookID.create("f9a7536a61caa60f870b3fbe9d4304b2d59ea03c71cbaee82609e3779d1e6e0f"));
+    this.book_registry.bookOrException(
+        BookID.create("251cc5f69cd2a329bb6074b47a26062e59f5bb01d09d14626f41073f63690113"));
+
+    EventAssertions.isTypeAndMatches(
+        BookStatusEvent.class,
+        this.book_events,
+        0,
+        e -> Assert.assertEquals(e.type(), BookStatusEvent.Type.BOOK_CHANGED));
+    EventAssertions.isTypeAndMatches(
+        BookStatusEvent.class,
+        this.book_events,
+        1,
+        e -> Assert.assertEquals(e.type(), BookStatusEvent.Type.BOOK_CHANGED));
+    EventAssertions.isTypeAndMatches(
+        BookStatusEvent.class,
+        this.book_events,
+        2,
+        e -> Assert.assertEquals(e.type(), BookStatusEvent.Type.BOOK_CHANGED));
+  }
+
+  /**
+   * If the remote side returns few books than the account has, database entries are removed.
+   *
+   * @throws Exception On errors
+   */
+
+  @Test(timeout = 3_000L)
+  public final void testBooksSyncRemoveEntries() throws Exception {
+
+    final BooksControllerType controller =
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+
+    final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
+    final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
+    this.profiles.setProfileCurrent(profile.id());
+    final AccountType account = profile.createAccount(provider);
+    account.setCredentials(Option.of(
+        AccountAuthenticationCredentials.builder(
+            AccountPIN.create("1234"), AccountBarcode.create("abcd"))
+            .build()));
+
+    /*
+     * Populate the database by syncing against a feed that contains books.
+     */
+
+    this.http.addResponse(
+        "urn:fake-auth:0",
+        new HTTPResultOK<>(
+            "OK",
+            200,
+            resource("testBooksSyncNewEntries.xml"),
+            resourceSize("testBooksSyncNewEntries.xml"),
+            new HashMap<>(),
+            0L));
+
+    controller.booksSync(account).get();
+
+    this.book_registry.bookOrException(
+        BookID.create("39434e1c3ea5620fdcc2303c878da54cc421175eb09ce1a6709b54589eb8711f"));
+    this.book_registry.bookOrException(
+        BookID.create("f9a7536a61caa60f870b3fbe9d4304b2d59ea03c71cbaee82609e3779d1e6e0f"));
+    this.book_registry.bookOrException(
+        BookID.create("251cc5f69cd2a329bb6074b47a26062e59f5bb01d09d14626f41073f63690113"));
+
+    this.book_registry.bookEvents().subscribe(this.book_events::add);
+
+    /*
+     * Now run the sync again but this time with a feed that removes books.
+     */
+
+    this.http.addResponse(
+        "urn:fake-auth:0",
+        new HTTPResultOK<>(
+            "OK",
+            200,
+            resource("testBooksSyncRemoveEntries.xml"),
+            resourceSize("testBooksSyncRemoveEntries.xml"),
+            new HashMap<>(),
+            0L));
+
+    controller.booksSync(account).get();
+    Assert.assertEquals(1L, this.book_registry.books().size());
+
+    EventAssertions.isTypeAndMatches(
+        BookStatusEvent.class,
+        this.book_events,
+        0,
+        e -> Assert.assertEquals(e.type(), BookStatusEvent.Type.BOOK_CHANGED));
+    EventAssertions.isTypeAndMatches(
+        BookStatusEvent.class,
+        this.book_events,
+        1,
+        e -> Assert.assertEquals(e.type(), BookStatusEvent.Type.BOOK_REMOVED));
+    EventAssertions.isTypeAndMatches(
+        BookStatusEvent.class,
+        this.book_events,
+        2,
+        e -> Assert.assertEquals(e.type(), BookStatusEvent.Type.BOOK_REMOVED));
+
+    this.book_registry.bookOrException(
+        BookID.create("39434e1c3ea5620fdcc2303c878da54cc421175eb09ce1a6709b54589eb8711f"));
+
+    try {
+      this.book_registry.bookOrException(
+          BookID.create("f9a7536a61caa60f870b3fbe9d4304b2d59ea03c71cbaee82609e3779d1e6e0f"));
+      Assert.fail("Book should not exist!");
+    } catch (final NoSuchElementException e) {
+      // Correctly raised
+    }
+
+    try {
+      this.book_registry.bookOrException(
+          BookID.create("251cc5f69cd2a329bb6074b47a26062e59f5bb01d09d14626f41073f63690113"));
+      Assert.fail("Book should not exist!");
+    } catch (final NoSuchElementException e) {
+      // Correctly raised
+    }
+  }
+
+  private InputStream resource(final String file) {
+    return BooksControllerContract.class.getResourceAsStream(file);
+  }
+
+  private long resourceSize(final String file) throws IOException {
+    long total = 0L;
+    final byte[] buffer = new byte[8192];
+    try (InputStream stream = resource(file)) {
+      while (true) {
+        final int r = stream.read(buffer);
+        if (r <= 0) {
+          break;
+        }
+        total += r;
+      }
+    }
+    return total;
   }
 
   private ProfilesDatabaseType profilesDatabaseWithoutAnonymous(final File dir_profiles)

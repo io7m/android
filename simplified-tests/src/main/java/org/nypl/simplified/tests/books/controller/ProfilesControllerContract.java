@@ -60,6 +60,7 @@ import org.nypl.simplified.opds.core.OPDSFeedParser;
 import org.nypl.simplified.opds.core.OPDSFeedParserType;
 import org.nypl.simplified.opds.core.OPDSFeedTransportType;
 import org.nypl.simplified.opds.core.OPDSSearchParser;
+import org.nypl.simplified.tests.EventAssertions;
 import org.nypl.simplified.tests.http.MockingHTTP;
 
 import java.io.ByteArrayInputStream;
@@ -211,16 +212,10 @@ public abstract class ProfilesControllerContract {
     controller.profileCreate(provider, "Kermit", date).get();
     controller.profileCreate(provider, "Kermit", date).get();
 
-    Assert.assertEquals(2L, this.profile_events.size());
-    Assert.assertThat(
-        this.profile_events.get(0),
-        IsInstanceOf.instanceOf(ProfileCreationSucceeded.class));
-    Assert.assertThat(
-        this.profile_events.get(1),
-        IsInstanceOf.instanceOf(ProfileCreationFailed.class));
-    Assert.assertEquals(
-        ERROR_DISPLAY_NAME_ALREADY_USED,
-        ((ProfileCreationFailed) this.profile_events.get(1)).errorCode());
+    EventAssertions.isType(ProfileCreationSucceeded.class, this.profile_events, 0);
+    EventAssertions.isTypeAndMatches(ProfileCreationFailed.class, this.profile_events, 1, e -> {
+      Assert.assertEquals(ERROR_DISPLAY_NAME_ALREADY_USED, e.errorCode());
+    });
   }
 
   /**
@@ -264,21 +259,11 @@ public abstract class ProfilesControllerContract {
     controller.profileAccountLogin(
         profiles.currentProfileUnsafe().accounts().firstKey(), credentials).get();
 
-    Assert.assertEquals(2L, this.profile_events.size());
-    Assert.assertThat(
-        this.profile_events.get(0),
-        IsInstanceOf.instanceOf(ProfileCreationSucceeded.class));
-    Assert.assertThat(
-        this.profile_events.get(1),
-        IsInstanceOf.instanceOf(ProfileSelected.class));
+    EventAssertions.isType(ProfileCreationSucceeded.class, this.profile_events, 0);
+    EventAssertions.isType(ProfileSelected.class, this.profile_events, 1);
 
-    Assert.assertEquals(2L, this.account_events.size());
-    Assert.assertThat(
-        this.account_events.get(0),
-        IsInstanceOf.instanceOf(AccountCreationSucceeded.class));
-    Assert.assertThat(
-        this.account_events.get(1),
-        IsInstanceOf.instanceOf(AccountLoginFailed.class));
+    EventAssertions.isType(AccountCreationSucceeded.class, this.account_events, 0);
+    EventAssertions.isType(AccountLoginFailed.class, this.account_events, 1);
 
     Assert.assertTrue(
         "Credentials must not be saved",
@@ -325,21 +310,11 @@ public abstract class ProfilesControllerContract {
     controller.profileAccountLogin(
         profiles.currentProfileUnsafe().accounts().firstKey(), credentials).get();
 
-    Assert.assertEquals(2L, this.profile_events.size());
-    Assert.assertThat(
-        this.profile_events.get(0),
-        IsInstanceOf.instanceOf(ProfileCreationSucceeded.class));
-    Assert.assertThat(
-        this.profile_events.get(1),
-        IsInstanceOf.instanceOf(ProfileSelected.class));
+    EventAssertions.isType(ProfileCreationSucceeded.class, this.profile_events, 0);
+    EventAssertions.isType(ProfileSelected.class, this.profile_events, 1);
 
-    Assert.assertEquals(2L, this.account_events.size());
-    Assert.assertThat(
-        this.account_events.get(0),
-        IsInstanceOf.instanceOf(AccountCreationSucceeded.class));
-    Assert.assertThat(
-        this.account_events.get(1),
-        IsInstanceOf.instanceOf(AccountLoginSucceeded.class));
+    EventAssertions.isType(AccountCreationSucceeded.class, this.account_events, 0);
+    EventAssertions.isType(AccountLoginSucceeded.class, this.account_events, 1);
 
     Assert.assertEquals(
         "Credentials must be saved",
@@ -387,21 +362,11 @@ public abstract class ProfilesControllerContract {
 
     controller.profileAccountCurrentLogin(credentials).get();
 
-    Assert.assertEquals(2L, this.profile_events.size());
-    Assert.assertThat(
-        this.profile_events.get(0),
-        IsInstanceOf.instanceOf(ProfileCreationSucceeded.class));
-    Assert.assertThat(
-        this.profile_events.get(1),
-        IsInstanceOf.instanceOf(ProfileSelected.class));
+    EventAssertions.isType(ProfileCreationSucceeded.class, this.profile_events, 0);
+    EventAssertions.isType(ProfileSelected.class, this.profile_events, 1);
 
-    Assert.assertEquals(2L, this.account_events.size());
-    Assert.assertThat(
-        this.account_events.get(0),
-        IsInstanceOf.instanceOf(AccountCreationSucceeded.class));
-    Assert.assertThat(
-        this.account_events.get(1),
-        IsInstanceOf.instanceOf(AccountLoginFailed.class));
+    EventAssertions.isType(AccountCreationSucceeded.class, this.account_events, 0);
+    EventAssertions.isType(AccountLoginFailed.class, this.account_events, 1);
 
     Assert.assertTrue(
         "Credentials must not be saved",
@@ -447,21 +412,11 @@ public abstract class ProfilesControllerContract {
 
     controller.profileAccountCurrentLogin(credentials).get();
 
-    Assert.assertEquals(2L, this.profile_events.size());
-    Assert.assertThat(
-        this.profile_events.get(0),
-        IsInstanceOf.instanceOf(ProfileCreationSucceeded.class));
-    Assert.assertThat(
-        this.profile_events.get(1),
-        IsInstanceOf.instanceOf(ProfileSelected.class));
+    EventAssertions.isType(ProfileCreationSucceeded.class, this.profile_events, 0);
+    EventAssertions.isType(ProfileSelected.class, this.profile_events, 1);
 
-    Assert.assertEquals(2L, this.account_events.size());
-    Assert.assertThat(
-        this.account_events.get(0),
-        IsInstanceOf.instanceOf(AccountCreationSucceeded.class));
-    Assert.assertThat(
-        this.account_events.get(1),
-        IsInstanceOf.instanceOf(AccountLoginSucceeded.class));
+    EventAssertions.isType(AccountCreationSucceeded.class, this.account_events, 0);
+    EventAssertions.isType(AccountLoginSucceeded.class, this.account_events, 1);
 
     Assert.assertEquals(
         "Credentials must be saved",
@@ -498,21 +453,11 @@ public abstract class ProfilesControllerContract {
 
     controller.profileAccountCurrentLogin(credentials).get();
 
-    Assert.assertEquals(2L, this.profile_events.size());
-    Assert.assertThat(
-        this.profile_events.get(0),
-        IsInstanceOf.instanceOf(ProfileCreationSucceeded.class));
-    Assert.assertThat(
-        this.profile_events.get(1),
-        IsInstanceOf.instanceOf(ProfileSelected.class));
+    EventAssertions.isType(ProfileCreationSucceeded.class, this.profile_events, 0);
+    EventAssertions.isType(ProfileSelected.class, this.profile_events, 1);
 
-    Assert.assertEquals(2L, this.account_events.size());
-    Assert.assertThat(
-        this.account_events.get(0),
-        IsInstanceOf.instanceOf(AccountCreationSucceeded.class));
-    Assert.assertThat(
-        this.account_events.get(1),
-        IsInstanceOf.instanceOf(AccountLoginSucceeded.class));
+    EventAssertions.isType(AccountCreationSucceeded.class, this.account_events, 0);
+    EventAssertions.isType(AccountLoginSucceeded.class, this.account_events, 1);
 
     Assert.assertTrue(
         "Credentials must not be saved",
@@ -557,26 +502,15 @@ public abstract class ProfilesControllerContract {
         Option.some(ReaderBookLocation.create(Option.none(), "2")),
         controller.profileBookmarkGet(BookID.create("aaaa")));
 
-    Assert.assertEquals(2L, this.profile_events.size());
-    Assert.assertThat(
-        this.profile_events.get(0),
-        IsInstanceOf.instanceOf(ProfilePreferencesChanged.class));
+    EventAssertions.isTypeAndMatches(ProfilePreferencesChanged.class, this.profile_events, 0, e -> {
+      Assert.assertTrue("Preferences must not have changed", !e.changedReaderPreferences());
+      Assert.assertTrue("Bookmarks must have changed", e.changedReaderBookmarks());
+    });
 
-    {
-      final ProfilePreferencesChanged change = (ProfilePreferencesChanged) this.profile_events.get(0);
-      Assert.assertTrue("Preferences must not have changed", !change.changedReaderPreferences());
-      Assert.assertTrue("Bookmarks must have changed", change.changedReaderBookmarks());
-    }
-
-    Assert.assertThat(
-        this.profile_events.get(1),
-        IsInstanceOf.instanceOf(ProfilePreferencesChanged.class));
-
-    {
-      final ProfilePreferencesChanged change = (ProfilePreferencesChanged) this.profile_events.get(1);
-      Assert.assertTrue("Preferences must not have changed", !change.changedReaderPreferences());
-      Assert.assertTrue("Bookmarks must have changed", change.changedReaderBookmarks());
-    }
+    EventAssertions.isTypeAndMatches(ProfilePreferencesChanged.class, this.profile_events, 1, e -> {
+      Assert.assertTrue("Preferences must not have changed", !e.changedReaderPreferences());
+      Assert.assertTrue("Bookmarks must have changed", e.changedReaderBookmarks());
+    });
   }
 
   /**
@@ -601,16 +535,10 @@ public abstract class ProfilesControllerContract {
 
     controller.profilePreferencesUpdate(profiles.currentProfileUnsafe().preferences()).get();
 
-    Assert.assertEquals(1L, this.profile_events.size());
-    Assert.assertThat(
-        this.profile_events.get(0),
-        IsInstanceOf.instanceOf(ProfilePreferencesChanged.class));
-
-    {
-      final ProfilePreferencesChanged change = (ProfilePreferencesChanged) this.profile_events.get(0);
-      Assert.assertTrue("Preferences must not have changed", !change.changedReaderPreferences());
-      Assert.assertTrue("Bookmarks must not have changed", !change.changedReaderBookmarks());
-    }
+    EventAssertions.isTypeAndMatches(ProfilePreferencesChanged.class, this.profile_events, 0, e -> {
+      Assert.assertTrue("Preferences must not have changed", !e.changedReaderPreferences());
+      Assert.assertTrue("Bookmarks must not have changed", !e.changedReaderBookmarks());
+    });
 
     this.profile_events.clear();
     controller.profilePreferencesUpdate(
@@ -627,16 +555,10 @@ public abstract class ProfilesControllerContract {
             .build())
         .get();
 
-    Assert.assertEquals(1L, this.profile_events.size());
-    Assert.assertThat(
-        this.profile_events.get(0),
-        IsInstanceOf.instanceOf(ProfilePreferencesChanged.class));
-
-    {
-      final ProfilePreferencesChanged change = (ProfilePreferencesChanged) this.profile_events.get(0);
-      Assert.assertTrue("Preferences must have changed", change.changedReaderPreferences());
-      Assert.assertTrue("Bookmarks must not have changed", !change.changedReaderBookmarks());
-    }
+    EventAssertions.isTypeAndMatches(ProfilePreferencesChanged.class, this.profile_events, 0, e -> {
+      Assert.assertTrue("Preferences must have changed", e.changedReaderPreferences());
+      Assert.assertTrue("Bookmarks must not have changed", !e.changedReaderBookmarks());
+    });
   }
 
   /**

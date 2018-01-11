@@ -10,12 +10,15 @@ import org.nypl.simplified.books.accounts.AccountAuthenticatedHTTP;
 import org.nypl.simplified.books.accounts.AccountAuthenticationCredentials;
 import org.nypl.simplified.books.accounts.AccountProviderAuthenticationDescription;
 import org.nypl.simplified.books.accounts.AccountType;
+import org.nypl.simplified.books.book_database.Book;
 import org.nypl.simplified.books.book_database.BookDatabaseEntryType;
 import org.nypl.simplified.books.book_database.BookDatabaseException;
 import org.nypl.simplified.books.book_database.BookDatabaseType;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_database.BookIDs;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
+import org.nypl.simplified.books.book_registry.BookStatus;
+import org.nypl.simplified.books.book_registry.BookWithStatus;
 import org.nypl.simplified.http.core.HTTPAuthType;
 import org.nypl.simplified.http.core.HTTPResultError;
 import org.nypl.simplified.http.core.HTTPResultException;
@@ -166,7 +169,10 @@ final class BookSyncTask implements Callable<Unit> {
       LOG.debug("[{}] updating", book_id.brief());
 
       try {
-        book_database.createOrUpdate(book_id, opds_entry);
+        final BookDatabaseEntryType database_entry =
+            book_database.createOrUpdate(book_id, opds_entry);
+        final Book book = database_entry.book();
+        this.book_registry.update(BookWithStatus.create(book, BookStatus.fromBook(book)));
       } catch (final BookDatabaseException e) {
         LOG.error("[{}] unable to update database entry: ", book_id.brief(), e);
       }
@@ -181,7 +187,7 @@ final class BookSyncTask implements Callable<Unit> {
     final Set<BookID> revoking = new HashSet<BookID>(existing.size());
     for (final BookID existing_id : existing) {
       try {
-        LOG.debug("[{}] deleting", existing_id.brief());
+        LOG.debug("[{}] checking for deletion", existing_id.brief());
 
         if (!received.contains(existing_id)) {
           final BookDatabaseEntryType db_entry = book_database.entry(existing_id);
@@ -190,8 +196,11 @@ final class BookSyncTask implements Callable<Unit> {
             revoking.add(existing_id);
           }
 
+          LOG.debug("[{}] deleting", existing_id.brief());
           db_entry.delete();
           this.book_registry.clearFor(existing_id);
+        } else {
+          LOG.debug("[{}] keeping", existing_id.brief());
         }
       } catch (final Throwable x) {
         LOG.error("[{}]: unable to delete entry: ", existing_id.value(), x);
