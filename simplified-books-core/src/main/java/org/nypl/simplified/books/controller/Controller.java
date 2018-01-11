@@ -483,14 +483,14 @@ public final class Controller implements BooksControllerType, ProfilesController
   }
 
   @Override
-  public void bookDelete(
+  public ListenableFuture<Unit> bookDelete(
       final AccountType account,
       final BookID book_id) {
 
     NullCheck.notNull(account, "Account");
     NullCheck.notNull(book_id, "Book ID");
 
-    this.exec.submit(new BookDeleteTask(
+    return this.exec.submit(new BookDeleteTask(
         account,
         this.book_registry,
         book_id));

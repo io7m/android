@@ -78,7 +78,7 @@ public interface BooksControllerType {
    * @param book_id The ID of the book
    */
 
-  void bookDelete(
+  ListenableFuture<Unit> bookDelete(
       AccountType account,
       BookID book_id);
 

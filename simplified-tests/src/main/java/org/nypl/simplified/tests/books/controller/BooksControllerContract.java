@@ -3,6 +3,7 @@ package org.nypl.simplified.tests.books.controller;
 import com.io7m.jfunctional.FunctionType;
 import com.io7m.jfunctional.Option;
 import com.io7m.jfunctional.OptionType;
+import com.io7m.jfunctional.Some;
 import com.io7m.jfunctional.Unit;
 
 import org.hamcrest.core.IsInstanceOf;
@@ -21,12 +22,15 @@ import org.nypl.simplified.books.accounts.AccountProviderAuthenticationDescripti
 import org.nypl.simplified.books.accounts.AccountProviderCollection;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabases;
+import org.nypl.simplified.books.book_database.BookDatabaseEntryType;
 import org.nypl.simplified.books.book_database.BookEvent;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookRegistry;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
+import org.nypl.simplified.books.book_registry.BookStatus;
 import org.nypl.simplified.books.book_registry.BookStatusEvent;
 import org.nypl.simplified.books.book_registry.BookStatusRevokeFailed;
+import org.nypl.simplified.books.book_registry.BookWithStatus;
 import org.nypl.simplified.books.controller.BooksControllerType;
 import org.nypl.simplified.books.controller.Controller;
 import org.nypl.simplified.books.core.BookRevokeExceptionNoCredentials;
@@ -42,6 +46,7 @@ import org.nypl.simplified.books.profiles.ProfilesDatabaseType;
 import org.nypl.simplified.downloader.core.DownloaderHTTP;
 import org.nypl.simplified.downloader.core.DownloaderType;
 import org.nypl.simplified.files.DirectoryUtilities;
+import org.nypl.simplified.files.FileUtilities;
 import org.nypl.simplified.http.core.HTTPAuthType;
 import org.nypl.simplified.http.core.HTTPResultError;
 import org.nypl.simplified.http.core.HTTPResultOK;
@@ -745,6 +750,80 @@ public abstract class BooksControllerContract {
     Assert.assertThat(
         this.book_registry.bookOrException(book_id).status(),
         IsInstanceOf.instanceOf(BookStatusRevokeFailed.class));
+  }
+
+  /**
+   * Deleting a book works.
+   *
+   * @throws Exception On errors
+   */
+
+  @Test(timeout = 3_000L)
+  public final void testBooksDelete() throws Exception {
+
+    final BooksControllerType controller =
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+
+    final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
+    final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
+    this.profiles.setProfileCurrent(profile.id());
+    final AccountType account = profile.createAccount(provider);
+    account.setCredentials(correctCredentials());
+
+    this.http.addResponse(
+        "urn:fake-auth:0",
+        new HTTPResultOK<>(
+            "OK",
+            200,
+            resource("testBooksDelete.xml"),
+            resourceSize("testBooksDelete.xml"),
+            new HashMap<>(),
+            0L));
+
+    controller.booksSync(account).get();
+
+    final BookID book_id =
+        BookID.create("39434e1c3ea5620fdcc2303c878da54cc421175eb09ce1a6709b54589eb8711f");
+
+    Assert.assertTrue(
+        "Book must not have a saved EPUB file",
+        this.book_registry.bookOrException(book_id)
+            .book()
+            .file()
+            .isNone());
+
+    /*
+     * Manually reach into the database and create a book in order to have something to delete.
+     */
+
+    {
+      final BookDatabaseEntryType database_entry = account.bookDatabase().entry(book_id);
+      database_entry.writeEPUB(File.createTempFile("book", ".epub"));
+      this.book_registry.update(
+          BookWithStatus.create(
+              database_entry.book(), BookStatus.fromBook(database_entry.book())));
+    }
+
+    final OptionType<File> created_file =
+        this.book_registry.bookOrException(book_id).book().file();
+    Assert.assertTrue(
+        "Book must have a saved EPUB file",
+        created_file.isSome());
+
+    final File file = ((Some<File>) created_file).get();
+    Assert.assertTrue("EPUB must exist", file.isFile());
+
+    this.book_registry.bookEvents().subscribe(this.book_events::add);
+    controller.bookDelete(account, book_id).get();
+
+    Assert.assertTrue(
+        "Book must not have a saved EPUB file",
+        this.book_registry.bookOrException(book_id)
+            .book()
+            .file()
+            .isNone());
+
+    Assert.assertFalse("EPUB must not exist", file.exists());
   }
 
   private InputStream resource(final String file) {
