@@ -1,5 +1,6 @@
 package org.nypl.simplified.app;
 
+import android.content.res.Resources;
 import android.os.Bundle;
 
 import com.io7m.jfunctional.OptionType;
@@ -20,8 +21,8 @@ public final class HelpActivity extends NavigationDrawerActivity {
   }
 
   @Override
-  protected SimplifiedPart navigationDrawerGetPart() {
-    return SimplifiedPart.PART_HELP;
+  protected String navigationDrawerGetActivityTitle(final Resources resources) {
+    return resources.getString(R.string.help);
   }
 
   @Override

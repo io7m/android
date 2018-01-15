@@ -1,5 +1,6 @@
 package org.nypl.simplified.app;
 
+import android.content.res.Resources;
 import android.os.Bundle;
 
 import org.nypl.simplified.books.core.LogUtilities;
@@ -25,15 +26,14 @@ public final class MainSettingsActivity extends NavigationDrawerActivity {
   }
 
   @Override
-  protected SimplifiedPart navigationDrawerGetPart() {
-    return SimplifiedPart.PART_SETTINGS;
-  }
-
-  @Override
   protected boolean navigationDrawerShouldShowIndicator() {
     return true;
   }
 
+  @Override
+  protected String navigationDrawerGetActivityTitle(final Resources resources) {
+    return resources.getString(R.string.settings);
+  }
 
   @Override
   public void onCreate(final Bundle saved_instance_state) {

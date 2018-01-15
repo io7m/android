@@ -1,8 +1,9 @@
 package org.nypl.simplified.app.catalog;
 
+import android.content.res.Resources;
+
 import com.io7m.junreachable.UnreachableCodeException;
 import org.nypl.simplified.app.R;
-import org.nypl.simplified.app.SimplifiedPart;
 import org.nypl.simplified.books.core.BooksFeedSelection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +31,11 @@ public final class MainCatalogActivity extends CatalogFeedActivity
 
   }
 
+  @Override
+  protected String navigationDrawerGetActivityTitle(final Resources resources) {
+    return resources.getString(R.string.catalog);
+  }
+
   @Override protected BooksFeedSelection getLocalFeedTypeSelection()
   {
     /*
@@ -38,11 +44,6 @@ public final class MainCatalogActivity extends CatalogFeedActivity
      */
 
     throw new UnreachableCodeException();
-  }
-
-  @Override protected SimplifiedPart navigationDrawerGetPart()
-  {
-    return SimplifiedPart.PART_CATALOG;
   }
 
   @Override protected String catalogFeedGetEmptyText()

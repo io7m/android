@@ -435,14 +435,10 @@ public abstract class CatalogFeedActivity extends CatalogActivity
   protected void onCreate(final @Nullable Bundle state) {
     super.onCreate(state);
 
-    this.navigationDrawerSetActionBarTitle();
-
     final CatalogFeedArgumentsType args = this.getArguments();
     final ImmutableStack<CatalogFeedArgumentsType> stack = this.getUpStack();
     this.configureUpButton(stack, args.getTitle());
-
-    final Resources resources = NullCheck.notNull(this.getResources());
-    setTitle(args.getTitle().equals(NullCheck.notNull(resources.getString(R.string.feature_app_name))) ? resources.getString(R.string.catalog) : args.getTitle());
+    setTitle(args.getTitle());
 
     /*
      * Attempt to restore the saved scroll position, if there is one.
@@ -942,11 +938,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
       final FeedEntryOPDS e) {
 
     this.log().debug("onSelectedBook: {}", this);
-    CatalogBookDetailActivity.startNewActivity(
-        this,
-        new_up_stack,
-        this.navigationDrawerGetPart(),
-        e);
+    CatalogBookDetailActivity.startNewActivity(this, new_up_stack, e);
   }
 
   private void onSelectedFeedGroup(

@@ -5,6 +5,7 @@ import android.app.ActionBar;
 import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.text.method.HideReturnsTransformationMethod;
 import android.text.method.PasswordTransformationMethod;
@@ -118,8 +119,8 @@ public final class MainSettingsAccountActivity extends NavigationDrawerActivity 
   }
 
   @Override
-  protected SimplifiedPart navigationDrawerGetPart() {
-    return SimplifiedPart.PART_ACCOUNT;
+  protected String navigationDrawerGetActivityTitle(final Resources resources) {
+    return resources.getString(R.string.settings);
   }
 
   @Override
@@ -329,8 +330,8 @@ public final class MainSettingsAccountActivity extends NavigationDrawerActivity 
         WebViewActivity.setActivityArguments(
             b,
             ((Some<URI>) this.account.provider().privacyPolicy()).get().toString(),
-            "Privacy Policy",
-            SimplifiedPart.PART_SETTINGS);
+            "Privacy Policy"
+        );
         intent.putExtras(b);
         this.startActivity(intent);
       });
@@ -350,16 +351,14 @@ public final class MainSettingsAccountActivity extends NavigationDrawerActivity 
         WebViewActivity.setActivityArguments(
             b,
             ((Some<URI>) this.account.provider().license()).get().toString(),
-            "Content Licenses",
-            SimplifiedPart.PART_SETTINGS);
+            "Content Licenses"
+        );
         intent.putExtras(b);
         this.startActivity(intent);
       });
     } else {
       this.license.setVisibility(View.GONE);
     }
-
-    this.navigationDrawerSetActionBarTitle();
 
     /*
      * Configure the EULA views if there is one.

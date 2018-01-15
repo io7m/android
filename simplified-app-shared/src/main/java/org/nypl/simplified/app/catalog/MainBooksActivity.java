@@ -1,7 +1,8 @@
 package org.nypl.simplified.app.catalog;
 
+import android.content.res.Resources;
+
 import org.nypl.simplified.app.R;
-import org.nypl.simplified.app.SimplifiedPart;
 import org.nypl.simplified.books.core.BooksFeedSelection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,14 +29,14 @@ public final class MainBooksActivity extends MainLocalFeedActivity
 
   }
 
+  @Override
+  protected String navigationDrawerGetActivityTitle(final Resources resources) {
+    return resources.getString(R.string.books);
+  }
+
   @Override protected BooksFeedSelection getLocalFeedTypeSelection()
   {
     return BooksFeedSelection.BOOKS_FEED_LOANED;
-  }
-
-  @Override protected SimplifiedPart navigationDrawerGetPart()
-  {
-    return SimplifiedPart.PART_BOOKS;
   }
 
   @Override protected boolean navigationDrawerShouldShowIndicator()

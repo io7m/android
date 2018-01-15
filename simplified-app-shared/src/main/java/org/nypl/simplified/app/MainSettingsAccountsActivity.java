@@ -3,6 +3,7 @@ package org.nypl.simplified.app;
 import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -11,6 +12,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -74,38 +76,30 @@ public final class MainSettingsAccountsActivity extends NavigationDrawerActivity
   }
 
   @Override
-  protected SimplifiedPart navigationDrawerGetPart() {
-    return SimplifiedPart.PART_SETTINGS;
+  protected boolean navigationDrawerShouldShowIndicator() {
+    return true;
   }
 
   @Override
-  protected boolean navigationDrawerShouldShowIndicator() {
-    return true;
+  protected String navigationDrawerGetActivityTitle(final Resources resources) {
+    return resources.getString(R.string.settings);
   }
 
   @Override
   public void onCreate(final Bundle saved_instance_state) {
     super.onCreate(saved_instance_state);
 
-    final ActionBar bar = this.getActionBar();
-    if (android.os.Build.VERSION.SDK_INT < 21) {
-      bar.setDisplayHomeAsUpEnabled(false);
-      bar.setHomeButtonEnabled(true);
-      bar.setIcon(R.drawable.ic_arrow_back);
-    } else {
-      bar.setHomeAsUpIndicator(R.drawable.ic_arrow_back);
-      bar.setDisplayHomeAsUpEnabled(true);
-      bar.setHomeButtonEnabled(false);
-    }
-
-    this.setContentView(R.layout.accounts);
+    final FrameLayout content_area = this.getContentFrame();
+    final LayoutInflater inflater = this.getLayoutInflater();
+    final ViewGroup layout =
+        NullCheck.notNull((ViewGroup) inflater.inflate(R.layout.accounts, content_area, false));
+    content_area.addView(layout);
+    content_area.requestLayout();
 
     this.account_list_view =
         NullCheck.notNull(this.findViewById(R.id.account_list));
     this.account_current_view =
         NullCheck.notNull(this.findViewById(R.id.current_account));
-
-    final LayoutInflater inflater = NullCheck.notNull(this.getLayoutInflater());
 
     this.adapter_accounts_array = new ArrayList<>();
     this.adapter_accounts =

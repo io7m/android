@@ -90,8 +90,7 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
       WebViewActivity.setActivityArguments(
         b,
         "http://www.librarysimplified.org/acknowledgments.html",
-        resources.getString(R.string.settings_about),
-        SimplifiedPart.PART_SETTINGS);
+        resources.getString(R.string.settings_about));
       intent.putExtras(b);
 
       final Preference preferences = findPreference(resources.getString(R.string.settings_about));
@@ -105,8 +104,7 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
       WebViewActivity.setActivityArguments(
         b,
         "http://www.librarysimplified.org/EULA.html",
-        resources.getString(R.string.settings_eula),
-        SimplifiedPart.PART_SETTINGS);
+        resources.getString(R.string.settings_eula));
       intent.putExtras(b);
 
       final Preference preferences = findPreference(resources.getString(R.string.settings_eula));
@@ -125,8 +123,8 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
             WebViewActivity.setActivityArguments(
               b,
               licenses.documentGetReadableURL().toString(),
-              resources.getString(R.string.settings_licence_software),
-              SimplifiedPart.PART_SETTINGS);
+              resources.getString(R.string.settings_licence_software)
+            );
             intent.putExtras(b);
 
             final Preference preferences = findPreference(resources.getString(R.string.settings_licence_software));

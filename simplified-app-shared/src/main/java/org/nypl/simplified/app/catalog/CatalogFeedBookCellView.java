@@ -211,11 +211,10 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
     this.cell_cover_layout =
         NullCheck.notNull(this.findViewById(R.id.cell_cover_layout));
-    this.cell_cover_image = NullCheck.notNull(
-        this.cell_cover_layout.findViewById(R.id.cell_cover_image));
-    this.cell_cover_progress = NullCheck.notNull(
-        this.cell_cover_layout.findViewById(
-            R.id.cell_cover_loading));
+    this.cell_cover_image =
+        NullCheck.notNull(this.cell_cover_layout.findViewById(R.id.cell_cover_image));
+    this.cell_cover_progress =
+        NullCheck.notNull(this.cell_cover_layout.findViewById(R.id.cell_cover_loading));
 
     /*
      * The height of the row is known, so assume a roughly 4:3 aspect ratio

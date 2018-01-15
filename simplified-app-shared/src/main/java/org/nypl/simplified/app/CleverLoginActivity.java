@@ -82,13 +82,13 @@ public final class CleverLoginActivity extends NavigationDrawerActivity {
 
 
   @Override
-  protected SimplifiedPart navigationDrawerGetPart() {
-    return SimplifiedPart.PART_ACCOUNT;
+  protected boolean navigationDrawerShouldShowIndicator() {
+    return false;
   }
 
   @Override
-  protected boolean navigationDrawerShouldShowIndicator() {
-    return false;
+  protected String navigationDrawerGetActivityTitle(final Resources resources) {
+    return resources.getString(R.string.settings_account);
   }
 
   @SuppressLint("JavascriptInterface")
