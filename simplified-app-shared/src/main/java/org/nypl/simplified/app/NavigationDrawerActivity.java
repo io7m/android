@@ -76,12 +76,9 @@ public abstract class NavigationDrawerActivity extends SimplifiedActivity
 
   private FrameLayout content_frame;
   private DrawerLayout drawer;
-
   private List<NavigationDrawerItemType> drawer_items_initial;
-  private List<NavigationDrawerItemType> drawer_items_accounts;
-  private ListView drawer_list;
   private NavigationDrawerArrayAdapter drawer_adapter;
-
+  private ListView drawer_list_view;
   private SharedPreferences drawer_settings;
   private boolean finishing;
   private ObservableSubscriptionType<ProfileEvent> profile_event_subscription;
@@ -298,7 +295,7 @@ public abstract class NavigationDrawerActivity extends SimplifiedActivity
     }
 
     this.drawer = drawer_layout;
-    this.drawer_list = drawer_list_view;
+    this.drawer_list_view = drawer_list_view;
     this.content_frame = frame_layout;
 
     this.profile_event_subscription =
@@ -345,6 +342,12 @@ public abstract class NavigationDrawerActivity extends SimplifiedActivity
   @Override
   public final void onDrawerClosed(final @Nullable View drawer_view) {
     LOG.debug("onDrawerClosed");
+
+    /*
+     * Clear the selected item when the drawer closes.
+     */
+
+    this.drawer_list_view.clearChoices();
 
     /*
      * If the drawer is closing because the user pressed the back button, then
