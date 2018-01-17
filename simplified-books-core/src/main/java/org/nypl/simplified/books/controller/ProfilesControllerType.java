@@ -19,6 +19,7 @@ import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.feeds.FeedWithoutGroups;
+import org.nypl.simplified.books.idle_timer.ProfileIdleTimerType;
 import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent;
 import org.nypl.simplified.books.profiles.ProfileCreationEvent;
 import org.nypl.simplified.books.profiles.ProfileEvent;
@@ -276,4 +277,10 @@ public interface ProfilesControllerType {
 
   AccountType profileAccountForBook(BookID id)
       throws ProfileNoneCurrentException, AccountsDatabaseNonexistentException;
+
+  /**
+   * @return The global profile idle timer
+   */
+
+  ProfileIdleTimerType profileIdleTimer();
 }

@@ -63,7 +63,7 @@ import static org.nypl.simplified.books.profiles.ProfilesDatabaseType.AnonymousP
  * The type of activities that have a navigation drawer.
  */
 
-public abstract class NavigationDrawerActivity extends SimplifiedActivity
+public abstract class NavigationDrawerActivity extends ProfileTimeOutActivity
     implements DrawerListener, OnItemClickListener {
 
   private static final Logger LOG;

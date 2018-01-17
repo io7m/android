@@ -122,6 +122,7 @@ public final class Simplified extends Application {
   private BookRegistryType book_registry;
   private Controller book_controller;
   private ListeningExecutorService exec_background;
+  private ExecutorService exec_profile_timer;
 
   /**
    * A specification of whether or not an action bar is wanted in an activity.
@@ -526,14 +527,21 @@ public final class Simplified extends Application {
     final AssetManager asset_manager = this.getAssets();
 
     LOG.debug("creating thread pools");
-    this.exec_catalog_feeds = Simplified.createNamedThreadPool(1, "catalog-feed", 19);
-    this.exec_covers = Simplified.createNamedThreadPool(2, "cover", 19);
-    this.exec_downloader = Simplified.createNamedThreadPool(4, "downloader", 19);
-    this.exec_books = Simplified.createNamedThreadPool(1, "books", 19);
-    this.exec_epub = Simplified.createNamedThreadPool(1, "epub", 19);
+    this.exec_catalog_feeds =
+        Simplified.createNamedThreadPool(1, "catalog-feed", 19);
+    this.exec_covers =
+        Simplified.createNamedThreadPool(2, "cover", 19);
+    this.exec_downloader =
+        Simplified.createNamedThreadPool(4, "downloader", 19);
+    this.exec_books =
+        Simplified.createNamedThreadPool(1, "books", 19);
+    this.exec_epub =
+        Simplified.createNamedThreadPool(1, "epub", 19);
     this.exec_background =
         MoreExecutors.listeningDecorator(
             Simplified.createNamedThreadPool(1, "background", 19));
+    this.exec_profile_timer =
+        Simplified.createNamedThreadPool(1, "profile-timer", 19);
 
     LOG.debug("initializing Bugsnag");
     this.initBugsnag(Bugsnag.getApiToken(asset_manager));
@@ -637,7 +645,15 @@ public final class Simplified extends Application {
         this.downloader,
         this.profiles,
         this.book_registry,
-        ignored -> this.account_providers);
+        ignored -> this.account_providers,
+        this.exec_profile_timer);
+
+    /*
+     * Log out the current profile after ten minutes, warning one minute before this happens.
+     */
+
+    this.book_controller.profileIdleTimer().setWarningIdleSecondsRemaining(60);
+    this.book_controller.profileIdleTimer().setMaximumIdleSeconds(10 * 60);
 
     LOG.debug("initializing network connectivity checker");
     this.network_connectivity = new NetworkConnectivity(this);

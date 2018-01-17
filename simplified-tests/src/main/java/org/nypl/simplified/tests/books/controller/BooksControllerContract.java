@@ -48,7 +48,6 @@ import org.nypl.simplified.books.profiles.ProfilesDatabaseType;
 import org.nypl.simplified.downloader.core.DownloaderHTTP;
 import org.nypl.simplified.downloader.core.DownloaderType;
 import org.nypl.simplified.files.DirectoryUtilities;
-import org.nypl.simplified.files.FileUtilities;
 import org.nypl.simplified.http.core.HTTPAuthType;
 import org.nypl.simplified.http.core.HTTPResultError;
 import org.nypl.simplified.http.core.HTTPResultOK;
@@ -93,6 +92,7 @@ public abstract class BooksControllerContract {
   private BookRegistryType book_registry;
   private ProfilesDatabaseType profiles;
   private List<BookEvent> book_events;
+  private ExecutorService executor_timer;
 
   private static AccountProvider fakeProvider(final String provider_id) {
     return AccountProvider.builder()
@@ -147,7 +147,8 @@ public abstract class BooksControllerContract {
       final BookRegistryType books,
       final ProfilesDatabaseType profiles,
       final DownloaderType downloader,
-      final FunctionType<Unit, AccountProviderCollection> account_providers) {
+      final FunctionType<Unit, AccountProviderCollection> account_providers, 
+      final ExecutorService timer_exec) {
 
     final OPDSFeedParserType parser =
         OPDSFeedParser.newParser(OPDSAcquisitionFeedEntryParser.newParser());
@@ -164,7 +165,8 @@ public abstract class BooksControllerContract {
         downloader,
         profiles,
         books,
-        account_providers);
+        account_providers,
+        timer_exec);
   }
 
   @Before
@@ -172,6 +174,7 @@ public abstract class BooksControllerContract {
     this.http = new MockingHTTP();
     this.executor_downloads = Executors.newCachedThreadPool();
     this.executor_books = Executors.newCachedThreadPool();
+    this.executor_timer = Executors.newCachedThreadPool();
     this.directory_downloads = DirectoryUtilities.directoryCreateTemporary();
     this.directory_profiles = DirectoryUtilities.directoryCreateTemporary();
     this.profile_events = Collections.synchronizedList(new ArrayList<ProfileEvent>());
@@ -186,6 +189,7 @@ public abstract class BooksControllerContract {
   public void tearDown() throws Exception {
     this.executor_books.shutdown();
     this.executor_downloads.shutdown();
+    this.executor_timer.shutdown();
   }
 
   /**
@@ -198,7 +202,7 @@ public abstract class BooksControllerContract {
   public final void testBooksSyncRemoteNon401() throws Exception {
 
     final BooksControllerType controller =
-        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
@@ -232,7 +236,7 @@ public abstract class BooksControllerContract {
   public final void testBooksSyncRemote401() throws Exception {
 
     final BooksControllerType controller =
-        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
@@ -268,7 +272,7 @@ public abstract class BooksControllerContract {
   public final void testBooksSyncWithoutAuthSupport() throws Exception {
 
     final BooksControllerType controller =
-        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeProvider("urn:fake:0");
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
@@ -291,7 +295,7 @@ public abstract class BooksControllerContract {
   public final void testBooksSyncMissingCredentials() throws Exception {
 
     final BooksControllerType controller =
-        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
@@ -313,7 +317,7 @@ public abstract class BooksControllerContract {
   public final void testBooksSyncBadFeed() throws Exception {
 
     final BooksControllerType controller =
-        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
@@ -346,7 +350,7 @@ public abstract class BooksControllerContract {
   public final void testBooksSyncNewEntries() throws Exception {
 
     final BooksControllerType controller =
-        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
@@ -404,7 +408,7 @@ public abstract class BooksControllerContract {
   public final void testBooksSyncRemoveEntries() throws Exception {
 
     final BooksControllerType controller =
-        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
@@ -496,7 +500,7 @@ public abstract class BooksControllerContract {
   public final void testBooksRevokeCorrectURI() throws Exception {
 
     final BooksControllerType controller =
-        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
@@ -553,7 +557,7 @@ public abstract class BooksControllerContract {
   public final void testBooksRevokeWithoutCredentials() throws Exception {
 
     final BooksControllerType controller =
-        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
@@ -609,7 +613,7 @@ public abstract class BooksControllerContract {
   public final void testBooksRevokeWithoutURI() throws Exception {
 
     final BooksControllerType controller =
-        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
@@ -654,7 +658,7 @@ public abstract class BooksControllerContract {
   public final void testBooksRevokeEmptyFeed() throws Exception {
 
     final BooksControllerType controller =
-        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
@@ -709,7 +713,7 @@ public abstract class BooksControllerContract {
   public final void testBooksRevokeGarbage() throws Exception {
 
     final BooksControllerType controller =
-        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
@@ -764,7 +768,7 @@ public abstract class BooksControllerContract {
   public final void testBooksDelete() throws Exception {
 
     final BooksControllerType controller =
-        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
@@ -838,7 +842,7 @@ public abstract class BooksControllerContract {
   public final void testBooksRevokeDismissOK() throws Exception {
 
     final BooksControllerType controller =
-        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");
@@ -899,7 +903,7 @@ public abstract class BooksControllerContract {
   public final void testBooksRevokeDismissHasNotFailed() throws Exception {
 
     final BooksControllerType controller =
-        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, this.profiles, this.downloader, BooksControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
     final ProfileType profile = this.profiles.createProfile(provider, "Kermit");

@@ -22,7 +22,7 @@ public abstract class SimplifiedActivity extends Activity {
 
   protected final boolean isLastActivity()
   {
-    return ACTIVITY_COUNT == 1;
+    return ACTIVITY_COUNT <= 1;
   }
 
   private static int ACTIVITY_COUNT;

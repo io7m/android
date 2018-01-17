@@ -83,6 +83,7 @@ public abstract class ProfilesControllerContract {
 
   private ExecutorService executor_downloads;
   private ExecutorService executor_books;
+  private ExecutorService executor_timer;
   private File directory_downloads;
   private File directory_profiles;
   private MockingHTTP http;
@@ -103,29 +104,31 @@ public abstract class ProfilesControllerContract {
   }
 
   private ProfilesControllerType controller(
-      final ExecutorService exec,
+      final ExecutorService task_exec,
       final HTTPType http,
       final BookRegistryType books,
       final ProfilesDatabaseType profiles,
       final DownloaderType downloader,
-      final FunctionType<Unit, AccountProviderCollection> account_providers) {
+      final FunctionType<Unit, AccountProviderCollection> account_providers,
+      final ExecutorService timer_exec) {
 
     final OPDSFeedParserType parser =
         OPDSFeedParser.newParser(OPDSAcquisitionFeedEntryParser.newParser());
     final OPDSFeedTransportType<OptionType<HTTPAuthType>> transport =
         FeedHTTPTransport.newTransport(http);
     final FeedLoaderType feed_loader =
-        FeedLoader.newFeedLoader(exec, books, parser, transport, OPDSSearchParser.newParser());
+        FeedLoader.newFeedLoader(task_exec, books, parser, transport, OPDSSearchParser.newParser());
 
     return Controller.create(
-        exec,
+        task_exec,
         http,
         parser,
         feed_loader,
         downloader,
         profiles,
         books,
-        account_providers);
+        account_providers,
+        timer_exec);
   }
 
   @Before
@@ -133,6 +136,7 @@ public abstract class ProfilesControllerContract {
     this.http = new MockingHTTP();
     this.executor_downloads = Executors.newCachedThreadPool();
     this.executor_books = Executors.newCachedThreadPool();
+    this.executor_timer = Executors.newCachedThreadPool();
     this.directory_downloads = DirectoryUtilities.directoryCreateTemporary();
     this.directory_profiles = DirectoryUtilities.directoryCreateTemporary();
     this.profile_events = Collections.synchronizedList(new ArrayList<ProfileEvent>());
@@ -145,6 +149,7 @@ public abstract class ProfilesControllerContract {
   public void tearDown() throws Exception {
     this.executor_books.shutdown();
     this.executor_downloads.shutdown();
+    this.executor_timer.shutdown();
   }
 
   /**
@@ -161,7 +166,7 @@ public abstract class ProfilesControllerContract {
     final DownloaderType downloader =
         DownloaderHTTP.newDownloader(this.executor_downloads, this.directory_downloads, http);
     final ProfilesControllerType controller =
-        controller(this.executor_books, http, this.book_registry, profiles, downloader, ProfilesControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, profiles, downloader, ProfilesControllerContract::accountProviders, this.executor_timer);
 
     this.expected.expect(ProfileNoneCurrentException.class);
     controller.profileCurrent();
@@ -181,7 +186,7 @@ public abstract class ProfilesControllerContract {
     final DownloaderType downloader =
         DownloaderHTTP.newDownloader(this.executor_downloads, this.directory_downloads, http);
     final ProfilesControllerType controller =
-        controller(this.executor_books, http, this.book_registry, profiles, downloader, ProfilesControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, profiles, downloader, ProfilesControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider account_provider = accountProviders().providerDefault();
     controller.profileCreate(account_provider, "Kermit", LocalDate.now()).get();
@@ -203,7 +208,7 @@ public abstract class ProfilesControllerContract {
     final ProfilesDatabaseType profiles =
         profilesDatabaseWithoutAnonymous(this.directory_profiles);
     final ProfilesControllerType controller =
-        controller(this.executor_books, http, this.book_registry, profiles, downloader, ProfilesControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, profiles, downloader, ProfilesControllerContract::accountProviders, this.executor_timer);
 
     controller.profileEvents().subscribe(this.profile_events::add);
 
@@ -230,7 +235,7 @@ public abstract class ProfilesControllerContract {
     final ProfilesDatabaseType profiles =
         profilesDatabaseWithoutAnonymous(this.directory_profiles);
     final ProfilesControllerType controller =
-        controller(this.executor_books, http, this.book_registry, profiles, downloader, ProfilesControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, profiles, downloader, ProfilesControllerContract::accountProviders, this.executor_timer);
 
     controller.profileEvents().subscribe(this.profile_events::add);
     controller.accountEvents().subscribe(this.account_events::add);
@@ -282,7 +287,7 @@ public abstract class ProfilesControllerContract {
     final ProfilesDatabaseType profiles =
         profilesDatabaseWithoutAnonymous(this.directory_profiles);
     final ProfilesControllerType controller =
-        controller(this.executor_books, http, this.book_registry, profiles, downloader, ProfilesControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, profiles, downloader, ProfilesControllerContract::accountProviders, this.executor_timer);
 
     controller.profileEvents().subscribe(this.profile_events::add);
     controller.accountEvents().subscribe(this.account_events::add);
@@ -334,7 +339,7 @@ public abstract class ProfilesControllerContract {
     final ProfilesDatabaseType profiles =
         profilesDatabaseWithoutAnonymous(this.directory_profiles);
     final ProfilesControllerType controller =
-        controller(this.executor_books, http, this.book_registry, profiles, downloader, ProfilesControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, profiles, downloader, ProfilesControllerContract::accountProviders, this.executor_timer);
 
     controller.profileEvents().subscribe(this.profile_events::add);
     controller.accountEvents().subscribe(this.account_events::add);
@@ -385,7 +390,7 @@ public abstract class ProfilesControllerContract {
     final ProfilesDatabaseType profiles =
         profilesDatabaseWithoutAnonymous(this.directory_profiles);
     final ProfilesControllerType controller =
-        controller(this.executor_books, http, this.book_registry, profiles, downloader, ProfilesControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, profiles, downloader, ProfilesControllerContract::accountProviders, this.executor_timer);
 
     controller.profileEvents().subscribe(this.profile_events::add);
     controller.accountEvents().subscribe(this.account_events::add);
@@ -436,7 +441,7 @@ public abstract class ProfilesControllerContract {
     final ProfilesDatabaseType profiles =
         profilesDatabaseWithoutAnonymous(this.directory_profiles);
     final ProfilesControllerType controller =
-        controller(this.executor_books, http, this.book_registry, profiles, downloader, ProfilesControllerContract::accountProviders);
+        controller(this.executor_books, http, this.book_registry, profiles, downloader, ProfilesControllerContract::accountProviders, this.executor_timer);
 
     controller.profileEvents().subscribe(this.profile_events::add);
     controller.accountEvents().subscribe(this.account_events::add);
@@ -476,7 +481,7 @@ public abstract class ProfilesControllerContract {
     final ProfilesDatabaseType profiles =
         profilesDatabaseWithoutAnonymous(this.directory_profiles);
     final ProfilesControllerType controller =
-        controller(this.executor_books, http, book_registry, profiles, downloader, ProfilesControllerContract::accountProviders);
+        controller(this.executor_books, http, book_registry, profiles, downloader, ProfilesControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeProvider("urn:fake:0");
     controller.profileCreate(provider, "Kermit", LocalDate.now()).get();
@@ -525,7 +530,7 @@ public abstract class ProfilesControllerContract {
     final ProfilesDatabaseType profiles =
         profilesDatabaseWithoutAnonymous(this.directory_profiles);
     final ProfilesControllerType controller =
-        controller(this.executor_books, http, book_registry, profiles, downloader, ProfilesControllerContract::accountProviders);
+        controller(this.executor_books, http, book_registry, profiles, downloader, ProfilesControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeProvider("urn:fake:0");
     controller.profileCreate(provider, "Kermit", LocalDate.now()).get();
@@ -573,7 +578,7 @@ public abstract class ProfilesControllerContract {
     final ProfilesDatabaseType profiles =
         profilesDatabaseWithoutAnonymous(this.directory_profiles);
     final ProfilesControllerType controller =
-        controller(this.executor_books, http, book_registry, profiles, downloader, ProfilesControllerContract::accountProviders);
+        controller(this.executor_books, http, book_registry, profiles, downloader, ProfilesControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeProvider("urn:fake:0");
     controller.profileCreate(provider, "Kermit", LocalDate.now()).get();

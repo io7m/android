@@ -30,6 +30,8 @@ import org.nypl.simplified.books.book_registry.BookRegistryType;
 import org.nypl.simplified.books.book_registry.BookWithStatus;
 import org.nypl.simplified.books.feeds.FeedLoaderType;
 import org.nypl.simplified.books.feeds.FeedWithoutGroups;
+import org.nypl.simplified.books.idle_timer.ProfileIdleTimer;
+import org.nypl.simplified.books.idle_timer.ProfileIdleTimerType;
 import org.nypl.simplified.books.profiles.ProfileAccountSelectEvent;
 import org.nypl.simplified.books.profiles.ProfileCreationEvent;
 import org.nypl.simplified.books.profiles.ProfileEvent;
@@ -70,7 +72,7 @@ public final class Controller implements BooksControllerType, ProfilesController
 
   private static final Logger LOG = LoggerFactory.getLogger(Controller.class);
 
-  private final ListeningExecutorService exec;
+  private final ListeningExecutorService task_executor;
   private final ProfilesDatabaseType profiles;
   private final BookRegistryType book_registry;
   private final ObservableType<ProfileEvent> profile_events;
@@ -82,19 +84,22 @@ public final class Controller implements BooksControllerType, ProfilesController
   private final FeedLoaderType feed_loader;
   private final DownloaderType downloader;
   private final ObservableSubscriptionType<ProfileEvent> profile_event_subscription;
+  private final ExecutorService timer_executor;
+  private final ProfileIdleTimerType timer;
 
   private Controller(
-      final ExecutorService in_exec,
+      final ExecutorService in_task_executor,
       final HTTPType in_http,
       final OPDSFeedParserType in_feed_parser,
       final FeedLoaderType in_feed_loader,
       final DownloaderType in_downloader,
       final ProfilesDatabaseType in_profiles,
       final BookRegistryType in_book_registry,
-      final FunctionType<Unit, AccountProviderCollection> in_account_providers) {
+      final FunctionType<Unit, AccountProviderCollection> in_account_providers,
+      final ExecutorService in_timer_executor) {
 
-    this.exec =
-        MoreExecutors.listeningDecorator(NullCheck.notNull(in_exec, "Executor"));
+    this.task_executor =
+        MoreExecutors.listeningDecorator(NullCheck.notNull(in_task_executor, "Executor"));
     this.http =
         NullCheck.notNull(in_http, "HTTP");
     this.feed_parser =
@@ -109,10 +114,13 @@ public final class Controller implements BooksControllerType, ProfilesController
         NullCheck.notNull(in_book_registry, "Book Registry");
     this.account_providers =
         NullCheck.notNull(in_account_providers, "Account providers");
+    this.timer_executor =
+        NullCheck.notNull(in_timer_executor, "Timer executor");
 
     this.downloads = new ConcurrentHashMap<>(32);
     this.profile_events = Observable.create();
     this.account_events = Observable.create();
+    this.timer = ProfileIdleTimer.create(this.timer_executor, this.profile_events);
     this.profile_event_subscription = this.profile_events.subscribe(this::onProfileEvent);
   }
 
@@ -129,7 +137,7 @@ public final class Controller implements BooksControllerType, ProfilesController
     LOG.debug("clearing the book registry");
     this.book_registry.clear();
     try {
-      this.exec.execute(
+      this.task_executor.execute(
           new ProfileDataLoadTask(this.profiles.currentProfileUnsafe(), this.book_registry));
     } catch (final ProfileNoneCurrentException e) {
       throw new IllegalStateException(e);
@@ -144,7 +152,8 @@ public final class Controller implements BooksControllerType, ProfilesController
       final DownloaderType in_downloader,
       final ProfilesDatabaseType in_profiles,
       final BookRegistryType in_book_registry,
-      final FunctionType<Unit, AccountProviderCollection> in_account_providers) {
+      final FunctionType<Unit, AccountProviderCollection> in_account_providers,
+      final ExecutorService in_timer_executor) {
 
     return new Controller(
         in_exec,
@@ -154,7 +163,8 @@ public final class Controller implements BooksControllerType, ProfilesController
         in_downloader,
         in_profiles,
         in_book_registry,
-        in_account_providers);
+        in_account_providers,
+        in_timer_executor);
   }
 
   /**
@@ -197,14 +207,14 @@ public final class Controller implements BooksControllerType, ProfilesController
     NullCheck.notNull(display_name, "Display name");
     NullCheck.notNull(date, "Date");
 
-    return this.exec.submit(new ProfileCreationTask(
+    return this.task_executor.submit(new ProfileCreationTask(
         this.profiles, this.profile_events, account_provider, display_name, date));
   }
 
   @Override
   public ListenableFuture<Unit> profileSelect(final ProfileID id) {
     NullCheck.notNull(id, "ID");
-    return this.exec.submit(new ProfileSelectionTask(this.profiles, this.profile_events, id));
+    return this.task_executor.submit(new ProfileSelectionTask(this.profiles, this.profile_events, id));
   }
 
   @Override
@@ -217,7 +227,7 @@ public final class Controller implements BooksControllerType, ProfilesController
   public ListenableFuture<AccountEventLogin> profileAccountCurrentLogin(
       final AccountAuthenticationCredentials credentials) {
     NullCheck.notNull(credentials, "Credentials");
-    return this.exec.submit(new ProfileAccountLoginTask(
+    return this.task_executor.submit(new ProfileAccountLoginTask(
         this,
         this.http,
         this.profiles,
@@ -232,7 +242,7 @@ public final class Controller implements BooksControllerType, ProfilesController
       final AccountAuthenticationCredentials credentials) {
     NullCheck.notNull(account, "Account");
     NullCheck.notNull(credentials, "Credentials");
-    return this.exec.submit(new ProfileAccountLoginTask(
+    return this.task_executor.submit(new ProfileAccountLoginTask(
         this,
         this.http,
         this.profiles,
@@ -244,14 +254,14 @@ public final class Controller implements BooksControllerType, ProfilesController
   @Override
   public ListenableFuture<AccountEventCreation> profileAccountCreate(final URI provider) {
     NullCheck.notNull(provider, "Provider");
-    return this.exec.submit(new ProfileAccountCreateTask(
+    return this.task_executor.submit(new ProfileAccountCreateTask(
         this.profiles, this.account_events, this.account_providers, provider));
   }
 
   @Override
   public ListenableFuture<AccountEventDeletion> profileAccountDeleteByProvider(final URI provider) {
     NullCheck.notNull(provider, "Provider");
-    return this.exec.submit(new ProfileAccountDeleteTask(
+    return this.task_executor.submit(new ProfileAccountDeleteTask(
         this.profiles, this.account_events, this.profile_events, this.account_providers, provider));
   }
 
@@ -259,7 +269,7 @@ public final class Controller implements BooksControllerType, ProfilesController
   public ListenableFuture<ProfileAccountSelectEvent> profileAccountSelectByProvider(
       final URI provider) {
     NullCheck.notNull(provider, "Provider");
-    return this.exec.submit(new ProfileAccountSelectionTask(
+    return this.task_executor.submit(new ProfileAccountSelectionTask(
         this.profiles, this.profile_events, this.account_providers, provider));
   }
 
@@ -306,7 +316,7 @@ public final class Controller implements BooksControllerType, ProfilesController
 
   @Override
   public ListenableFuture<AccountEventLogout> profileAccountLogout() {
-    return this.exec.submit(new ProfileAccountLogoutTask(
+    return this.task_executor.submit(new ProfileAccountLogoutTask(
         this.profiles,
         this.book_registry,
         this.account_events));
@@ -345,7 +355,7 @@ public final class Controller implements BooksControllerType, ProfilesController
     NullCheck.notNull(new_location, "Location");
 
     final ProfileType profile = this.profiles.currentProfileUnsafe();
-    return this.exec.submit(
+    return this.task_executor.submit(
         new ProfileBookmarkSetTask(profile, this.profile_events, book_id, new_location));
   }
 
@@ -366,7 +376,7 @@ public final class Controller implements BooksControllerType, ProfilesController
 
     NullCheck.notNull(preferences, "Preferences");
 
-    return this.exec.submit(new ProfilePreferencesUpdateTask(
+    return this.task_executor.submit(new ProfilePreferencesUpdateTask(
         this.profile_events,
         this.profiles.currentProfileUnsafe(),
         preferences));
@@ -378,7 +388,7 @@ public final class Controller implements BooksControllerType, ProfilesController
       throws ProfileNoneCurrentException {
 
     NullCheck.notNull(request, "Request");
-    return this.exec.submit(new ProfileFeedTask(this.book_registry, request));
+    return this.task_executor.submit(new ProfileFeedTask(this.book_registry, request));
   }
 
   @Override
@@ -399,6 +409,11 @@ public final class Controller implements BooksControllerType, ProfilesController
   }
 
   @Override
+  public ProfileIdleTimerType profileIdleTimer() {
+    return this.timer;
+  }
+
+  @Override
   public void bookBorrow(
       final AccountType account,
       final BookID id,
@@ -410,7 +425,7 @@ public final class Controller implements BooksControllerType, ProfilesController
     NullCheck.notNull(acquisition, "Acquisition");
     NullCheck.notNull(entry, "Entry");
 
-    this.exec.submit(new BookBorrowTask(
+    this.task_executor.submit(new BookBorrowTask(
         this.downloader,
         this.downloads,
         this.feed_loader,
@@ -429,7 +444,7 @@ public final class Controller implements BooksControllerType, ProfilesController
     NullCheck.notNull(account, "Account");
     NullCheck.notNull(id, "Book ID");
 
-    this.exec.submit(new BookBorrowFailedDismissTask(
+    this.task_executor.submit(new BookBorrowFailedDismissTask(
         this.downloader,
         this.downloads,
         account.bookDatabase(),
@@ -459,7 +474,7 @@ public final class Controller implements BooksControllerType, ProfilesController
 
     NullCheck.notNull(account, "Account");
 
-    return this.exec.submit(new BookSyncTask(
+    return this.task_executor.submit(new BookSyncTask(
         this,
         account,
         this.book_registry,
@@ -475,7 +490,7 @@ public final class Controller implements BooksControllerType, ProfilesController
     NullCheck.notNull(account, "Account");
     NullCheck.notNull(book_id, "Book ID");
 
-    return this.exec.submit(new BookRevokeTask(
+    return this.task_executor.submit(new BookRevokeTask(
         this.book_registry,
         this.feed_loader,
         account,
@@ -490,7 +505,7 @@ public final class Controller implements BooksControllerType, ProfilesController
     NullCheck.notNull(account, "Account");
     NullCheck.notNull(book_id, "Book ID");
 
-    return this.exec.submit(new BookDeleteTask(
+    return this.task_executor.submit(new BookDeleteTask(
         account,
         this.book_registry,
         book_id));
@@ -504,7 +519,7 @@ public final class Controller implements BooksControllerType, ProfilesController
     NullCheck.notNull(account, "Account");
     NullCheck.notNull(book_id, "Book ID");
 
-    return this.exec.submit(new BookRevokeFailedDismissTask(
+    return this.task_executor.submit(new BookRevokeFailedDismissTask(
         account.bookDatabase(),
         this.book_registry,
         book_id));

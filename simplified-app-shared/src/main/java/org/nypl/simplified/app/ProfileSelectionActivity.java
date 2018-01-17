@@ -74,6 +74,8 @@ public final class ProfileSelectionActivity extends SimplifiedActivity {
     this.button.setOnClickListener(view -> openCreationDialog());
 
     final ProfilesControllerType profiles = Simplified.getProfilesController();
+    profiles.profileIdleTimer().stop();
+
     this.profile_event_subscription = profiles.profileEvents().subscribe(event -> reloadProfiles());
   }
 
@@ -122,6 +124,8 @@ public final class ProfileSelectionActivity extends SimplifiedActivity {
 
   private void onProfileSelectionSucceeded(final Unit ignored) {
     LOG.debug("onProfileSelectionSucceeded");
+    LOG.debug("starting profile idle timer");
+    Simplified.getProfilesController().profileIdleTimer().start();
     UIThread.runOnUIThread(this::openCatalog);
   }
 

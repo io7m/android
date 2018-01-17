@@ -24,6 +24,7 @@ import com.io7m.jfunctional.Some;
 import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 
+import org.nypl.simplified.app.ProfileTimeOutActivity;
 import org.nypl.simplified.app.SimplifiedActivity;
 import org.nypl.simplified.app.R;
 import org.nypl.simplified.app.Simplified;
@@ -64,7 +65,7 @@ import static org.nypl.simplified.app.Simplified.WantActionBar.WANT_NO_ACTION_BA
  * The main reader activity for reading an EPUB.
  */
 
-public final class ReaderActivity extends SimplifiedActivity implements
+public final class ReaderActivity extends ProfileTimeOutActivity implements
     ReaderHTTPServerStartListenerType,
     ReaderSimplifiedFeedbackListenerType,
     ReaderReadiumFeedbackListenerType,
