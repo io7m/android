@@ -66,9 +66,9 @@ public final class MainEULAActivity extends SimplifiedActivity
     if (android.os.Build.VERSION.SDK_INT < 21) {
       bar.setDisplayHomeAsUpEnabled(false);
       bar.setHomeButtonEnabled(true);
-      bar.setIcon(R.drawable.ic_arrow_back);
+      bar.setIcon(R.drawable.ic_arrow_back_white_24dp);
     } else {
-      bar.setHomeAsUpIndicator(R.drawable.ic_arrow_back);
+      bar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_white_24dp);
       bar.setDisplayHomeAsUpEnabled(true);
       bar.setHomeButtonEnabled(false);
     }
