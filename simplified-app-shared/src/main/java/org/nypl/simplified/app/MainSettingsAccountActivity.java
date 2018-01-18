@@ -382,6 +382,16 @@ public final class MainSettingsAccountActivity extends NavigationDrawerActivity 
     }
   }
 
+  @Override
+  protected void onDestroy() {
+    super.onDestroy();
+
+    final ObservableSubscriptionType<AccountEvent> subscription = this.account_event_subscription;
+    if (subscription != null) {
+      subscription.unsubscribe();
+    }
+  }
+
   private Unit onAccountEvent(final AccountEvent event) {
     LOG.debug("onAccountEvent: {}", event);
 
