@@ -60,8 +60,8 @@
         android:layout_width="wrap_content"
         android:layout_height="30dp"
         android:layout_marginTop="10dp"
-        android:background="@drawable/simplified_welcome_button"
-        android:textColor="@drawable/simplified_welcome_button_text"
+        android:background="@drawable/simplified_button"
+        android:textColor="@drawable/simplified_button_text"
         android:layout_weight="1"/>
     </LinearLayout>
 
@@ -105,8 +105,8 @@
         android:layout_width="wrap_content"
         android:layout_height="30dp"
         android:layout_marginTop="10dp"
-        android:background="@drawable/simplified_welcome_button"
-        android:textColor="@drawable/simplified_welcome_button_text"
+        android:background="@drawable/simplified_button"
+        android:textColor="@drawable/simplified_button_text"
         android:layout_weight="1"/>
     </LinearLayout>
   </LinearLayout>

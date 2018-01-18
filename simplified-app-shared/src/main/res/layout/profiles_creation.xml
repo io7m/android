@@ -38,8 +38,8 @@
         android:layout_below="@+id/profileCreationDateSelection"
         android:layout_centerHorizontal="true"
         android:layout_margin="16dp"
-        android:background="@drawable/simplified_welcome_button"
-        android:textColor="@drawable/simplified_welcome_button_text"
+        android:background="@drawable/simplified_button"
+        android:textColor="@drawable/simplified_button_text"
         android:text="@string/profiles_create"/>
 
 </RelativeLayout>

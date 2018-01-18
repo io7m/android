@@ -6,4 +6,5 @@
     android:title="EULA"
     android:visible="true"
     android:showAsAction="always"/>
+
 </menu>
