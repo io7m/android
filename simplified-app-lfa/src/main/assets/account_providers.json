@@ -11,7 +11,6 @@
     "supportsCardCreator" : false,
     "supportsHelpCenter" : false,
     "catalogUrl" : "http://demo-app.cantookstation.com/catalog.atom",
-    "supportEmail" : "simplyehelp@nypl.org",
     "licenseUrl": "http://www.librarysimplified.org/iclicenses.html",
     "mainColor": "#23A5A6"
   }
