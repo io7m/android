@@ -24,8 +24,6 @@
     android:layout_height="@dimen/button_standard_height"
     android:layout_below="@id/book_delete_text"
     android:layout_centerHorizontal="true"
-    android:background="@drawable/simplified_button"
-    android:text="@string/catalog_book_delete"
-    android:textColor="@drawable/simplified_button_text" />
+    android:text="@string/catalog_book_delete"/>
 
 </RelativeLayout>

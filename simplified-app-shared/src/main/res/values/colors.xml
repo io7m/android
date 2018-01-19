@@ -11,6 +11,7 @@
   <color name="button_foreground">#ff669900</color>
   <color name="button_background">#ffffff</color>
   <color name="button_disabled">#dddddd</color>
+  <color name="button_pressed_text">#ffffff</color>
 
   <color name="downloading_foreground">#ffffff</color>
 
@@ -34,6 +35,5 @@
 
   <color name="text_light">#66000000</color>
   <color name="text_hint">#FFCCCCCC</color>
-
 
 </resources>

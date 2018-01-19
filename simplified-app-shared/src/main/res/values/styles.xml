@@ -9,6 +9,8 @@
     <item name="android:icon">@drawable/ic_menu_white_24dp</item>
 
     <item name="android:editTextStyle">@style/SimplifiedTheme.EditText</item>
+    <item name="android:buttonStyle">@style/SimplifiedTheme.ButtonStyle</item>
+    <item name="android:buttonStyleSmall">@style/SimplifiedTheme.ButtonStyle</item>
 
     <item name="button_foreground">@color/feature_main_color</item>
     <item name="list_item_foreground">@color/feature_main_color</item>
@@ -23,6 +25,8 @@
     <item name="android:windowNoTitle">true</item>
 
     <item name="android:editTextStyle">@style/SimplifiedTheme.EditText</item>
+    <item name="android:buttonStyle">@style/SimplifiedTheme.ButtonStyle</item>
+    <item name="android:buttonStyleSmall">@style/SimplifiedTheme.ButtonStyle</item>
 
     <item name="button_foreground">@color/feature_main_color</item>
     <item name="list_item_foreground">@color/feature_main_color</item>
@@ -54,6 +58,18 @@
 
   <style name="SimplifiedTheme.EditText" parent="@android:style/Widget.EditText">
     <item name="android:background">@drawable/simplified_edit_text</item>
+  </style>
+
+  <style name="SimplifiedTheme.ButtonStyle" parent="@android:style/Widget.Button">
+    <item name="android:background">@drawable/simplified_button</item>
+    <item name="android:textColor">@color/simplified_button_text</item>
+    <item name="android:minHeight">48dip</item>
+    <item name="android:minWidth">64dip</item>
+  </style>
+
+  <style name="SimplifiedTheme.ButtonStyleSmall" parent="@android:style/Widget.Button.Small">
+    <item name="android:background">@drawable/simplified_button</item>
+    <item name="android:textColor">@color/simplified_button_text</item>
   </style>
 
   <style name="SimplifiedTheme.LaneTitle">

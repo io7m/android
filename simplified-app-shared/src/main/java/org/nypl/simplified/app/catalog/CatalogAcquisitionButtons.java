@@ -10,7 +10,6 @@ import com.io7m.jfunctional.Some;
 import com.io7m.jnull.NullCheck;
 import com.io7m.junreachable.UnreachableCodeException;
 
-import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
@@ -70,18 +69,20 @@ public final class CatalogAcquisitionButtons {
     final OptionType<OPDSAcquisition> a_opt =
         CatalogAcquisitionButtons.getPreferredAcquisition(
             book_id, eo.getAcquisitions());
+
     if (a_opt.isSome()) {
       final OPDSAcquisition acquisition = ((Some<OPDSAcquisition>) a_opt).get();
       final CatalogAcquisitionButton b =
           new CatalogAcquisitionButton(
               in_activity,
-              in_account,
               in_books,
               in_profiles,
               in_book_registry,
               book_id,
               acquisition,
-              in_entry);
+              in_entry
+          );
+
       in_view_group.addView(b);
     }
   }

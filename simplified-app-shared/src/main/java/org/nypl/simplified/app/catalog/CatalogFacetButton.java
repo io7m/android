@@ -32,6 +32,7 @@ public final class CatalogFacetButton extends Button {
       final String in_group_name,
       final ArrayList<FeedFacetType> in_group,
       final CatalogFacetSelectionListenerType in_listener) {
+
     super(in_activity);
 
     NullCheck.notNull(in_group);
@@ -51,7 +52,6 @@ public final class CatalogFacetButton extends Button {
 
     final FeedFacetType active = NullCheck.notNull(active_maybe);
     this.setTextSize(12.0f);
-    this.setBackgroundResource(R.drawable.simplified_button);
 
     this.setText(active.facetGetTitle());
     this.setOnClickListener(view -> {

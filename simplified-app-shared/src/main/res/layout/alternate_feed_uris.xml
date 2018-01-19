@@ -75,10 +75,8 @@
 
       <Button
         android:id="@+id/alt_set"
-        android:background="@drawable/simplified_button"
         android:layout_width="wrap_content"
         android:layout_height="@dimen/button_standard_height"
-        android:textColor="@drawable/simplified_button_text"
         android:textSize="12sp"
         android:text="Set"
         android:layout_marginEnd="20dp"
@@ -86,10 +84,8 @@
 
       <Button
         android:id="@+id/alt_reset"
-        android:background="@drawable/simplified_button"
         android:layout_width="wrap_content"
         android:layout_height="@dimen/button_standard_height"
-        android:textColor="@drawable/simplified_button_text"
         android:textSize="12sp"
         android:text="Reset"
         android:layout_marginStart="20dp"

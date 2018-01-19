@@ -3,6 +3,8 @@ package org.nypl.simplified.app.catalog;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.res.Resources;
+import android.view.ContextThemeWrapper;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.io7m.jnull.NullCheck;
@@ -16,8 +18,7 @@ import org.nypl.simplified.books.controller.BooksControllerType;
  * A button for revoking loans or holds.
  */
 
-public final class CatalogBookRevokeButton
-    extends CatalogLeftPaddedButton implements CatalogBookButtonType {
+public final class CatalogBookRevokeButton extends Button implements CatalogBookButtonType {
 
   /**
    * Construct a button.
@@ -29,29 +30,26 @@ public final class CatalogBookRevokeButton
       final AccountType in_account,
       final BookID in_book_id,
       final CatalogBookRevokeType in_revoke_type) {
+
     super(in_activity);
 
     NullCheck.notNull(in_book_id);
     NullCheck.notNull(in_revoke_type);
 
     final Resources resources = NullCheck.notNull(in_activity.getResources());
-    final TextView text_view = this.getTextView();
-
-    text_view.setTextSize(12.0f);
-    this.setBackgroundResource(R.drawable.simplified_button);
 
     switch (in_revoke_type) {
       case REVOKE_LOAN: {
-        text_view.setText(
+        this.setText(
             NullCheck.notNull(resources.getString(R.string.catalog_book_revoke_loan)));
-        text_view.setContentDescription(
+        this.setContentDescription(
             NullCheck.notNull(resources.getString(R.string.catalog_accessibility_book_revoke_loan)));
         break;
       }
       case REVOKE_HOLD: {
-        text_view.setText(
+        this.setText(
             NullCheck.notNull(resources.getString(R.string.catalog_book_revoke_hold)));
-        text_view.setContentDescription(
+        this.setContentDescription(
             NullCheck.notNull(resources.getString(R.string.catalog_accessibility_book_revoke_hold)));
         break;
       }

@@ -25,8 +25,6 @@
       android:layout_height="@dimen/button_standard_height"
       android:layout_gravity="center_horizontal"
       android:layout_marginTop="16dp"
-      android:background="@drawable/simplified_button"
-      android:textColor="@drawable/simplified_button_text"
       android:textSize="12sp"
       android:text="@string/catalog_book_error_retry" />
   </LinearLayout>

@@ -364,8 +364,7 @@ public final class MainSettingsAccountsActivity extends NavigationDrawerActivity
          * by the current profile.
          */
 
-        final PopupMenu menu =
-            new PopupMenu(getApplicationContext(), this.findViewById(R.id.add_account));
+        final PopupMenu menu = new PopupMenu(this, this.findViewById(R.id.add_account));
 
         final ImmutableList<AccountProvider> used_account_providers =
             Simplified.getProfilesController().profileCurrentlyUsedAccountProviders();

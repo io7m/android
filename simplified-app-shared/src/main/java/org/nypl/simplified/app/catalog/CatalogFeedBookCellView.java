@@ -1,9 +1,7 @@
 package org.nypl.simplified.app.catalog;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.res.Resources;
-import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,13 +16,11 @@ import com.io7m.jfunctional.OptionType;
 import com.io7m.jfunctional.Some;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
-import com.io7m.junreachable.UnimplementedCodeException;
 import com.io7m.junreachable.UnreachableCodeException;
 import com.squareup.picasso.Callback;
 
 import org.nypl.simplified.app.BookCoverProviderType;
 import org.nypl.simplified.app.R;
-import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
@@ -119,7 +115,7 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
       final ProfilesControllerType in_profiles_controller,
       final BookRegistryReadableType in_books_registry) {
 
-    super(in_activity.getApplicationContext(), null);
+    super(in_activity);
 
     this.activity =
         NullCheck.notNull(in_activity, "Activity");
@@ -134,13 +130,10 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
 
     this.book_selection_listener = (v, e) -> LOG.debug("doing nothing for {}", e);
 
-    final Context context =
-        NullCheck.notNull(in_activity.getApplicationContext());
     final Resources resources =
-        NullCheck.notNull(context.getResources());
+        NullCheck.notNull(in_activity.getResources());
 
-    final LayoutInflater inflater =
-        (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    final LayoutInflater inflater = in_activity.getLayoutInflater();
     inflater.inflate(R.layout.catalog_book_cell, this, true);
 
     /*
@@ -150,24 +143,18 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
     this.cell_downloading =
         NullCheck.notNull(this.findViewById(R.id.cell_downloading));
 
-    this.cell_downloading_progress = NullCheck.notNull(
-        this.cell_downloading.findViewById(
-            R.id.cell_downloading_progress));
-    this.cell_downloading_percent_text = NullCheck.notNull(
-        this.cell_downloading.findViewById(
-            R.id.cell_downloading_percent_text));
-    this.cell_downloading_label = NullCheck.notNull(
-        this.cell_downloading.findViewById(
-            R.id.cell_downloading_label));
-    this.cell_downloading_title = NullCheck.notNull(
-        this.cell_downloading.findViewById(
-            R.id.cell_downloading_title));
-    this.cell_downloading_authors = NullCheck.notNull(
-        this.cell_downloading.findViewById(
-            R.id.cell_downloading_authors));
-    this.cell_downloading_cancel = NullCheck.notNull(
-        this.cell_downloading.findViewById(
-            R.id.cell_downloading_cancel));
+    this.cell_downloading_progress =
+        NullCheck.notNull(this.cell_downloading.findViewById(R.id.cell_downloading_progress));
+    this.cell_downloading_percent_text =
+        NullCheck.notNull(this.cell_downloading.findViewById(R.id.cell_downloading_percent_text));
+    this.cell_downloading_label =
+        NullCheck.notNull(this.cell_downloading.findViewById(R.id.cell_downloading_label));
+    this.cell_downloading_title =
+        NullCheck.notNull(this.cell_downloading.findViewById(R.id.cell_downloading_title));
+    this.cell_downloading_authors =
+        NullCheck.notNull(this.cell_downloading.findViewById(R.id.cell_downloading_authors));
+    this.cell_downloading_cancel =
+        NullCheck.notNull(this.cell_downloading.findViewById(R.id.cell_downloading_cancel));
 
     this.cell_downloading_failed =
         NullCheck.notNull(this.findViewById(R.id.cell_downloading_failed));
@@ -179,10 +166,6 @@ public final class CatalogFeedBookCellView extends FrameLayout implements
         NullCheck.notNull(this.cell_downloading_failed.findViewById(R.id.cell_downloading_failed_dismiss));
     this.cell_downloading_failed_retry =
         NullCheck.notNull(this.cell_downloading_failed.findViewById(R.id.cell_downloading_failed_retry));
-
-    this.cell_downloading_cancel.setBackgroundResource(R.drawable.simplified_button);
-    this.cell_downloading_failed_dismiss.setBackgroundResource(R.drawable.simplified_button);
-    this.cell_downloading_failed_retry.setBackgroundResource(R.drawable.simplified_button);
 
     this.cell_corrupt =
         NullCheck.notNull(this.findViewById(R.id.cell_corrupt));

@@ -121,7 +121,7 @@
       android:background="@drawable/simplified_button"
       android:contentDescription="@string/settings_accessibility_log_in_cancel"
       android:text="@string/settings_log_in_cancel"
-      android:textColor="@drawable/simplified_button_text" />
+      android:textColor="@color/simplified_button_text" />
 
     <Button
       android:id="@+id/login_dialog_ok"
@@ -134,7 +134,7 @@
       android:background="@drawable/simplified_button"
       android:contentDescription="@string/settings_accessibility_log_in"
       android:text="@string/settings_log_in"
-      android:textColor="@drawable/simplified_button_text" />
+      android:textColor="@color/simplified_button_text" />
 
   </RelativeLayout>
 
@@ -154,7 +154,7 @@
     android:layout_gravity="center_horizontal"
     style="?android:attr/borderlessButtonStyle"
     android:background="@drawable/simplified_button"
-    android:textColor="@drawable/simplified_button_text"/>
+    android:textColor="@color/simplified_button_text"/>
 </RelativeLayout>
 
 </RelativeLayout>

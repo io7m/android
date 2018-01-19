@@ -2,13 +2,13 @@ package org.nypl.simplified.app.catalog;
 
 import android.app.Activity;
 import android.content.res.Resources;
-import android.graphics.Color;
+import android.view.ContextThemeWrapper;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.io7m.jnull.NullCheck;
 
 import org.nypl.simplified.app.R;
-import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
@@ -23,8 +23,7 @@ import org.nypl.simplified.opds.core.OPDSAvailabilityType;
  * An acquisition button.
  */
 
-public final class CatalogAcquisitionButton extends CatalogLeftPaddedButton
-    implements CatalogBookButtonType {
+public final class CatalogAcquisitionButton extends Button implements CatalogBookButtonType {
 
   /**
    * Construct an acquisition button.
@@ -32,7 +31,6 @@ public final class CatalogAcquisitionButton extends CatalogLeftPaddedButton
 
   public CatalogAcquisitionButton(
       final Activity in_activity,
-      final AccountType in_account,
       final BooksControllerType in_books,
       final ProfilesControllerType in_profiles,
       final BookRegistryReadableType in_book_registry,
@@ -40,26 +38,24 @@ public final class CatalogAcquisitionButton extends CatalogLeftPaddedButton
       final OPDSAcquisition in_acquisition,
       final FeedEntryOPDS in_entry) {
 
-    super(NullCheck.notNull(in_activity, "Activity"));
+    super(in_activity);
     final Resources resources = NullCheck.notNull(in_activity.getResources());
 
     final OPDSAvailabilityType availability = in_entry.getFeedEntry().getAvailability();
-    final TextView text_view = this.getTextView();
-    text_view.setTextSize(12.0f);
+    this.setTextSize(12.0f);
 
-    this.setBackgroundResource(R.drawable.simplified_button);
     switch (in_acquisition.getType()) {
       case ACQUISITION_OPEN_ACCESS:
-        text_view.setText(NullCheck.notNull(resources.getString(R.string.catalog_book_download)));
-        text_view.setContentDescription(NullCheck.notNull(resources.getString(R.string.catalog_accessibility_book_download)));
+        this.setText(NullCheck.notNull(resources.getString(R.string.catalog_book_download)));
+        this.setContentDescription(NullCheck.notNull(resources.getString(R.string.catalog_accessibility_book_download)));
         break;
       case ACQUISITION_BORROW: {
         if (availability instanceof OPDSAvailabilityHoldable) {
-          text_view.setText(NullCheck.notNull(resources.getString(R.string.catalog_book_reserve)));
-          text_view.setContentDescription(NullCheck.notNull(resources.getString(R.string.catalog_accessibility_book_reserve)));
+          this.setText(NullCheck.notNull(resources.getString(R.string.catalog_book_reserve)));
+          this.setContentDescription(NullCheck.notNull(resources.getString(R.string.catalog_accessibility_book_reserve)));
         } else {
-          text_view.setText(NullCheck.notNull(resources.getString(R.string.catalog_book_borrow)));
-          text_view.setContentDescription(NullCheck.notNull(resources.getString(R.string.catalog_accessibility_book_borrow)));
+          this.setText(NullCheck.notNull(resources.getString(R.string.catalog_book_borrow)));
+          this.setContentDescription(NullCheck.notNull(resources.getString(R.string.catalog_accessibility_book_borrow)));
         }
         break;
       }
@@ -67,8 +63,8 @@ public final class CatalogAcquisitionButton extends CatalogLeftPaddedButton
       case ACQUISITION_GENERIC:
       case ACQUISITION_SAMPLE:
       case ACQUISITION_SUBSCRIBE: {
-        text_view.setText(NullCheck.notNull(resources.getString(R.string.catalog_book_download)));
-        text_view.setContentDescription(NullCheck.notNull(resources.getString(R.string.catalog_accessibility_book_download)));
+        this.setText(NullCheck.notNull(resources.getString(R.string.catalog_book_download)));
+        this.setContentDescription(NullCheck.notNull(resources.getString(R.string.catalog_accessibility_book_download)));
         break;
       }
     }

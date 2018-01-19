@@ -75,9 +75,7 @@
     android:layout_height="@dimen/button_standard_height"
     android:layout_centerHorizontal="true"
     android:layout_alignParentBottom="true"
-    android:background="@drawable/simplified_button"
     android:text="@string/catalog_cancel_downloading"
-    android:textColor="@drawable/simplified_button_text"
     android:textSize="12sp" />
 
 </RelativeLayout>

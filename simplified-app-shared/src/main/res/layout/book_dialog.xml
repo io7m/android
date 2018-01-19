@@ -87,8 +87,6 @@
                 android:layout_alignParentEnd="true"
                 android:layout_alignParentBottom="true"
                 android:layout_weight="1"
-                android:background="@drawable/simplified_button"
-                android:textColor="@drawable/simplified_button_text"
                 android:layout_width="wrap_content"
                 android:layout_height="@dimen/button_standard_height"
                 android:textSize="12sp"
@@ -99,8 +97,6 @@
                 android:layout_alignParentEnd="true"
                 android:layout_alignParentBottom="true"
                 android:layout_weight="1"
-                android:background="@drawable/simplified_button"
-                android:textColor="@drawable/simplified_button_text"
                 android:layout_width="wrap_content"
                 android:layout_height="@dimen/button_standard_height"
                 android:layout_marginLeft="12dp"
@@ -112,12 +108,10 @@
               android:id="@+id/book_dialog_downloading_cancel"
               android:layout_width="wrap_content"
               android:layout_height="@dimen/button_standard_height"
-              android:background="@drawable/simplified_button"
               android:layout_alignParentBottom="true"
               android:layout_marginLeft="12dp"
               android:layout_marginBottom="8dp"
               android:text="@string/catalog_cancel_downloading"
-              android:textColor="@drawable/simplified_button_text"
               android:textSize="12sp" />
 
       <LinearLayout
@@ -135,8 +129,6 @@
         <Button
                 android:layout_alignParentEnd="true"
                 android:layout_alignParentBottom="true"
-                android:background="@drawable/simplified_button"
-                android:textColor="@drawable/simplified_button_text"
                 android:layout_width="wrap_content"
                 android:layout_height="@dimen/button_standard_height"
                 android:textSize="12sp"
@@ -192,7 +184,7 @@
     </WebView>
 
     <Button
-      android:textColor="@drawable/simplified_button_text"
+      android:textColor="@color/simplified_button_text"
       android:layout_width="match_parent"
       android:layout_height="@dimen/button_standard_height"
       android:gravity="right|center_vertical"
@@ -244,7 +236,7 @@
       android:paddingRight="10dp"
       android:text="@string/catalog_detail_related"
       android:textAppearance="?android:attr/textAppearanceMedium"
-      android:textColor="@drawable/simplified_button_text" />
+      android:textColor="@color/simplified_button_text" />
 
     <View
       android:layout_width="fill_parent"
@@ -255,7 +247,7 @@
       android:background="@android:color/darker_gray" />
 
     <Button
-            android:textColor="@drawable/simplified_button_text"
+            android:textColor="@color/simplified_button_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"

@@ -24,7 +24,6 @@ import com.io7m.jfunctional.OptionVisitorType;
 import com.io7m.jfunctional.Some;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
-import com.io7m.junreachable.UnimplementedCodeException;
 import com.io7m.junreachable.UnreachableCodeException;
 
 import org.nypl.simplified.app.BookCoverProviderType;
@@ -671,8 +670,7 @@ public final class CatalogBookDetailView
     this.book_downloading_failed_buttons.setVisibility(View.INVISIBLE);
 
     final Resources rr = NullCheck.notNull(this.activity.getResources());
-    final String text =
-        CatalogBookAvailabilityStrings.getAvailabilityString(rr, s);
+    final String text = CatalogBookAvailabilityStrings.getAvailabilityString(rr, s);
     this.book_download_text.setText(text);
 
     CatalogAcquisitionButtons.addButtons(

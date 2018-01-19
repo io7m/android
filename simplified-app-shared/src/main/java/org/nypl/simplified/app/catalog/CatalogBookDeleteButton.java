@@ -3,7 +3,9 @@ package org.nypl.simplified.app.catalog;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.res.Resources;
+import android.view.ContextThemeWrapper;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.io7m.jnull.NullCheck;
@@ -19,8 +21,7 @@ import org.nypl.simplified.books.controller.BooksControllerType;
  * A button for deleting books.
  */
 
-public final class CatalogBookDeleteButton
-    extends CatalogLeftPaddedButton implements CatalogBookButtonType {
+public final class CatalogBookDeleteButton extends Button implements CatalogBookButtonType {
 
   /**
    * Construct a button.
@@ -36,12 +37,9 @@ public final class CatalogBookDeleteButton
 
     final Resources resources = NullCheck.notNull(in_activity.getResources());
 
-    final TextView text_view = this.getTextView();
-    text_view.setText(NullCheck.notNull(resources.getString(R.string.catalog_book_delete)));
-    text_view.setContentDescription(NullCheck.notNull(resources.getString(R.string.catalog_accessibility_book_delete)));
-    text_view.setTextSize(12.0f);
-
-    this.setBackgroundResource(R.drawable.simplified_button);
+    this.setText(NullCheck.notNull(resources.getString(R.string.catalog_book_delete)));
+    this.setContentDescription(NullCheck.notNull(resources.getString(R.string.catalog_accessibility_book_delete)));
+    this.setTextSize(12.0f);
 
     this.setOnClickListener(view -> {
       final CatalogBookDeleteDialog d = CatalogBookDeleteDialog.newDialog();

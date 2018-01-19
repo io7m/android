@@ -41,7 +41,7 @@
       android:background="@drawable/simplified_button"
       android:contentDescription="@string/settings_accessibility_log_out_cancel"
       android:text="@string/settings_log_out_cancel"
-      android:textColor="@drawable/simplified_button_text" />
+      android:textColor="@color/simplified_button_text" />
 
     <Button
       android:id="@+id/logout_confirm"
@@ -53,7 +53,7 @@
       android:background="@drawable/simplified_button"
       android:contentDescription="@string/settings_accessibility_log_out"
       android:text="@string/settings_log_out"
-      android:textColor="@drawable/simplified_button_text" />
+      android:textColor="@color/simplified_button_text" />
 
   </RelativeLayout>
 

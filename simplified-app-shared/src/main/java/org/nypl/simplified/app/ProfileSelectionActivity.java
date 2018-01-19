@@ -63,7 +63,7 @@ public final class ProfileSelectionActivity extends SimplifiedActivity {
     this.list_items = new ArrayList<>();
     this.reloadProfiles();
 
-    this.list_adapter = new ProfileArrayAdapter(this.getApplicationContext(), this.list_items);
+    this.list_adapter = new ProfileArrayAdapter(this, this.list_items);
     this.list = NullCheck.notNull(this.findViewById(R.id.profileSelectionList));
     this.list.setAdapter(this.list_adapter);
     this.list.setOnItemClickListener(

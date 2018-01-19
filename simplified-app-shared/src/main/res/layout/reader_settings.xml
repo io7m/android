@@ -212,7 +212,7 @@
       android:background="@drawable/simplified_button"
       android:layout_width="wrap_content"
       android:layout_height="@dimen/button_standard_height"
-      android:textColor="@drawable/simplified_button_text"
+      android:textColor="@color/simplified_button_text"
       android:textSize="12sp"
       android:text="@string/reader_settings_close"
       android:contentDescription="@string/reader_accessibility_settings_close"/>

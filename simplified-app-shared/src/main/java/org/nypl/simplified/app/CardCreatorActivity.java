@@ -509,7 +509,7 @@ public class CardCreatorActivity extends FragmentActivity implements
         ((Button) findViewById(R.id.next_button)).setText("Next");
 
         ((EditText) findViewById(R.id.region)).setText(tracker.getAddressOutput());
-        ((TextView) findViewById(android.R.id.text1)).setTextAppearance(getApplicationContext(), R.style.WizardPageSuccess);
+        ((TextView) findViewById(android.R.id.text1)).setTextAppearance(this, R.style.WizardPageSuccess);
         ((TextView) findViewById(android.R.id.text1)).setText("We have successfully determined that you are in New York!");
 
       } else {
@@ -517,7 +517,7 @@ public class CardCreatorActivity extends FragmentActivity implements
         ((Button) findViewById(R.id.next_button)).setText("Done");
 
         ((EditText) findViewById(R.id.region)).setText(tracker.getAddressOutput());
-        ((TextView) findViewById(android.R.id.text1)).setTextAppearance(getApplicationContext(), R.style.WizardPageError);
+        ((TextView) findViewById(android.R.id.text1)).setTextAppearance(this, R.style.WizardPageError);
         ((TextView) findViewById(android.R.id.text1)).setText("You must be in New York to sign up for a library card. "
           + "Please try to sign up again when you are in another location.");
       }
@@ -661,7 +661,7 @@ public class CardCreatorActivity extends FragmentActivity implements
 
       } else {
         ((TextView) findViewById(android.R.id.text1)).setText(R.string.location_no_valid_address);
-        ((TextView) findViewById(android.R.id.text1)).setTextAppearance(getApplicationContext(), R.style.WizardPageError);
+        ((TextView) findViewById(android.R.id.text1)).setTextAppearance(this, R.style.WizardPageError);
 
       }
 
@@ -680,7 +680,7 @@ public class CardCreatorActivity extends FragmentActivity implements
 
       } else {
         ((TextView) findViewById(android.R.id.text1)).setText(response.getMessage());
-        ((TextView) findViewById(android.R.id.text1)).setTextAppearance(getApplicationContext(), R.style.WizardPageError);
+        ((TextView) findViewById(android.R.id.text1)).setTextAppearance(this, R.style.WizardPageError);
 
       }
     }
@@ -693,7 +693,7 @@ public class CardCreatorActivity extends FragmentActivity implements
   public void onAddressValidationFailed(final AddressResponse response) {
     Log.i(TAG, response.getMessage());
     ((TextView) findViewById(android.R.id.text1)).setText(response.getMessage());
-    ((TextView) findViewById(android.R.id.text1)).setTextAppearance(getApplicationContext(), R.style.WizardPageError);
+    ((TextView) findViewById(android.R.id.text1)).setTextAppearance(this, R.style.WizardPageError);
     this.showProgress(false);
 
   }
@@ -702,7 +702,7 @@ public class CardCreatorActivity extends FragmentActivity implements
   public void onAddressValidationError(final String message) {
     Log.i(TAG, message);
     ((TextView) findViewById(android.R.id.text1)).setText(message);
-    ((TextView) findViewById(android.R.id.text1)).setTextAppearance(getApplicationContext(), R.style.WizardPageError);
+    ((TextView) findViewById(android.R.id.text1)).setTextAppearance(this, R.style.WizardPageError);
     this.showProgress(false);
   }
 
@@ -724,7 +724,7 @@ public class CardCreatorActivity extends FragmentActivity implements
   public void onUsernameValidationFailed(final UsernameResponse response) {
     Log.i(TAG, response.getMessage());
     ((TextView) findViewById(android.R.id.text1)).setText(response.getMessage());
-    ((TextView) findViewById(android.R.id.text1)).setTextAppearance(getApplicationContext(), R.style.WizardPageError);
+    ((TextView) findViewById(android.R.id.text1)).setTextAppearance(this, R.style.WizardPageError);
     this.showProgress(false);
   }
 
@@ -733,7 +733,7 @@ public class CardCreatorActivity extends FragmentActivity implements
     Log.i(TAG, message);
 //    showToast("An Error occurred, please try again later");
     ((TextView) findViewById(android.R.id.text1)).setText(message);
-    ((TextView) findViewById(android.R.id.text1)).setTextAppearance(getApplicationContext(), R.style.WizardPageError);
+    ((TextView) findViewById(android.R.id.text1)).setTextAppearance(this, R.style.WizardPageError);
     this.showProgress(false);
 
   }
@@ -788,7 +788,7 @@ public class CardCreatorActivity extends FragmentActivity implements
   public void onAccountCreationFailed(final NewPatronResponse response) {
     Log.i(TAG, response.getMessage());
     ((TextView) findViewById(android.R.id.text1)).setText(response.getMessage());
-    ((TextView) findViewById(android.R.id.text1)).setTextAppearance(getApplicationContext(), R.style.WizardPageError);
+    ((TextView) findViewById(android.R.id.text1)).setTextAppearance(this, R.style.WizardPageError);
     this.showProgress(false);
 
   }
@@ -797,7 +797,7 @@ public class CardCreatorActivity extends FragmentActivity implements
   public void onAccountCreationError(final String message) {
     Log.i(TAG, message);
     ((TextView) findViewById(android.R.id.text1)).setText(message);
-    ((TextView) findViewById(android.R.id.text1)).setTextAppearance(getApplicationContext(), R.style.WizardPageError);
+    ((TextView) findViewById(android.R.id.text1)).setTextAppearance(this, R.style.WizardPageError);
     this.showProgress(false);
   }
 
