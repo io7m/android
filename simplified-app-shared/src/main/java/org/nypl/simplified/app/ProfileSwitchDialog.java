@@ -84,8 +84,8 @@ public final class ProfileSwitchDialog extends DialogFragment {
     super.onResume();
 
     final Resources rr = NullCheck.notNull(this.getResources());
-    final int h = (int) rr.getDimension(R.dimen.book_delete_dialog_height);
-    final int w = (int) rr.getDimension(R.dimen.book_delete_dialog_width);
+    final int h = (int) rr.getDimension(R.dimen.profile_switch_dialog_height);
+    final int w = (int) rr.getDimension(R.dimen.profile_switch_dialog_width);
 
     final Dialog dialog = NullCheck.notNull(this.getDialog());
     final Window window = NullCheck.notNull(dialog.getWindow());
