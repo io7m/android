@@ -30,7 +30,7 @@ public abstract class ProfileTimeOutActivity extends SimplifiedActivity {
 
   private ObservableSubscriptionType<ProfileEvent> profile_event_sub;
   private boolean foreground;
-  private Dialog warn_dialog;
+  private ProfileTimeOutDialog warn_dialog;
 
   @Override
   protected void onPause() {
@@ -84,13 +84,8 @@ public abstract class ProfileTimeOutActivity extends SimplifiedActivity {
      */
 
     if (this.foreground) {
-      this.warn_dialog =
-          new AlertDialog.Builder(this)
-              .setTitle(R.string.profiles_time_out_soon_title)
-              .setMessage(R.string.profiles_time_out_soon)
-              .setIcon(R.drawable.clock_icon)
-              .setOnDismissListener(view -> this.resetTimer())
-              .show();
+      this.warn_dialog = ProfileTimeOutDialog.newDialog(view -> resetTimer());
+      this.warn_dialog.show(this.getFragmentManager(), "profile-timeout-dialog");
     }
   }
 
@@ -100,10 +95,10 @@ public abstract class ProfileTimeOutActivity extends SimplifiedActivity {
      * Dismiss any warning dialog that might be onscreen.
      */
 
-    final Dialog dialog = this.warn_dialog;
+    final ProfileTimeOutDialog dialog = this.warn_dialog;
     if (dialog != null) {
       this.warn_dialog = null;
-      dialog.setOnDismissListener(view -> {});
+      dialog.setListener(view -> {});
       dialog.dismiss();
     }
 
