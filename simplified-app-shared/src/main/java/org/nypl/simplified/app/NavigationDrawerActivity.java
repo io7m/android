@@ -822,11 +822,16 @@ public abstract class NavigationDrawerActivity extends ProfileTimeOutActivity
         final NavigationDrawerArrayAdapter array_adapter) {
       UIThread.checkIsUIThread();
 
-      drawer.closeDrawer(GravityCompat.START);
+      final ProfileSwitchDialog dialog =
+          ProfileSwitchDialog.newDialog(() -> {
+            drawer.closeDrawer(GravityCompat.START);
 
-      UIThread.runOnUIThreadDelayed(() -> {
-        startActivityWithoutHistory(this.activity, new Bundle(), ProfileSelectionActivity.class);
-      }, 500L);
+            UIThread.runOnUIThreadDelayed(() -> {
+              startActivityWithoutHistory(this.activity, new Bundle(), ProfileSelectionActivity.class);
+            }, 500L);
+          });
+
+      dialog.show(this.activity.getFragmentManager(), "profile-switch-dialog");
     }
   }
 
