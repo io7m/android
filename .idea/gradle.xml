@@ -8,6 +8,7 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/simplified-app-lfa" />
             <option value="$PROJECT_DIR$/simplified-app-shared" />
             <option value="$PROJECT_DIR$/simplified-app-simplye" />
             <option value="$PROJECT_DIR$/simplified-assert" />

@@ -1,0 +1,35 @@
+apply plugin: 'com.android.application'
+
+android {
+  compileSdkVersion 27
+  buildToolsVersion "27.0.2"
+  packagingOptions {
+    exclude 'META-INF/LICENSE'
+  }
+  signingConfigs {
+    release {
+      keyAlias findProperty("au.org.libraryforall.keyAlias")
+      keyPassword findProperty("au.org.libraryforall.keyPassword")
+      storeFile file("keystore.jks")
+      storePassword findProperty("au.org.libraryforall.storePassword")
+    }
+  }
+  buildTypes {
+    release {
+      signingConfig signingConfigs.release
+    }
+  }
+  lintOptions {
+    checkReleaseBuilds false
+  }
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
+}
+
+description = 'simplified-app-lfa'
+
+dependencies {
+  compile project(':simplified-app-shared')
+}

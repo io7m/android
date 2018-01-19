@@ -1,0 +1,18 @@
+[
+  {
+    "id": "urn:provider:com.cantookstation",
+    "name" : "Demarque Test",
+    "subtitle" : "This is an example subtitle.",
+    "logo" : "simplified-asset:account_logo_nypl.png",
+    "supportsSimplyESync" : false,
+    "supportsBarcodeScanner" : false,
+    "supportsBarcodeDisplay" : false,
+    "supportsReservations" : false,
+    "supportsCardCreator" : false,
+    "supportsHelpCenter" : false,
+    "catalogUrl" : "http://demo-app.cantookstation.com/catalog.atom",
+    "supportEmail" : "simplyehelp@nypl.org",
+    "licenseUrl": "http://www.librarysimplified.org/iclicenses.html",
+    "mainColor": "#23A5A6"
+  }
+]

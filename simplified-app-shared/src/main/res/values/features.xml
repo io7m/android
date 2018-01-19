@@ -21,7 +21,7 @@
   <bool name="feature_holds_enabled">true</bool>
 
   <!-- If true, the application presents selectable profiles. -->
-  <bool name="feature_profiles_enabled">true</bool>
+  <bool name="feature_profiles_enabled">false</bool>
 
   <!-- The default Adobe vendor ID -->
   <string name="feature_adobe_vendor_id">NYPL</string>

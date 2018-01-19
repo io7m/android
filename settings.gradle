@@ -3,9 +3,8 @@ rootProject.name = 'simplified'
 // FIXME: These should be re-enabled once they are working.
 // include ':simplified-app-openebooks'
 // include ':simplified-app-vanilla'
+include ':simplified-app-lfa'
 include ':simplified-app-shared'
-include ':simplified-datepicker'
-include ':simplified-datepicker-demo'
 include ':simplified-app-simplye'
 include ':simplified-assert'
 include ':simplified-books-core'
@@ -13,6 +12,8 @@ include ':simplified-bugsnag'
 include ':simplified-cardcreator'
 include ':simplified-checkstyle'
 include ':simplified-circ-analytics'
+include ':simplified-datepicker'
+include ':simplified-datepicker-demo'
 include ':simplified-downloader-core'
 include ':simplified-files'
 include ':simplified-http-core'
@@ -31,6 +32,7 @@ include ':simplified-volley'
 // FIXME: These should be re-enabled once they are working
 // project(':simplified-app-vanilla').projectDir = "$rootDir/simplified-app-vanilla" as File
 // project(':simplified-app-openebooks').projectDir = "$rootDir/simplified-app-openebooks" as File
+project(':simplified-app-lfa').projectDir = "$rootDir/simplified-app-lfa" as File
 project(':simplified-app-shared').projectDir = "$rootDir/simplified-app-shared" as File
 project(':simplified-app-simplye').projectDir = "$rootDir/simplified-app-simplye" as File
 project(':simplified-assert').projectDir = "$rootDir/simplified-assert" as File
@@ -44,8 +46,8 @@ project(':simplified-files').projectDir = "$rootDir/simplified-files" as File
 project(':simplified-http-core').projectDir = "$rootDir/simplified-http-core" as File
 project(':simplified-json-core').projectDir = "$rootDir/simplified-json-core" as File
 project(':simplified-multilibrary').projectDir = "$rootDir/simplified-multilibrary" as File
-project(':simplified-opds-core').projectDir = "$rootDir/simplified-opds-core" as File
 project(':simplified-observable').projectDir = "$rootDir/simplified-observable" as File
+project(':simplified-opds-core').projectDir = "$rootDir/simplified-opds-core" as File
 project(':simplified-prefs').projectDir = "$rootDir/simplified-prefs" as File
 project(':simplified-rfc3339-core').projectDir = "$rootDir/simplified-rfc3339-core" as File
 project(':simplified-stack').projectDir = "$rootDir/simplified-stack" as File

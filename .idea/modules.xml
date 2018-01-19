@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/simplified.iml" filepath="$PROJECT_DIR$/simplified.iml" />
+      <module fileurl="file://$PROJECT_DIR$/simplified-app-lfa/simplified-app-lfa.iml" filepath="$PROJECT_DIR$/simplified-app-lfa/simplified-app-lfa.iml" />
       <module fileurl="file://$PROJECT_DIR$/simplified-app-shared/simplified-app-shared.iml" filepath="$PROJECT_DIR$/simplified-app-shared/simplified-app-shared.iml" />
       <module fileurl="file://$PROJECT_DIR$/simplified-app-simplye/simplified-app-simplye.iml" filepath="$PROJECT_DIR$/simplified-app-simplye/simplified-app-simplye.iml" />
       <module fileurl="file://$PROJECT_DIR$/simplified-assert/simplified-assert.iml" filepath="$PROJECT_DIR$/simplified-assert/simplified-assert.iml" />
