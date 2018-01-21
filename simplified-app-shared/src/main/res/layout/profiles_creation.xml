@@ -21,7 +21,7 @@
         android:layout_centerHorizontal="true"
         android:layout_above="@+id/profileCreationDateSelection"
         android:ems="10"
-        android:inputType="textPersonName"
+        android:inputType="textPersonName|textCapWords"
         android:hint="@string/profiles_name_field"
         android:text=""/>
 
