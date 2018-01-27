@@ -7,5 +7,4 @@
     android:title="Add Account"
     android:visible="true"
     android:showAsAction="always"/>
-
 </menu>

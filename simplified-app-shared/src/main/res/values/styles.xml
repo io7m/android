@@ -1,38 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 
-  <style name="SimplifiedTheme" parent="android:Theme.Holo.Light.DarkActionBar">
-    <item name="android:actionBarStyle">@style/SimplifiedTheme.ActionBar</item>
-
+  <style name="SimplifiedTheme" parent="android:Theme.Holo.Light">
     <item name="android:windowAnimationStyle">@style/SimplifiedTheme.Window</item>
     <item name="android:activatedBackgroundIndicator">@drawable/drawer_list_selector</item>
-    <item name="android:icon">@drawable/ic_menu_white_24dp</item>
-
-    <item name="android:editTextStyle">@style/SimplifiedTheme.EditText</item>
-    <item name="android:buttonStyle">@style/SimplifiedTheme.ButtonStyle</item>
-    <item name="android:buttonStyleSmall">@style/SimplifiedTheme.ButtonStyle</item>
-
-    <item name="button_foreground">@color/feature_main_color</item>
-    <item name="list_item_foreground">@color/feature_main_color</item>
-    <item name="downloading_background">@color/feature_main_color</item>
-    <item name="notification_background">@color/feature_main_color</item>
-    <item name="main_color">@color/feature_main_color</item>
+    <item name="android:icon">@drawable/ic_menu</item>
+    <item name="button_foreground">@color/app_main_color</item>
+    <item name="list_item_foreground">@color/app_main_color</item>
+    <item name="downloading_background">@color/app_main_color</item>
+    <item name="notification_background">@color/app_main_color</item>
+    <item name="main_color">@color/app_main_color</item>
   </style>
 
   <style name="SimplifiedThemeNoActionBar" parent="android:Theme.Holo.Light.NoActionBar">
     <item name="android:windowAnimationStyle">@style/SimplifiedTheme.Window</item>
     <item name="android:windowActionBar">false</item>
     <item name="android:windowNoTitle">true</item>
-
-    <item name="android:editTextStyle">@style/SimplifiedTheme.EditText</item>
-    <item name="android:buttonStyle">@style/SimplifiedTheme.ButtonStyle</item>
-    <item name="android:buttonStyleSmall">@style/SimplifiedTheme.ButtonStyle</item>
-
-    <item name="button_foreground">@color/feature_main_color</item>
-    <item name="list_item_foreground">@color/feature_main_color</item>
-    <item name="downloading_background">@color/feature_main_color</item>
-    <item name="notification_background">@color/feature_main_color</item>
-    <item name="main_color">@color/feature_main_color</item>
+    <item name="button_foreground">@color/app_main_color</item>
+    <item name="list_item_foreground">@color/app_main_color</item>
+    <item name="downloading_background">@color/app_main_color</item>
+    <item name="notification_background">@color/app_main_color</item>
+    <item name="main_color">@color/app_main_color</item>
   </style>
 
   <style name="SimplifiedTheme.Window" parent="@android:style/Animation.Activity">
@@ -42,39 +30,9 @@
     <item name="android:activityCloseExitAnimation">@anim/activity_close</item>
   </style>
 
-  <style name="SimplifiedTheme.ActionBar" parent="@android:style/Widget.Holo.ActionBar">
-    <item name="android:background">@color/feature_main_color</item>
-    <item name="android:titleTextStyle">@style/SimplifiedTheme.ActionBar.Title</item>
-    <item name="android:subtitleTextStyle">@style/SimplifiedTheme.ActionBar.Subtitle</item>
-  </style>
-
-  <style name="SimplifiedTheme.ActionBar.Title" parent="@android:style/TextAppearance.Medium">
-    <item name="android:textColor">#ffffff</item>
-  </style>
-
-  <style name="SimplifiedTheme.ActionBar.Subtitle" parent="@android:style/TextAppearance.Small">
-    <item name="android:textColor">#ffffff</item>
-  </style>
-
-  <style name="SimplifiedTheme.EditText" parent="@android:style/Widget.EditText">
-    <item name="android:background">@drawable/simplified_edit_text</item>
-  </style>
-
-  <style name="SimplifiedTheme.ButtonStyle" parent="@android:style/Widget.Button">
-    <item name="android:background">@drawable/simplified_button</item>
-    <item name="android:textColor">@color/simplified_button_text</item>
-    <item name="android:minHeight">48dip</item>
-    <item name="android:minWidth">64dip</item>
-  </style>
-
-  <style name="SimplifiedTheme.ButtonStyleSmall" parent="@android:style/Widget.Button.Small">
-    <item name="android:background">@drawable/simplified_button</item>
-    <item name="android:textColor">@color/simplified_button_text</item>
-  </style>
-
   <style name="SimplifiedTheme.LaneTitle">
     <item name="android:textSize">21sp</item>
-    <item name="android:textColor">@color/feature_main_color</item>
+    <item name="android:textColor">@color/app_main_color</item>
     <item name="android:textStyle">normal</item>
     <item name="android:typeface">sans</item>
   </style>
@@ -127,9 +85,11 @@
     <item name="android:layout_marginBottom">8dp</item>
     <item name="android:layout_marginLeft">8dp</item>
     <item name="android:layout_marginRight">8dp</item>
+
     <item name="android:textSize">16sp</item>
     <item name="android:textColor">@color/text_light</item>
     <item name="android:fontFamily">sans-serif</item>
+
   </style>
 
   <style name="WizardPageFooter">

@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.widget.ImageView;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,18 +33,6 @@ public abstract class SimplifiedActivity extends Activity {
     this.overridePendingTransition(R.anim.activity_open, R.anim.activity_close);
     ACTIVITY_COUNT += 1;
     LOG.debug("activity count: {}", ACTIVITY_COUNT);
-
-    /*
-     * XXX: XXXAPI21: This is an extremely unfortunate hack: In order to have padding between the up
-     * indicator icon and the title text, it's either necessary to create an entire custom view
-     * for the action bar, or to reach into Android's internal resources and manually add padding.
-     * Shocking and horrible.
-     */
-
-    final ImageView view = this.findViewById(android.R.id.home);
-    if (view != null) {
-      view.setPadding(0, 0, 16, 0);
-    }
   }
 
   @Override

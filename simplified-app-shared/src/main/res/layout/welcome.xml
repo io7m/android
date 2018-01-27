@@ -50,7 +50,10 @@
       android:layout_gravity="center"
       android:layout_width="wrap_content"
       android:layout_height="30dp"
-      android:layout_marginTop="10dp"/>
+      android:layout_marginTop="10dp"
+      android:background="@drawable/simplified_welcome_button"
+      android:textColor="@drawable/simplified_welcome_button_text"
+      />
   </LinearLayout>
 
   <LinearLayout
@@ -88,7 +91,10 @@
       android:layout_gravity="center"
       android:layout_width="wrap_content"
       android:layout_height="30dp"
-      android:layout_marginTop="10dp"/>
+      android:layout_marginTop="10dp"
+      android:background="@drawable/simplified_welcome_button"
+      android:textColor="@drawable/simplified_welcome_button_text"
+      />
   </LinearLayout>
 
 

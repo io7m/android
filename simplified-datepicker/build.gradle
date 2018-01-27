@@ -14,5 +14,4 @@ description = 'simplified-datepicker'
 dependencies {
   compile 'com.io7m.jnull:io7m-jnull-core:[1.0.0, 2.0.0)'
   compile 'joda-time:joda-time:2.9.9'
-  compile 'org.slf4j:slf4j-api:1.7.25'
 }

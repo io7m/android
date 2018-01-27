@@ -22,9 +22,11 @@
   <color name="normal_text_major">#000000</color>
   <color name="normal_text_minor">#a0a0a0</color>
 
+
   <color name="colorPrimary">#af1a16</color>
   <color name="colorPrimaryDark">#cc1a16</color>
   <color name="colorAccent">#f9c8c7</color>
+
 
   <color name="step_pager_previous_tab_color">#f9c8c7</color>
   <color name="step_pager_selected_tab_color">#cc1a16</color>

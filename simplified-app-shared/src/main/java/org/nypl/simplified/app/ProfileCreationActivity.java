@@ -63,7 +63,6 @@ public final class ProfileCreationActivity extends SimplifiedActivity {
     });
 
     this.date = NullCheck.notNull(this.findViewById(R.id.profileCreationDateSelection));
-    this.date.setDividerColor(this.getResources().getColor(R.color.feature_main_color));
     this.name = NullCheck.notNull(this.findViewById(R.id.profileCreationEditName));
     this.name.addTextChangedListener(new ButtonTextWatcher(button));
   }

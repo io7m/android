@@ -3,7 +3,6 @@ package org.nypl.simplified.app.catalog;
 import android.app.ActionBar;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
@@ -14,7 +13,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.GridView;
 import android.widget.LinearLayout;
@@ -79,6 +77,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 import javax.annotation.concurrent.GuardedBy;
 
@@ -560,7 +559,6 @@ public abstract class CatalogFeedActivity extends CatalogActivity
      * Otherwise, disable and hide it.
      */
 
-    final Resources resources = NullCheck.notNull(this.getResources());
     final OptionType<FeedSearchType> search_opt = feed.getFeedSearch();
     boolean search_ok = false;
     if (search_opt.isSome()) {
@@ -572,7 +570,6 @@ public abstract class CatalogFeedActivity extends CatalogActivity
       this.search_view.setIconifiedByDefault(false);
       search_item.setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_ALWAYS);
       search_item.expandActionView();
-      onCreateOptionsMenuSearchItemApplyPreV21Hacks(resources, this.search_view);
 
       /*
        * Set some placeholder text
@@ -588,7 +585,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
        * Check that the search URI is of an understood type.
        */
 
-
+      final Resources resources = NullCheck.notNull(this.getResources());
       final FeedSearchType search = search_some.get();
       search_ok = search.matchSearch(
           new FeedSearchMatcherType<Boolean, UnreachableCodeException>() {
@@ -611,42 +608,6 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     if (search_ok) {
       search_item.setEnabled(true);
       search_item.setVisible(true);
-    }
-  }
-
-  /**
-   * XXX: XXXAPI21: Prior to API level 21, Google provides absolutely no way whatsoever to style
-   * search views in action bars.
-   * <p>
-   * When the minimum API level of the application is moved up to 21, this code can and
-   * should be mercilessly removed, and instead replaced with a style for the SearchView
-   * type.
-   */
-
-  private static void onCreateOptionsMenuSearchItemApplyPreV21Hacks(
-      final Resources resources,
-      final SearchView search_view) {
-
-    final int search_text_id =
-        resources.getIdentifier("android:id/search_src_text", null, null);
-    if (search_text_id != 0) {
-      final EditText search_view_text = search_view.findViewById(search_text_id);
-      search_view_text.setTextColor(Color.WHITE);
-      search_view_text.setHintTextColor(resources.getColor(R.color.feature_main_color_pale));
-    }
-
-    final int search_plate_id =
-        resources.getIdentifier("android:id/search_plate", null, null);
-    if (search_plate_id != 0) {
-      final View search_plate = search_view.findViewById(search_plate_id);
-      search_plate.setBackgroundResource(R.drawable.simplified_edit_text);
-    }
-
-    final int submit_area_id =
-        resources.getIdentifier("android:id/submit_area", null, null);
-    if (submit_area_id != 0) {
-      final View submit_area = search_view.findViewById(submit_area_id);
-      submit_area.setBackgroundResource(R.drawable.simplified_edit_text);
     }
   }
 
