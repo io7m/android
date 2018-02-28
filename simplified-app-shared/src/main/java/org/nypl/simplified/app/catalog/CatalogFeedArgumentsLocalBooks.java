@@ -95,9 +95,9 @@ public final class CatalogFeedArgumentsLocalBooks
     return m.onFeedArgumentsLocalBooks(this);
   }
 
-  @Override public boolean isLocallyGenerated()
+  @Override public boolean requiresNetworkConnectivity()
   {
-    return true;
+    return false;
   }
 
   @Override public boolean isSearching()

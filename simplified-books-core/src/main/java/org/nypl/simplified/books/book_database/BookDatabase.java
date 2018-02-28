@@ -19,7 +19,9 @@ import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -460,6 +462,24 @@ public final class BookDatabase implements BookDatabaseType {
         } catch (final IOException e) {
           throw new BookDatabaseException(e.getMessage(), Collections.singletonList(e));
         }
+      }
+    }
+
+    @Override
+    public File temporaryFile() throws IOException {
+      synchronized (this.book_lock) {
+        Assertions.checkPrecondition(!this.deleted, "Entry must not have been deleted");
+
+        for (int index = 0; index < Integer.MAX_VALUE; ++index) {
+          final File file = new File(this.book_dir, "temporary_" + index);
+          if (!file.exists()) {
+            try (OutputStream ignored = new FileOutputStream(file)) {
+              return file;
+            }
+          }
+        }
+
+        throw new IOException("Could not find an available temporary file");
       }
     }
   }

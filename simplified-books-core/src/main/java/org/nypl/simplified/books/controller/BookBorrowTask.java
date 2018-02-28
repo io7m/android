@@ -22,6 +22,8 @@ import org.nypl.simplified.books.book_database.BookDatabaseType;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
 import org.nypl.simplified.books.book_registry.BookWithStatus;
+import org.nypl.simplified.books.bundled_content.BundledContentResolverType;
+import org.nypl.simplified.books.bundled_content.BundledURIs;
 import org.nypl.simplified.books.core.BookBorrowExceptionBadBorrowFeed;
 import org.nypl.simplified.books.core.BookBorrowExceptionFetchingBorrowFeedFailed;
 import org.nypl.simplified.books.core.BookBorrowExceptionLoanLimitReached;
@@ -50,6 +52,7 @@ import org.nypl.simplified.books.feeds.FeedWithoutGroups;
 import org.nypl.simplified.downloader.core.DownloadListenerType;
 import org.nypl.simplified.downloader.core.DownloadType;
 import org.nypl.simplified.downloader.core.DownloaderType;
+import org.nypl.simplified.files.FileUtilities;
 import org.nypl.simplified.http.core.HTTPAuthType;
 import org.nypl.simplified.http.core.HTTPProblemReport;
 import org.nypl.simplified.opds.core.OPDSAcquisition;
@@ -68,7 +71,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.concurrent.Callable;
@@ -85,6 +91,7 @@ final class BookBorrowTask implements Callable<Unit> {
   private static final Logger LOG = LoggerFactory.getLogger(BookBorrowTask.class);
 
   private final FeedLoaderType feed_loader;
+  private final BundledContentResolverType bundled_content;
   private final BookRegistryType book_registry;
   private final BookID book_id;
   private final AccountType account;
@@ -100,6 +107,7 @@ final class BookBorrowTask implements Callable<Unit> {
       final DownloaderType downloader,
       final ConcurrentHashMap<BookID, DownloadType> downloads,
       final FeedLoaderType feed_loader,
+      final BundledContentResolverType bundled_content,
       final BookRegistryType book_registry,
       final BookID id,
       final AccountType account,
@@ -112,6 +120,8 @@ final class BookBorrowTask implements Callable<Unit> {
         NullCheck.notNull(downloads, "Downloads");
     this.feed_loader =
         NullCheck.notNull(feed_loader, "Feed loader");
+    this.bundled_content =
+        NullCheck.notNull(bundled_content, "bundled_content");
     this.book_registry =
         NullCheck.notNull(book_registry, "Book registry");
     this.book_id =
@@ -145,6 +155,12 @@ final class BookBorrowTask implements Callable<Unit> {
       final BookDatabaseType database = this.account.bookDatabase();
       this.database_entry = database.createOrUpdate(this.book_id, this.entry);
 
+      if (BundledURIs.isBundledURI(this.acquisition.getURI())) {
+        LOG.debug("[{}]: acquisition is bundled", this.book_id.brief());
+        this.runAcquisitionBundled();
+        return;
+      }
+
       final OPDSAcquisition.Type type = this.acquisition.getType();
       switch (type) {
         case ACQUISITION_BORROW: {
@@ -172,6 +188,42 @@ final class BookBorrowTask implements Callable<Unit> {
     } catch (final Exception e) {
       LOG.error("[{}]: error: ", this.book_id.brief(), e);
       this.downloadFailed(Option.some(e));
+    }
+  }
+
+  /**
+   * Copy data out of the bundled resources.
+   */
+
+  private void runAcquisitionBundled() throws IOException, BookDatabaseException {
+
+    final File file = this.database_entry.temporaryFile();
+    final byte[] buffer = new byte[2048];
+
+    try (OutputStream output = new FileOutputStream(file)) {
+      try (InputStream stream = this.bundled_content.resolve(this.acquisition.getURI())) {
+        final long size = stream.available();
+        long consumed = 0L;
+        this.downloadDataReceived(consumed, size);
+
+        while (true) {
+          final int r = stream.read(buffer);
+          if (r == -1) {
+            break;
+          }
+          consumed += r;
+          output.write(buffer, 0, r);
+          this.downloadDataReceived(consumed, size);
+        }
+        output.flush();
+      }
+
+      this.saveEPUBAndRights(file, Option.none());
+      final Book book = this.database_entry.book();
+      this.book_registry.update(BookWithStatus.create(book, BookStatus.fromBook(book)));
+    } catch (final IOException | BookDatabaseException e) {
+      FileUtilities.fileDelete(file);
+      throw e;
     }
   }
 

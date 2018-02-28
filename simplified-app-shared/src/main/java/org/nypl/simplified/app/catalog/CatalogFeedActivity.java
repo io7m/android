@@ -227,7 +227,7 @@ public abstract class CatalogFeedActivity extends CatalogActivity
 
     if (this.previously_paused && !did_retry) {
       final CatalogFeedArgumentsType args = this.getArguments();
-      if (args.isLocallyGenerated()) {
+      if (args.requiresNetworkConnectivity()) {
         this.retryFeed();
       }
     }
@@ -466,12 +466,12 @@ public abstract class CatalogFeedActivity extends CatalogActivity
     this.progress_layout = in_progress_layout;
 
     /*
-     * If the feed is not locally generated, and the network is not
+     * If the feed requires network connectivity, and the network is not
      * available, then fail fast and display an error message.
      */
 
     final NetworkConnectivityType net = Simplified.getNetworkConnectivity();
-    if (!args.isLocallyGenerated()) {
+    if (args.requiresNetworkConnectivity()) {
       if (!net.isNetworkAvailable()) {
         this.onNetworkUnavailable();
         return;
@@ -660,7 +660,10 @@ public abstract class CatalogFeedActivity extends CatalogActivity
       future.cancel(true);
     }
 
-    this.profile_event_subscription.unsubscribe();
+    final ObservableSubscriptionType<ProfileEvent> profile_sub = this.profile_event_subscription;
+    if (profile_sub != null) {
+      profile_sub.unsubscribe();
+    }
 
     final ObservableSubscriptionType<BookStatusEvent> book_sub = this.book_event_subscription;
     if (book_sub != null) {

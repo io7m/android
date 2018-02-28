@@ -28,6 +28,7 @@ import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
 import org.nypl.simplified.books.book_registry.BookWithStatus;
+import org.nypl.simplified.books.bundled_content.BundledContentResolverType;
 import org.nypl.simplified.books.feeds.FeedLoaderType;
 import org.nypl.simplified.books.feeds.FeedWithoutGroups;
 import org.nypl.simplified.books.idle_timer.ProfileIdleTimer;
@@ -76,6 +77,7 @@ public final class Controller implements BooksControllerType, ProfilesController
   private final ProfilesDatabaseType profiles;
   private final BookRegistryType book_registry;
   private final ObservableType<ProfileEvent> profile_events;
+  private final BundledContentResolverType bundled_content;
   private final FunctionType<Unit, AccountProviderCollection> account_providers;
   private final HTTPType http;
   private final ObservableType<AccountEvent> account_events;
@@ -95,6 +97,7 @@ public final class Controller implements BooksControllerType, ProfilesController
       final DownloaderType in_downloader,
       final ProfilesDatabaseType in_profiles,
       final BookRegistryType in_book_registry,
+      final BundledContentResolverType in_bundled_content,
       final FunctionType<Unit, AccountProviderCollection> in_account_providers,
       final ExecutorService in_timer_executor) {
 
@@ -112,6 +115,8 @@ public final class Controller implements BooksControllerType, ProfilesController
         NullCheck.notNull(in_profiles, "Profiles");
     this.book_registry =
         NullCheck.notNull(in_book_registry, "Book Registry");
+    this.bundled_content =
+        NullCheck.notNull(in_bundled_content, "Bundled content");
     this.account_providers =
         NullCheck.notNull(in_account_providers, "Account providers");
     this.timer_executor =
@@ -152,6 +157,7 @@ public final class Controller implements BooksControllerType, ProfilesController
       final DownloaderType in_downloader,
       final ProfilesDatabaseType in_profiles,
       final BookRegistryType in_book_registry,
+      final BundledContentResolverType in_bundled_content,
       final FunctionType<Unit, AccountProviderCollection> in_account_providers,
       final ExecutorService in_timer_executor) {
 
@@ -163,6 +169,7 @@ public final class Controller implements BooksControllerType, ProfilesController
         in_downloader,
         in_profiles,
         in_book_registry,
+        in_bundled_content,
         in_account_providers,
         in_timer_executor);
   }
@@ -429,6 +436,7 @@ public final class Controller implements BooksControllerType, ProfilesController
         this.downloader,
         this.downloads,
         this.feed_loader,
+        this.bundled_content,
         this.book_registry,
         id,
         account,

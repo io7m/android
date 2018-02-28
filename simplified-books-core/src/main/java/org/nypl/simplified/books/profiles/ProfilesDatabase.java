@@ -124,8 +124,13 @@ public final class ProfilesDatabase implements ProfilesDatabaseType {
     profiles.remove(ANONYMOUS_PROFILE_ID);
 
     if (!errors.isEmpty()) {
+      for (final Exception e : errors) {
+        LOG.error("error during profile database open: ", e);
+      }
+
       throw new ProfileDatabaseOpenException(
-          "One or more errors occurred whilst trying to open the profile database.", errors);
+          "One or more errors occurred whilst trying to open the profile database.",
+          errors);
     }
 
     return new ProfilesDatabase(

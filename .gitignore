@@ -19,7 +19,16 @@
 # Certificates and API Keys
 #
 
-ReaderClientCert.sig 
-bugsnag.conf 
-helpstack.conf 
+ReaderClientCert.sig
+bugsnag.conf
+helpstack.conf
 *.jks
+
+#
+# Bundled content
+#
+
+simplified-app-lfa/src/main/assets/feeds
+simplified-app-lfa/src/main/assets/images
+simplified-app-lfa/src/main/assets/books
+simplified-app-lfa/src/main/assets/info.properties

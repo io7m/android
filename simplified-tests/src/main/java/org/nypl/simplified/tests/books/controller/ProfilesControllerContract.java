@@ -27,6 +27,7 @@ import org.nypl.simplified.books.accounts.AccountsDatabases;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookRegistry;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
+import org.nypl.simplified.books.bundled_content.BundledContentResolverType;
 import org.nypl.simplified.books.controller.Controller;
 import org.nypl.simplified.books.controller.ProfileFeedRequest;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
@@ -65,6 +66,9 @@ import org.nypl.simplified.tests.http.MockingHTTP;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -116,8 +120,13 @@ public abstract class ProfilesControllerContract {
         OPDSFeedParser.newParser(OPDSAcquisitionFeedEntryParser.newParser());
     final OPDSFeedTransportType<OptionType<HTTPAuthType>> transport =
         FeedHTTPTransport.newTransport(http);
+    final BundledContentResolverType bundled_content = uri -> {
+      throw new FileNotFoundException(uri.toString());
+    };
+
     final FeedLoaderType feed_loader =
-        FeedLoader.newFeedLoader(task_exec, books, parser, transport, OPDSSearchParser.newParser());
+        FeedLoader.newFeedLoader(
+            task_exec, books, bundled_content, parser, transport, OPDSSearchParser.newParser());
 
     return Controller.create(
         task_exec,
@@ -127,6 +136,7 @@ public abstract class ProfilesControllerContract {
         downloader,
         profiles,
         books,
+        bundled_content,
         account_providers,
         timer_exec);
   }

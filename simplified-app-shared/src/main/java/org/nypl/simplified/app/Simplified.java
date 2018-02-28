@@ -36,6 +36,7 @@ import org.nypl.simplified.books.accounts.AccountsDatabases;
 import org.nypl.simplified.books.book_registry.BookRegistry;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
+import org.nypl.simplified.books.bundled_content.BundledContentResolverType;
 import org.nypl.simplified.books.controller.Controller;
 import org.nypl.simplified.books.controller.BooksControllerType;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
@@ -123,6 +124,7 @@ public final class Simplified extends Application {
   private Controller book_controller;
   private ListeningExecutorService exec_background;
   private ExecutorService exec_profile_timer;
+  private BundledContentResolverType bundled_content_resolver;
 
   /**
    * A specification of whether or not an action bar is wanted in an activity.
@@ -625,6 +627,9 @@ public final class Simplified extends Application {
       throw new IllegalStateException("Could not initialize profile database", e);
     }
 
+    LOG.debug("initializing bundled content");
+    this.bundled_content_resolver = BundledContentResolver.create(this.getAssets());
+
     LOG.debug("initializing feed loader");
     this.feed_parser = createFeedParser();
     this.feed_search_parser = OPDSSearchParser.newParser();
@@ -632,6 +637,7 @@ public final class Simplified extends Application {
     this.feed_loader = FeedLoader.newFeedLoader(
         this.exec_catalog_feeds,
         this.book_registry,
+        this.bundled_content_resolver,
         this.feed_parser,
         this.feed_transport,
         this.feed_search_parser);
@@ -645,6 +651,7 @@ public final class Simplified extends Application {
         this.downloader,
         this.profiles,
         this.book_registry,
+        this.bundled_content_resolver,
         ignored -> this.account_providers,
         this.exec_profile_timer);
 

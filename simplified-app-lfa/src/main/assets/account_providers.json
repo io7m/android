@@ -1,8 +1,8 @@
 [
   {
     "id": "urn:provider:com.cantookstation",
-    "name" : "Demarque Test",
-    "subtitle" : "This is an example subtitle.",
+    "name" : "Bundled Books",
+    "subtitle" : "Books bundled with this application.",
     "logo" : "simplified-asset:account_logo_nypl.png",
     "supportsSimplyESync" : false,
     "supportsBarcodeScanner" : false,
@@ -10,7 +10,7 @@
     "supportsReservations" : false,
     "supportsCardCreator" : false,
     "supportsHelpCenter" : false,
-    "catalogUrl" : "http://demo-app.cantookstation.com/catalog.atom",
+    "catalogUrl" : "simplified-bundled://feeds/DBAFF5A924399A0369C3B6D19662AF30268BBCE6F8A226F62A16C47A0962068B.atom",
     "licenseUrl": "http://www.librarysimplified.org/iclicenses.html",
     "mainColor": "#23A5A6"
   }

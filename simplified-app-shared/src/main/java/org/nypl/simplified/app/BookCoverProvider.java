@@ -22,6 +22,7 @@ import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
 import org.nypl.simplified.books.book_registry.BookWithStatus;
 import org.nypl.simplified.books.book_database.BookID;
+import org.nypl.simplified.books.bundled_content.BundledURIs;
 import org.nypl.simplified.books.feeds.FeedEntryOPDS;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
@@ -243,7 +244,9 @@ public final class BookCoverProvider implements BookCoverProviderType {
 
     UIThread.checkIsUIThread();
 
-    final OptionType<URI> uri_opt = this.getCoverURI(e);
+    final OptionType<URI> uri_opt =
+        this.getCoverURI(e).map(BookCoverProvider::mapToFileURIIfNecessary);
+
     BookCoverProvider.load(e, i, w, h, c, this.picasso, this.cover_gen, COVER_TAG, uri_opt);
   }
 
@@ -293,8 +296,21 @@ public final class BookCoverProvider implements BookCoverProviderType {
 
     UIThread.checkIsUIThread();
 
-    final OptionType<URI> uri_opt = this.getThumbnailURI(e);
+    final OptionType<URI> uri_opt =
+        this.getThumbnailURI(e).map(BookCoverProvider::mapToFileURIIfNecessary);
+
     BookCoverProvider.load(e, i, w, h, c, this.picasso, this.cover_gen, THUMBNAIL_TAG, uri_opt);
+  }
+
+  /**
+   * Transform a bundled content URI to a file URI, or return the original URI otherwise.
+   */
+
+  private static URI mapToFileURIIfNecessary(final URI uri) {
+    if (BundledURIs.isBundledURI(uri)) {
+      return BundledURIs.toAndroidAssetFileURI(uri);
+    }
+    return uri;
   }
 
   @Override

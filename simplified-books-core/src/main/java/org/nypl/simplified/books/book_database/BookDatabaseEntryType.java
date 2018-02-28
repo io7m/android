@@ -4,6 +4,7 @@ import org.nypl.drm.core.AdobeAdeptLoan;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * An entry in the book database.
@@ -64,4 +65,10 @@ public interface BookDatabaseEntryType {
 
   void deleteEPUB()
       throws BookDatabaseException;
+
+  /**
+   * @return A temporary file that can be used to stage data to be copied into the database
+   */
+
+  File temporaryFile() throws IOException;
 }

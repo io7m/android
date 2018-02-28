@@ -1,12 +1,20 @@
 package org.nypl.simplified.app.catalog;
 
 import com.io7m.jnull.NullCheck;
+
+import org.nypl.simplified.books.bundled_content.BundledURIs;
 import org.nypl.simplified.stack.ImmutableStack;
 
 import java.net.URI;
 
 /**
  * Feed arguments indicating that the displayed feed is a remote feed.
+ *
+ * The term "remote" is now something of a misnomer, because the "remote" feed can actually be
+ * in bundled content. For uniformity, we try to treat remote feeds the same as bundled feeds.
+ *
+ * @see org.nypl.simplified.books.bundled_content.BundledContentResolverType
+ * @see BundledURIs
  */
 
 public final class CatalogFeedArgumentsRemote
@@ -83,9 +91,13 @@ public final class CatalogFeedArgumentsRemote
     return m.onFeedArgumentsRemote(this);
   }
 
-  @Override public boolean isLocallyGenerated()
+  @Override public boolean requiresNetworkConnectivity()
   {
-    return false;
+    /*
+     * Only feeds that don't refer to bundled content require network connectivity.
+     */
+
+    return !BundledURIs.isBundledURI(this.uri);
   }
 
   @Override public boolean isSearching()

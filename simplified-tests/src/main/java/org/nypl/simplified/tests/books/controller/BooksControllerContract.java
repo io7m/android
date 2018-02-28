@@ -33,6 +33,7 @@ import org.nypl.simplified.books.book_registry.BookStatusLoaned;
 import org.nypl.simplified.books.book_registry.BookStatusRevokeFailed;
 import org.nypl.simplified.books.book_registry.BookStatusType;
 import org.nypl.simplified.books.book_registry.BookWithStatus;
+import org.nypl.simplified.books.bundled_content.BundledContentResolverType;
 import org.nypl.simplified.books.controller.BooksControllerType;
 import org.nypl.simplified.books.controller.Controller;
 import org.nypl.simplified.books.core.BookRevokeExceptionNoCredentials;
@@ -63,6 +64,7 @@ import org.nypl.simplified.tests.http.MockingHTTP;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -147,15 +149,18 @@ public abstract class BooksControllerContract {
       final BookRegistryType books,
       final ProfilesDatabaseType profiles,
       final DownloaderType downloader,
-      final FunctionType<Unit, AccountProviderCollection> account_providers, 
+      final FunctionType<Unit, AccountProviderCollection> account_providers,
       final ExecutorService timer_exec) {
 
     final OPDSFeedParserType parser =
         OPDSFeedParser.newParser(OPDSAcquisitionFeedEntryParser.newParser());
     final OPDSFeedTransportType<OptionType<HTTPAuthType>> transport =
         FeedHTTPTransport.newTransport(http);
+    final BundledContentResolverType bundled_content = uri -> {
+      throw new FileNotFoundException(uri.toString());
+    };
     final FeedLoaderType feed_loader =
-        FeedLoader.newFeedLoader(exec, books, parser, transport, OPDSSearchParser.newParser());
+        FeedLoader.newFeedLoader(exec, books, bundled_content, parser, transport, OPDSSearchParser.newParser());
 
     return Controller.create(
         exec,
@@ -165,6 +170,7 @@ public abstract class BooksControllerContract {
         downloader,
         profiles,
         books,
+        bundled_content,
         account_providers,
         timer_exec);
   }

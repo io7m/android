@@ -107,6 +107,10 @@ public final class AccountsDatabase implements AccountsDatabaseType {
         errors);
 
     if (!errors.isEmpty()) {
+      for (final Exception e : errors) {
+        LOG.error("error during account database open: ", e);
+      }
+
       throw new AccountsDatabaseOpenException(
           "One or more errors occurred whilst trying to open the account database.", errors);
     }
