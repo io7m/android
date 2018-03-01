@@ -1,9 +1,9 @@
 [
   {
-    "id": "urn:provider:com.cantookstation",
+    "id": "urn:provider:com.cantookstation.lfa.bundled",
     "name" : "Bundled Books",
     "subtitle" : "Books bundled with this application.",
-    "logo" : "simplified-asset:account_logo_nypl.png",
+    "logo" : "simplified-asset:bundled.png",
     "supportsSimplyESync" : false,
     "supportsBarcodeScanner" : false,
     "supportsBarcodeDisplay" : false,
@@ -11,7 +11,6 @@
     "supportsCardCreator" : false,
     "supportsHelpCenter" : false,
     "catalogUrl" : "simplified-bundled://feeds/DBAFF5A924399A0369C3B6D19662AF30268BBCE6F8A226F62A16C47A0962068B.atom",
-    "licenseUrl": "http://www.librarysimplified.org/iclicenses.html",
     "mainColor": "#23A5A6"
   }
 ]
