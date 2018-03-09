@@ -31,7 +31,7 @@ android {
 description = 'simplified-app-lfa'
 
 task unzipBundledContent(type: Copy) {
-  def zipPath = "bundled.zip"
+  def zipPath = "${project.rootDir}/bundled.zip"
   def zipFile = file(zipPath)
   def outputDir = file("src/main/assets/")
   from zipTree(zipFile)
