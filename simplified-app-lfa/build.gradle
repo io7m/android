@@ -30,6 +30,20 @@ android {
 
 description = 'simplified-app-lfa'
 
+task unzipBundledContent(type: Copy) {
+  def zipPath = "bundled.zip"
+  def zipFile = file(zipPath)
+  def outputDir = file("src/main/assets/")
+  from zipTree(zipFile)
+  into outputDir
+}
+
+afterEvaluate {
+  android.applicationVariants.all { variant ->
+    variant.javaCompiler.dependsOn(unzipBundledContent)
+  }
+}
+
 dependencies {
   compile project(':simplified-app-shared')
 }
