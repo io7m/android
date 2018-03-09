@@ -99,6 +99,13 @@
       android:exported="false">
     </activity>
     <activity
+      android:name="org.nypl.simplified.app.MainSettingsVersionActivity"
+      android:configChanges="orientation|screenSize"
+      android:label="@string/settings_application_version"
+      android:contentDescription="@string/settings_application_version"
+      android:exported="false">
+    </activity>
+    <activity
       android:name="org.nypl.simplified.app.HelpActivity"
       android:configChanges="orientation|screenSize"
       android:label="@string/help"

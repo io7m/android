@@ -32,3 +32,9 @@ simplified-app-lfa/src/main/assets/feeds
 simplified-app-lfa/src/main/assets/images
 simplified-app-lfa/src/main/assets/books
 simplified-app-lfa/src/main/assets/info.properties
+
+#
+# Generated content
+#
+
+simplified-app-shared/src/main/assets/revision.properties

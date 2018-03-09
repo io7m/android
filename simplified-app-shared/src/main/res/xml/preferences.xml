@@ -33,6 +33,12 @@
       android:title="@string/settings_licence_software"
       android:icon="@null">
     </Preference>
+
+    <Preference
+        android:key="@string/settings_application_version"
+        android:title="@string/settings_application_version"
+        android:icon="@null">
+    </Preference>
   </PreferenceCategory>
   <PreferenceCategory>
     <Preference

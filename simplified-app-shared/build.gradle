@@ -49,3 +49,10 @@ dependencies {
   compileOnly 'com.google.auto.value:auto-value:1.5'
   annotationProcessor 'com.google.auto.value:auto-value:1.5'
 }
+
+task generateRevisionProperties {
+  description = 'Generate a revision.properties file'
+  new File("$projectDir/src/main/assets/revision.properties").text = "revision = " + grgit.head().id
+}
+
+preBuild.dependsOn generateRevisionProperties

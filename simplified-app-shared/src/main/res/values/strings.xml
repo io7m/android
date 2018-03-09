@@ -167,6 +167,7 @@
   <string name="settings_adobe_accounts">Adobe Accounts</string>
   <string name="settings_alt_uris">Alternate URIs</string>
   <string name="settings_reveal_password">Show PIN</string>
+  <string name="settings_application_version">Application Version</string>
 
   <string name="login_needed">You need to login to access the collection.</string>
   <string name="login_with_barcode">Login with Barcode</string>
@@ -256,5 +257,7 @@
   <string name="profiles_switch_confirm">Are you sure you want to switch profiles?</string>
   <string name="profiles_time_out_soon">The current profile will soon be logged out due to inactivity. Please touch the screen if you want to stay logged in.</string>
   <string name="profiles_time_out_soon_title">Profile Inactivity</string>
+  <string name="versions_revision">Build</string>
+  <string name="versions_version">Version</string>
 
 </resources>

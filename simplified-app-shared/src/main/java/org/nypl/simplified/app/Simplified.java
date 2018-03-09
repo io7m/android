@@ -528,6 +528,8 @@ public final class Simplified extends Application {
     final Resources resources = this.getResources();
     final AssetManager asset_manager = this.getAssets();
 
+    LOG.debug("build: {}", BuildRevision.revision(asset_manager));
+
     LOG.debug("creating thread pools");
     this.exec_catalog_feeds =
         Simplified.createNamedThreadPool(1, "catalog-feed", 19);

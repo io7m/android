@@ -112,6 +112,18 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
     }
 
     {
+      final Intent intent =
+          new Intent(MainSettingsFragment.this.getActivity(), MainSettingsVersionActivity.class);
+      final Bundle b = new Bundle();
+      NavigationDrawerActivity.setActivityArguments(b, false);
+      intent.setClass(getActivity(), MainSettingsVersionActivity.class);
+      intent.putExtras(b);
+
+      final Preference preferences = findPreference(resources.getString(R.string.settings_application_version));
+      preferences.setIntent(intent);
+    }
+
+    {
       docs.getLicenses().map_(
         new ProcedureType<SyncedDocumentType>() {
           @Override

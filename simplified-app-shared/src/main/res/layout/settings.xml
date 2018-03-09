@@ -104,6 +104,23 @@
       />
 
     <TextView
+        android:id="@+id/settings_version"
+        android:text="@string/settings_application_version"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        />
+
+    <View
+        android:background="#eee"
+        android:id="@+id/settings_version_divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginBottom="16dp"
+        android:layout_marginTop="16dp"
+        />
+
+    <TextView
       android:id="@+id/settings_adobe_accounts"
       android:text="@string/settings_adobe_accounts"
       android:textAppearance="?android:attr/textAppearanceMedium"
