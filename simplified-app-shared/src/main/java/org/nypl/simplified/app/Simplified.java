@@ -33,6 +33,7 @@ import org.nypl.simplified.assertions.Assertions;
 import org.nypl.simplified.books.accounts.AccountProviderCollection;
 import org.nypl.simplified.books.accounts.AccountProvidersJSON;
 import org.nypl.simplified.books.accounts.AccountsDatabases;
+import org.nypl.simplified.books.analytics.AnalyticsLogger;
 import org.nypl.simplified.books.book_registry.BookRegistry;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
@@ -102,6 +103,8 @@ public final class Simplified extends Application {
   private File directory_documents;
   private File directory_downloads;
   private File directory_profiles;
+  private File directory_analytics;
+  private AnalyticsLogger analytics_logger;
   private OptionType<AdobeAdeptExecutorType> adobe_drm;
   private CatalogBookCoverGenerator cover_generator;
   private HTTPType http;
@@ -561,11 +564,13 @@ public final class Simplified extends Application {
     this.directory_downloads = new File(this.directory_base, "downloads");
     this.directory_documents = new File(this.directory_base, "documents");
     this.directory_profiles = new File(this.directory_base, "profiles");
+    this.directory_analytics = new File(this.directory_base, "analytics");
 
     LOG.debug("directory_base:      {}", this.directory_base);
     LOG.debug("directory_downloads: {}", this.directory_downloads);
     LOG.debug("directory_documents: {}", this.directory_documents);
     LOG.debug("directory_profiles:  {}", this.directory_profiles);
+    LOG.debug("directory_analytics:  {}", this.directory_analytics);
 
     /*
      * Make sure the required directories exist. There is no sane way to
@@ -577,6 +582,7 @@ public final class Simplified extends Application {
       DirectoryUtilities.directoryCreate(this.directory_downloads);
       DirectoryUtilities.directoryCreate(this.directory_documents);
       DirectoryUtilities.directoryCreate(this.directory_profiles);
+      DirectoryUtilities.directoryCreate(this.directory_analytics);
     } catch (final IOException e) {
       LOG.error("could not create directories: {}", e.getMessage(), e);
       throw new IllegalStateException(e);
@@ -629,6 +635,9 @@ public final class Simplified extends Application {
       throw new IllegalStateException("Could not initialize profile database", e);
     }
 
+    LOG.debug("initializing analytics log");
+    analytics_logger = AnalyticsLogger.create(this.directory_analytics);
+
     LOG.debug("initializing bundled content");
     this.bundled_content_resolver = BundledContentResolver.create(this.getAssets());
 
@@ -652,6 +661,7 @@ public final class Simplified extends Application {
         this.feed_loader,
         this.downloader,
         this.profiles,
+        this.analytics_logger,
         this.book_registry,
         this.bundled_content_resolver,
         ignored -> this.account_providers,

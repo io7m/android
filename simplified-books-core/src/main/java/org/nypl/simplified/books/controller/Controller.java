@@ -25,6 +25,7 @@ import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountProviderCollection;
 import org.nypl.simplified.books.accounts.AccountType;
 import org.nypl.simplified.books.accounts.AccountsDatabaseNonexistentException;
+import org.nypl.simplified.books.analytics.AnalyticsLogger;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
 import org.nypl.simplified.books.book_registry.BookWithStatus;
@@ -69,12 +70,13 @@ import java.util.concurrent.ExecutorService;
  * The default controller implementation.
  */
 
-public final class Controller implements BooksControllerType, ProfilesControllerType {
+public final class Controller implements BooksControllerType, ProfilesControllerType, AnalyticsControllerType {
 
   private static final Logger LOG = LoggerFactory.getLogger(Controller.class);
 
   private final ListeningExecutorService task_executor;
   private final ProfilesDatabaseType profiles;
+  private final AnalyticsLogger analytics_logger;
   private final BookRegistryType book_registry;
   private final ObservableType<ProfileEvent> profile_events;
   private final BundledContentResolverType bundled_content;
@@ -96,6 +98,7 @@ public final class Controller implements BooksControllerType, ProfilesController
       final FeedLoaderType in_feed_loader,
       final DownloaderType in_downloader,
       final ProfilesDatabaseType in_profiles,
+      final AnalyticsLogger in_analytics_logger,
       final BookRegistryType in_book_registry,
       final BundledContentResolverType in_bundled_content,
       final FunctionType<Unit, AccountProviderCollection> in_account_providers,
@@ -113,6 +116,8 @@ public final class Controller implements BooksControllerType, ProfilesController
         NullCheck.notNull(in_downloader, "Downloader");
     this.profiles =
         NullCheck.notNull(in_profiles, "Profiles");
+    this.analytics_logger =
+        NullCheck.notNull(in_analytics_logger, "Analytics");
     this.book_registry =
         NullCheck.notNull(in_book_registry, "Book Registry");
     this.bundled_content =
@@ -127,6 +132,9 @@ public final class Controller implements BooksControllerType, ProfilesController
     this.account_events = Observable.create();
     this.timer = ProfileIdleTimer.create(this.timer_executor, this.profile_events);
     this.profile_event_subscription = this.profile_events.subscribe(this::onProfileEvent);
+
+    // Example log...
+    logToAnalytics("app_open");
   }
 
   private void onProfileEvent(final ProfileEvent e) {
@@ -156,6 +164,7 @@ public final class Controller implements BooksControllerType, ProfilesController
       final FeedLoaderType in_feed_loader,
       final DownloaderType in_downloader,
       final ProfilesDatabaseType in_profiles,
+      final AnalyticsLogger in_analytics_logger,
       final BookRegistryType in_book_registry,
       final BundledContentResolverType in_bundled_content,
       final FunctionType<Unit, AccountProviderCollection> in_account_providers,
@@ -168,10 +177,16 @@ public final class Controller implements BooksControllerType, ProfilesController
         in_feed_loader,
         in_downloader,
         in_profiles,
+        in_analytics_logger,
         in_book_registry,
         in_bundled_content,
         in_account_providers,
         in_timer_executor);
+  }
+
+  @Override
+  public void logToAnalytics(String message) {
+    analytics_logger.logToAnalytics(message);
   }
 
   /**
