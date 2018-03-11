@@ -38,6 +38,7 @@ import org.nypl.simplified.books.book_registry.BookRegistry;
 import org.nypl.simplified.books.book_registry.BookRegistryReadableType;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
 import org.nypl.simplified.books.bundled_content.BundledContentResolverType;
+import org.nypl.simplified.books.controller.AnalyticsControllerType;
 import org.nypl.simplified.books.controller.Controller;
 import org.nypl.simplified.books.controller.BooksControllerType;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
@@ -214,6 +215,11 @@ public final class Simplified extends Application {
    */
 
   public static ProfilesControllerType getProfilesController() {
+    final Simplified i = Simplified.checkInitialized();
+    return i.book_controller;
+  }
+
+  public static AnalyticsControllerType getAnalyticsController() {
     final Simplified i = Simplified.checkInitialized();
     return i.book_controller;
   }

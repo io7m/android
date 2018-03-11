@@ -133,7 +133,6 @@ public final class Controller implements BooksControllerType, ProfilesController
     this.timer = ProfileIdleTimer.create(this.timer_executor, this.profile_events);
     this.profile_event_subscription = this.profile_events.subscribe(this::onProfileEvent);
 
-    // Example log...
     logToAnalytics("app_open");
   }
 
