@@ -641,8 +641,12 @@ public final class Simplified extends Application {
       throw new IllegalStateException("Could not initialize profile database", e);
     }
 
-    LOG.debug("initializing analytics log");
-    analytics_logger = AnalyticsLogger.create(this.directory_analytics);
+    try {
+      LOG.debug("initializing analytics log");
+      analytics_logger = AnalyticsLogger.create(this.directory_analytics);
+    } catch (Exception e) {
+      LOG.debug("Ignoring exception: AnalyticsLogger.create raised: ", e);
+    }
 
     LOG.debug("initializing bundled content");
     this.bundled_content_resolver = BundledContentResolver.create(this.getAssets());

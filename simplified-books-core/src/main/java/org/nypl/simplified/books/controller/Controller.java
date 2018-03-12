@@ -185,7 +185,9 @@ public final class Controller implements BooksControllerType, ProfilesController
 
   @Override
   public void logToAnalytics(String message) {
-    analytics_logger.logToAnalytics(message);
+    if ( analytics_logger != null ) {
+      analytics_logger.logToAnalytics(message);
+    }
   }
 
   /**

@@ -8,13 +8,17 @@ import org.slf4j.Logger;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.Date;
 
 /**
  * Created by Skullbonez on 3/11/2018.
+ *
+ * This logger is to be AS FAILSAFE AS POSSIBLE.
+ * Silent failures are allowed here.  We want this
+ * to be a "best effort" logger - it is not to
+ * crash the app!
+ *
  */
 
 public class AnalyticsLogger {
@@ -56,12 +60,14 @@ public class AnalyticsLogger {
     if ( analytics_output == null ) {
       init();
     }
-    try {
-      String date_str = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,").format(new Date());
-      analytics_output.write(date_str + message + "\n");
-      analytics_output.flush();  // Make small synchronous additions for now
-    } catch (Exception e) {
-      LOG.debug("Ignoring exception: logToAnalytics raised: ", e);
+    if ( analytics_output != null ) {
+      try {
+        String date_str = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,").format(new Date());
+        analytics_output.write(date_str + message + "\n");
+        analytics_output.flush();  // Make small synchronous additions for now
+      } catch (Exception e) {
+        LOG.debug("Ignoring exception: logToAnalytics raised: ", e);
+      }
     }
   }
 }
