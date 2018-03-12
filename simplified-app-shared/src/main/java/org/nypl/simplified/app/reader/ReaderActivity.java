@@ -235,6 +235,8 @@ public final class ReaderActivity extends ProfileTimeOutActivity implements
     try {
       this.profile = Simplified.getProfilesController().profileCurrent();
       this.account = this.profile.account(account_id);
+      String message = "book_opened," + this.profile.id().id() + "," + this.profile.displayName() + "," + this.book_id;
+      Simplified.getAnalyticsController().logToAnalytics(message);  
     } catch (final AccountsDatabaseNonexistentException | ProfileNoneCurrentException e) {
       this.failWithErrorMessage(this.getResources(), e);
       return;
@@ -666,12 +668,18 @@ public final class ReaderActivity extends ProfileTimeOutActivity implements
     final Container container = NullCheck.notNull(this.epub_container);
     final Package default_package = NullCheck.notNull(container.getDefaultPackage());
 
+    final List<OpenPage> pages = e.getOpenPages();
+    if (!pages.isEmpty()) {
+      final OpenPage page = NullCheck.notNull(pages.get(0));
+      String message = "book_open_page," + (page.getSpineItemPageIndex() + 1) + "/" + page.getSpineItemPageCount();
+      Simplified.getAnalyticsController().logToAnalytics(message);
+    }
+
     UIThread.runOnUIThread(() -> {
       final double p = e.getProgressFractional();
       in_progress_bar.setMax(100);
       in_progress_bar.setProgress((int) (100.0 * p));
 
-      final List<OpenPage> pages = e.getOpenPages();
       if (pages.isEmpty()) {
         in_progress_text.setText("");
       } else {
