@@ -29,6 +29,7 @@ public class AnalyticsLogger {
   private final int log_file_size_limit =  1024 * 1024 * 10;
   private BufferedWriter analytics_output = null;
   private File directory_analytics = null;
+  private boolean log_size_limit_reached = false;
 
   private AnalyticsLogger(
       File in_directory_analytics)
@@ -44,12 +45,18 @@ public class AnalyticsLogger {
   }
 
   private void init() {
+    if ( log_size_limit_reached ) {
+      // Don't bother trying to re-init if the log is full.
+      return;
+    }
     try {
       File log_file = new File(directory_analytics, log_file_name);
       // Stop logging after 10MB (future releases will transmit then delete this file)
       if (log_file.length() < log_file_size_limit) {
         FileWriter logWriter = new FileWriter(log_file, true);
         analytics_output = new BufferedWriter(logWriter);
+      } else {
+        log_size_limit_reached = true;
       }
     } catch (Exception e) {
       LOG.debug("Ignoring exception: init raised: ", e);
