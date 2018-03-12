@@ -235,6 +235,8 @@ public final class ReaderActivity extends ProfileTimeOutActivity implements
     try {
       this.profile = Simplified.getProfilesController().profileCurrent();
       this.account = this.profile.account(account_id);
+      String message = "book_opened," + this.profile.id().id() + "," + this.book_id;
+      Simplified.getAnalyticsController().logToAnalytics(message);
     } catch (final AccountsDatabaseNonexistentException | ProfileNoneCurrentException e) {
       this.failWithErrorMessage(this.getResources(), e);
       return;
