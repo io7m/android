@@ -41,47 +41,6 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
 
     final Resources resources = NullCheck.notNull(this.getResources());
     final DocumentStoreType docs = Simplified.getDocumentStore();
-    final OptionType<HelpstackType> helpstack = Simplified.getHelpStack();
-
-    {
-      final Preference preferences = findPreference(resources.getString(R.string.settings_accounts));
-      preferences.setIntent(null);
-      preferences.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-        @Override
-        public boolean onPreferenceClick(final Preference preference) {
-
-          final Bundle b = new Bundle();
-          NavigationDrawerActivity.setActivityArguments(b, false);
-          final Intent intent = new Intent();
-          intent.setClass(getActivity(), MainSettingsAccountsActivity.class);
-          intent.putExtras(b);
-
-          preferences.setIntent(intent);
-          return false;
-        }
-      });
-    }
-
-    {
-      if (helpstack.isSome()) {
-
-        final Preference preference = findPreference(resources.getString(R.string.help));
-        preference.setIntent(null);
-        preference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-          @Override
-          public boolean onPreferenceClick(final Preference preference) {
-            final HSHelpStack stack =
-                HSHelpStack.getInstance(getActivity());
-            final HSDeskGear gear =
-              new HSDeskGear("https://nypl.desk.com/", "4GBRmMv8ZKG8fGehhA", "12060");
-            stack.setGear(gear);
-            stack.showHelp(getActivity());
-            return false;
-          }
-        });
-
-      }
-    }
 
     {
       final Intent intent = new Intent(
