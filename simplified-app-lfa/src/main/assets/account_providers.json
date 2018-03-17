@@ -10,7 +10,7 @@
     "supportsReservations" : false,
     "supportsCardCreator" : false,
     "supportsHelpCenter" : false,
-    "catalogUrl" : "simplified-bundled://feeds/45E1F63C0F533292B88D63892B98264C4E5F28A230B3333AB8DD9381AFDD65EB.atom",
+    "catalogUrl" : "simplified-bundled:feeds/DBAFF5A924399A0369C3B6D19662AF30268BBCE6F8A226F62A16C47A0962068B.atom",
     "mainColor": "#23A5A6"
   }
 ]

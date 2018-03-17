@@ -2,7 +2,7 @@
 <resources>
 
   <!-- The main application name -->
-  <string name="feature_app_name">LFA</string>
+  <string name="feature_app_name">LFA Offline</string>
 
   <!-- The main app color -->
   <color name="feature_main_color">#23A5A6</color>
