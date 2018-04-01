@@ -118,6 +118,8 @@ public final class WebViewActivity extends NavigationDrawerActivity {
     this.web_view =
         NullCheck.notNull(this.findViewById(R.id.web_view));
 
+    this.web_view.setVerticalScrollBarEnabled(false);
+
     final ActionBar bar = this.getActionBar();
     bar.setTitle(title);
     if (android.os.Build.VERSION.SDK_INT < 21) {
