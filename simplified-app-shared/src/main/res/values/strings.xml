@@ -38,7 +38,7 @@
   <string name="catalog_load_not_connected">You are not connected to the internet. Please connect and try again.</string>
   <string name="catalog_book_revoke_loan_confirm">Are you sure you want to return this book?</string>
   <string name="catalog_book_revoke_hold_confirm">Are you sure you want to remove this reservation?</string>
-  <string name="catalog_book_delete_confirm">Are you sure you want to delete this book?</string>
+  <string name="catalog_book_delete_confirm">Are you sure you want to remove this book from My Books?</string>
   <string name="catalog_cancel_downloading">Cancel</string>
   <string name="catalog_categories">Categories</string>
   <string name="catalog_detail_related">Related Books</string>
@@ -71,8 +71,8 @@
   <string name="catalog_book_error_dismiss">Dismiss</string>
   <string name="catalog_book_error_retry">Retry</string>
   <string name="catalog_book_sync">Sync</string>
-  <string name="catalog_book_download">Download</string>
-  <string name="catalog_book_delete">Delete</string>
+  <string name="catalog_book_download">Add to My Books</string>
+  <string name="catalog_book_delete">Remove</string>
   <string name="catalog_book_revoke_loan">Return Now</string>
   <string name="catalog_book_revoke_hold">Remove</string>
   <string name="catalog_book_report">Report Issue</string>
@@ -190,8 +190,8 @@
   <string name="catalog_accessibility_book_error_dismiss">Dismiss Button</string>
   <string name="catalog_accessibility_book_error_retry">Retry Button</string>
   <string name="catalog_accessibility_book_sync">Sync Button</string>
-  <string name="catalog_accessibility_book_download">Download Button</string>
-  <string name="catalog_accessibility_book_delete">Delete Button</string>
+  <string name="catalog_accessibility_book_download">Add to My Books Button</string>
+  <string name="catalog_accessibility_book_delete">Remove Button</string>
   <string name="catalog_accessibility_book_revoke_loan">Return Now Button</string>
   <string name="catalog_accessibility_book_revoke_hold">Remove Button</string>
   <string name="catalog_accessibility_book_revoke_loan_cancel">Cancel Return Now</string>
