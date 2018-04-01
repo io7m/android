@@ -62,7 +62,7 @@ class MainSettingsFragment extends PreferenceFragment implements LoginListenerTy
       final Bundle b = new Bundle();
       WebViewActivity.setActivityArguments(
         b,
-        "http://www.librarysimplified.org/EULA.html",
+        "file:///android_asset/eula.html",
         resources.getString(R.string.settings_eula));
       intent.putExtras(b);
 
