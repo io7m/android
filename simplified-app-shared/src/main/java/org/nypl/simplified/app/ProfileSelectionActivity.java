@@ -91,6 +91,9 @@ public final class ProfileSelectionActivity extends SimplifiedActivity {
     LOG.debug("selected profile: {} ({})", profile.id(), profile.displayName());
     final ProfilesControllerType profiles = Simplified.getProfilesController();
 
+    String message = "profile_selected," + profile.id().id() + "," + profile.displayName();
+    Simplified.getAnalyticsController().logToAnalytics(message);
+
     FluentFuture.from(
         profiles.profileSelect(profile.id()))
         .addCallback(new FutureCallback<Unit>() {

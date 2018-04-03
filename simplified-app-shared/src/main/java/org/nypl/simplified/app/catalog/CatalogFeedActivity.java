@@ -1153,6 +1153,9 @@ public abstract class CatalogFeedActivity extends CatalogActivity
       final ImmutableStack<CatalogFeedArgumentsType> us =
           ImmutableStack.empty();
 
+      String message = "catalog_searched," + qnn;
+      Simplified.getAnalyticsController().logToAnalytics(message);
+
       final String title =
           this.resources.getString(R.string.catalog_search) + ": " + qnn;
 
