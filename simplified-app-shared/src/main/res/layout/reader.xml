@@ -43,6 +43,7 @@
       <TextView
         android:id="@+id/reader_title_text"
         android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textColor="@color/feature_main_color"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
@@ -56,6 +57,7 @@
 
       <ImageView
         android:id="@+id/reader_toc"
+        android:tint="@color/feature_main_color"
         android:layout_width="40dp"
         android:layout_height="30dp"
         android:layout_marginStart="2dp"
@@ -66,6 +68,7 @@
 
       <ImageView
         android:id="@+id/reader_settings"
+        android:tint="@color/feature_main_color"
         android:contentDescription="@string/reader_accessibility_settings"
         android:src="@drawable/text_8x"
         android:layout_marginStart="2dp"
