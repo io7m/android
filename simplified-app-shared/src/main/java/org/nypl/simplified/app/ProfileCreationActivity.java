@@ -1,12 +1,17 @@
 package org.nypl.simplified.app;
 
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 
 import com.google.common.util.concurrent.FluentFuture;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -20,6 +25,7 @@ import org.joda.time.LocalDate;
 import org.nypl.simplified.app.utilities.ErrorDialogUtilities;
 import org.nypl.simplified.app.utilities.UIThread;
 import org.nypl.simplified.books.accounts.AccountProviderCollection;
+import org.nypl.simplified.books.book_database.Book;
 import org.nypl.simplified.books.controller.ProfilesControllerType;
 import org.nypl.simplified.books.core.LogUtilities;
 import org.nypl.simplified.books.profiles.ProfileCreationEvent;
@@ -36,13 +42,16 @@ import static org.nypl.simplified.books.profiles.ProfileCreationEvent.ProfileCre
  * An activity that allows for the creation of profiles.
  */
 
-public final class ProfileCreationActivity extends SimplifiedActivity {
+public final class ProfileCreationActivity extends SimplifiedActivity implements TextWatcher {
 
   private static final Logger LOG = LogUtilities.getLog(ProfileCreationActivity.class);
 
   private Button button;
   private DatePicker date;
   private EditText name;
+  private RadioGroup genderRadioGroup;
+  private RadioButton nonBinaryRadioButton;
+  private EditText nonBinaryEditText;
 
   public ProfileCreationActivity() {
 
@@ -50,6 +59,8 @@ public final class ProfileCreationActivity extends SimplifiedActivity {
 
   @Override
   protected void onCreate(final @Nullable Bundle state) {
+    // This activity is too tall for many phones in landscape mode.
+    this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
     this.setTheme(Simplified.getCurrentTheme(WANT_NO_ACTION_BAR));
     super.onCreate(state);
@@ -64,7 +75,27 @@ public final class ProfileCreationActivity extends SimplifiedActivity {
 
     this.date = NullCheck.notNull(this.findViewById(R.id.profileCreationDateSelection));
     this.name = NullCheck.notNull(this.findViewById(R.id.profileCreationEditName));
-    this.name.addTextChangedListener(new ButtonTextWatcher(button));
+    this.genderRadioGroup = NullCheck.notNull(this.findViewById(R.id.profileGenderRadioGroup));
+    this.nonBinaryRadioButton = NullCheck.notNull(
+        this.findViewById(R.id.profileGenderNonBinaryRadioButton));
+    this.nonBinaryEditText =
+        NullCheck.notNull(this.findViewById(R.id.profileGenderNonBinaryEditText));
+
+    this.name.addTextChangedListener(this);
+    this.nonBinaryEditText.addTextChangedListener(this);
+    this.nonBinaryEditText.setOnFocusChangeListener((View view, boolean hasFocus) -> {
+      if (hasFocus) {
+        this.nonBinaryRadioButton.setChecked(true);
+      }
+    });
+    this.genderRadioGroup.setOnCheckedChangeListener((group, id) -> {
+      if (id == R.id.profileGenderNonBinaryRadioButton) {
+        this.nonBinaryEditText.requestFocus();
+      } else {
+        this.nonBinaryEditText.clearFocus();
+      }
+      this.updateButtonEnabled();
+    });
   }
 
   private Unit onProfileCreationFailed(final ProfileCreationFailed e) {
@@ -115,8 +146,19 @@ public final class ProfileCreationActivity extends SimplifiedActivity {
 
   private void createProfile() {
     final String name_text = name.getText().toString().trim();
+    final String gender_text;
+    if (this.genderRadioGroup.getCheckedRadioButtonId() == R.id.profileGenderFemaleRadioButton) {
+      gender_text = "female";
+    } else if (this.genderRadioGroup.getCheckedRadioButtonId() == R.id.profileGenderMaleRadioButton) {
+      gender_text = "male";
+    } else if (this.genderRadioGroup.getCheckedRadioButtonId() == R.id.profileGenderNonBinaryRadioButton) {
+      gender_text = this.nonBinaryEditText.getText().toString().toLowerCase().trim();
+    } else {
+      throw new RuntimeException("createProfile");
+    }
     final LocalDate date_value = this.date.getDate();
     LOG.debug("name: {}", name_text);
+    LOG.debug("gender: {}", gender_text);
     LOG.debug("date: {}", date_value);
 
     final AccountProviderCollection providers = Simplified.getAccountProviders();
@@ -127,6 +169,7 @@ public final class ProfileCreationActivity extends SimplifiedActivity {
         profiles.profileCreate(
             providers.providerDefault(),
             name_text,
+            gender_text,
             date_value);
 
     FluentFuture.from(task)
@@ -134,39 +177,40 @@ public final class ProfileCreationActivity extends SimplifiedActivity {
         .transform(this::onProfileEvent, exec);
   }
 
-  /**
-   * A text watcher that enables and disables a button based on whether or not the
-   * text field is empty.
-   */
+  private void updateButtonEnabled() {
+    final boolean isNameEmpty = this.name.getText().toString().trim().isEmpty();
+    final boolean isNonBinaryEmpty = this.nonBinaryEditText.getText().toString().trim().isEmpty();
+    final boolean isAnyRadioButtonChecked = this.genderRadioGroup.getCheckedRadioButtonId() != -1;
+    final boolean isNonBinaryRatioButtonChecked= this.nonBinaryRadioButton.isChecked();
 
-  private static final class ButtonTextWatcher implements TextWatcher {
-
-    private final Button button;
-
-    ButtonTextWatcher(final Button in_button) {
-      this.button = NullCheck.notNull(in_button, "Button");
+    if (isNonBinaryRatioButtonChecked) {
+      this.button.setEnabled(!isNameEmpty && !isNonBinaryEmpty);
+    } else if (isAnyRadioButtonChecked) {
+      this.button.setEnabled(!isNameEmpty);
+    } else {
+      this.button.setEnabled(false);
     }
+  }
 
-    @Override
-    public void beforeTextChanged(
-        final CharSequence text,
-        final int i,
-        final int i1,
-        final int i2) {
-    }
+  @Override
+  public void beforeTextChanged(
+      final CharSequence text,
+      final int i,
+      final int i1,
+      final int i2) {
+  }
 
-    @Override
-    public void onTextChanged(
-        final CharSequence text,
-        final int i,
-        final int i1,
-        final int i2) {
-      this.button.setEnabled(!text.toString().trim().isEmpty());
-    }
+  @Override
+  public void onTextChanged(
+      final CharSequence text,
+      final int i,
+      final int i1,
+      final int i2) {
+    this.updateButtonEnabled();
+  }
 
-    @Override
-    public void afterTextChanged(final Editable editable) {
+  @Override
+  public void afterTextChanged(final Editable editable) {
 
-    }
   }
 }

@@ -74,6 +74,7 @@ public interface ProfilesControllerType {
    *
    * @param account_provider The account provider used to create the default account
    * @param display_name     The profile display name
+   * @param gender           The gender for the profile
    * @param date             The date of birth for the profile
    * @return A future that returns a status value
    */
@@ -81,6 +82,7 @@ public interface ProfilesControllerType {
   ListenableFuture<ProfileCreationEvent> profileCreate(
       AccountProvider account_provider,
       String display_name,
+      String gender,
       LocalDate date);
 
   /**

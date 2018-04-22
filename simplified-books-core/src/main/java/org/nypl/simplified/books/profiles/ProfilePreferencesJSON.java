@@ -98,6 +98,9 @@ public final class ProfilePreferencesJSON {
     final ObjectNode obj =
         JSONParserUtilities.checkObject(null, node);
 
+    final OptionType<String> gender=
+        JSONParserUtilities.getStringOptional(obj, "gender");
+
     final OptionType<LocalDate> date_of_birth =
         JSONParserUtilities.getStringOptional(obj, "date-of-birth")
             .mapPartial(text -> {
@@ -139,6 +142,7 @@ public final class ProfilePreferencesJSON {
             });
 
     return ProfilePreferences.builder()
+        .setGender(gender)
         .setDateOfBirth(date_of_birth)
         .setReaderPreferences(reader_prefs)
         .setReaderBookmarks(reader_bookmarks)
@@ -171,6 +175,9 @@ public final class ProfilePreferencesJSON {
 
     final DateTimeFormatter date_formatter = standardDateFormatter();
     final ObjectNode jo = jom.createObjectNode();
+
+    description.gender().map_(
+        gender -> jo.put("gender", gender));
 
     description.dateOfBirth().map_(
         date -> jo.put("date-of-birth", date_formatter.print(date)));

@@ -199,7 +199,7 @@ public abstract class ProfilesControllerContract {
         controller(this.executor_books, http, this.book_registry, profiles, downloader, ProfilesControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider account_provider = accountProviders().providerDefault();
-    controller.profileCreate(account_provider, "Kermit", LocalDate.now()).get();
+    controller.profileCreate(account_provider, "Kermit", "Female", LocalDate.now()).get();
     controller.profileSelect(profiles.profiles().firstKey()).get();
 
     final ProfileReadableType p = controller.profileCurrent();
@@ -224,8 +224,8 @@ public abstract class ProfilesControllerContract {
 
     final LocalDate date = LocalDate.now();
     final AccountProvider provider = accountProviders().providerDefault();
-    controller.profileCreate(provider, "Kermit", date).get();
-    controller.profileCreate(provider, "Kermit", date).get();
+    controller.profileCreate(provider, "Kermit", "Female", date).get();
+    controller.profileCreate(provider, "Kermit", "Female", date).get();
 
     EventAssertions.isType(ProfileCreationSucceeded.class, this.profile_events, 0);
     EventAssertions.isTypeAndMatches(ProfileCreationFailed.class, this.profile_events, 1, e -> {
@@ -251,7 +251,7 @@ public abstract class ProfilesControllerContract {
     controller.accountEvents().subscribe(this.account_events::add);
 
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
-    controller.profileCreate(provider, "Kermit", LocalDate.now()).get();
+    controller.profileCreate(provider, "Kermit", "Female", LocalDate.now()).get();
     controller.profileSelect(profiles.profiles().firstKey()).get();
     controller.profileAccountCreate(provider.id()).get();
 
@@ -303,7 +303,7 @@ public abstract class ProfilesControllerContract {
     controller.accountEvents().subscribe(this.account_events::add);
 
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
-    controller.profileCreate(provider, "Kermit", LocalDate.now()).get();
+    controller.profileCreate(provider, "Kermit", "Female", LocalDate.now()).get();
     controller.profileSelect(profiles.profiles().firstKey()).get();
     controller.profileAccountCreate(provider.id()).get();
 
@@ -355,7 +355,7 @@ public abstract class ProfilesControllerContract {
     controller.accountEvents().subscribe(this.account_events::add);
 
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
-    controller.profileCreate(provider, "Kermit", LocalDate.now()).get();
+    controller.profileCreate(provider, "Kermit", "Female", LocalDate.now()).get();
     controller.profileSelect(profiles.profiles().firstKey()).get();
     controller.profileAccountCreate(provider.id()).get();
 
@@ -406,7 +406,7 @@ public abstract class ProfilesControllerContract {
     controller.accountEvents().subscribe(this.account_events::add);
 
     final AccountProvider provider = fakeAuthProvider("urn:fake-auth:0");
-    controller.profileCreate(provider, "Kermit", LocalDate.now()).get();
+    controller.profileCreate(provider, "Kermit", "Female", LocalDate.now()).get();
     controller.profileSelect(profiles.profiles().firstKey()).get();
     controller.profileAccountCreate(provider.id()).get();
 
@@ -457,7 +457,7 @@ public abstract class ProfilesControllerContract {
     controller.accountEvents().subscribe(this.account_events::add);
 
     final AccountProvider provider = fakeProvider("urn:fake:0");
-    controller.profileCreate(provider, "Kermit", LocalDate.now()).get();
+    controller.profileCreate(provider, "Kermit", "Female", LocalDate.now()).get();
     controller.profileSelect(profiles.profiles().firstKey()).get();
     controller.profileAccountCreate(provider.id()).get();
 
@@ -494,7 +494,7 @@ public abstract class ProfilesControllerContract {
         controller(this.executor_books, http, book_registry, profiles, downloader, ProfilesControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeProvider("urn:fake:0");
-    controller.profileCreate(provider, "Kermit", LocalDate.now()).get();
+    controller.profileCreate(provider, "Kermit", "Female", LocalDate.now()).get();
     controller.profileSelect(profiles.profiles().firstKey()).get();
     controller.profileAccountCreate(provider.id()).get();
     controller.profileEvents().subscribe(this.profile_events::add);
@@ -543,7 +543,7 @@ public abstract class ProfilesControllerContract {
         controller(this.executor_books, http, book_registry, profiles, downloader, ProfilesControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeProvider("urn:fake:0");
-    controller.profileCreate(provider, "Kermit", LocalDate.now()).get();
+    controller.profileCreate(provider, "Kermit", "Female", LocalDate.now()).get();
     controller.profileSelect(profiles.profiles().firstKey()).get();
     controller.profileAccountCreate(provider.id()).get();
     controller.profileEvents().subscribe(this.profile_events::add);
@@ -591,7 +591,7 @@ public abstract class ProfilesControllerContract {
         controller(this.executor_books, http, book_registry, profiles, downloader, ProfilesControllerContract::accountProviders, this.executor_timer);
 
     final AccountProvider provider = fakeProvider("urn:fake:0");
-    controller.profileCreate(provider, "Kermit", LocalDate.now()).get();
+    controller.profileCreate(provider, "Kermit", "Female", LocalDate.now()).get();
     controller.profileSelect(profiles.profiles().firstKey()).get();
     controller.profileAccountCreate(provider.id()).get();
     controller.profileEvents().subscribe(this.profile_events::add);

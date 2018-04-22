@@ -224,14 +224,16 @@ public final class Controller implements BooksControllerType, ProfilesController
   public ListenableFuture<ProfileCreationEvent> profileCreate(
       final AccountProvider account_provider,
       final String display_name,
+      final String gender,
       final LocalDate date) {
 
     NullCheck.notNull(account_provider, "Account provider");
     NullCheck.notNull(display_name, "Display name");
+    NullCheck.notNull(gender, "Gender");
     NullCheck.notNull(date, "Date");
 
     return this.task_executor.submit(new ProfileCreationTask(
-        this.profiles, this.profile_events, account_provider, display_name, date));
+        this.profiles, this.profile_events, account_provider, display_name, gender, date));
   }
 
   @Override

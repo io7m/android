@@ -23,6 +23,7 @@ final class ProfileCreationTask implements Callable<ProfileCreationEvent> {
   private final ProfilesDatabaseType profiles;
   private final ObservableType<ProfileEvent> profile_events;
   private final String display_name;
+  private final String gender;
   private final LocalDate date;
   private final AccountProvider account_provider;
 
@@ -31,6 +32,7 @@ final class ProfileCreationTask implements Callable<ProfileCreationEvent> {
       final ObservableType<ProfileEvent> in_profile_events,
       final AccountProvider in_account_provider,
       final String in_display_name,
+      final String in_gender,
       final LocalDate in_date) {
 
     this.profiles =
@@ -41,6 +43,8 @@ final class ProfileCreationTask implements Callable<ProfileCreationEvent> {
         NullCheck.notNull(in_account_provider, "Account provider");
     this.display_name =
         NullCheck.notNull(in_display_name, "Display name");
+    this.gender =
+        NullCheck.notNull(in_gender, "Gender");
     this.date =
         NullCheck.notNull(in_date, "Date");
   }
@@ -59,6 +63,7 @@ final class ProfileCreationTask implements Callable<ProfileCreationEvent> {
       profile.preferencesUpdate(
           profile.preferences()
               .toBuilder()
+              .setGender(this.gender)
               .setDateOfBirth(this.date)
               .build());
 

@@ -21,6 +21,12 @@ public abstract class ProfilePreferences {
   }
 
   /**
+   * @return The gender of the reader (if one has been explicitly specified)
+   */
+
+  public abstract OptionType<String> gender();
+
+  /**
    * @return The date of birth of the reader (if one has been explicitly specified)
    */
 
@@ -85,6 +91,25 @@ public abstract class ProfilePreferences {
         ReaderPreferences prefs);
 
     /**
+     * @param gender The gender
+     * @return The current builder
+     * @see #gender()
+     */
+
+    public abstract Builder setGender(
+        OptionType<String> gender);
+
+    /**
+     * @param gender The gender
+     * @return The current builder
+     * @see #gender()
+     */
+
+    public final Builder setGender(final String gender) {
+      return setGender(Option.some(gender));
+    }
+
+    /**
      * @param date The date
      * @return The current builder
      * @see #dateOfBirth()
@@ -120,6 +145,7 @@ public abstract class ProfilePreferences {
             ReaderPreferences.builder()
                 .build())
         .setReaderBookmarks(ReaderBookmarks.create(ImmutableMap.of()))
-        .setDateOfBirth(Option.<LocalDate>none());
+        .setGender(Option.none())
+        .setDateOfBirth(Option.none());
   }
 }
