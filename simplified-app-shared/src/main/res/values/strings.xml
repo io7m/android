@@ -31,7 +31,7 @@
   <string name="holds_empty">When you reserve a book from the catalog it will show up here. Look here from time to time to see if your book is available to download.</string>
 
   <!-- Catalog strings -->
-  <string name="catalog">Catalog</string>
+  <string name="catalog">Catalogue</string>
   <string name="catalog_book_detail">Details</string>
   <string name="catalog_load_error_title">Error</string>
   <string name="catalog_load_error_text">An error occurred while loading the catalog. Please try again.</string>
