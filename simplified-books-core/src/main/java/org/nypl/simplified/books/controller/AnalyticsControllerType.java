@@ -12,4 +12,9 @@ public interface AnalyticsControllerType {
    * @param message The message to log.  Date and time is prepended.
    */
   void logToAnalytics(String message);
+
+  /**
+   * Pushes analytics to the analytics server if the log is full enough.
+   */
+  void attemptToPushAnalytics(String deviceId);
 }

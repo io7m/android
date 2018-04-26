@@ -190,6 +190,13 @@ public final class Controller implements BooksControllerType, ProfilesController
     }
   }
 
+  @Override
+  public void attemptToPushAnalytics(String deviceId) {
+    if ( analytics_logger != null ) {
+      analytics_logger.attemptToPushAnalytics(deviceId);
+    }
+  }
+
   /**
    * Perform an unchecked (but safe) cast of the given map type. The cast is safe because
    * {@code V <: VB}.

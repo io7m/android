@@ -3,6 +3,7 @@ package org.nypl.simplified.app;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -91,8 +92,13 @@ public final class ProfileSelectionActivity extends SimplifiedActivity {
     LOG.debug("selected profile: {} ({})", profile.id(), profile.displayName());
     final ProfilesControllerType profiles = Simplified.getProfilesController();
 
+    // TODO: Winnie -> Add gender to this string please!!
     String message = "profile_selected," + profile.id().id() + "," + profile.displayName();
     Simplified.getAnalyticsController().logToAnalytics(message);
+    if ( Simplified.getNetworkConnectivity().isNetworkAvailable() ) {
+      String deviceId = Settings.Secure.getString(getApplicationContext().getContentResolver(), Settings.Secure.ANDROID_ID);
+      Simplified.getAnalyticsController().attemptToPushAnalytics(deviceId);
+    }
 
     FluentFuture.from(
         profiles.profileSelect(profile.id()))

@@ -219,6 +219,10 @@ public final class Simplified extends Application {
     return i.book_controller;
   }
 
+  /**
+   * @return The analytics controller
+   */
+
   public static AnalyticsControllerType getAnalyticsController() {
     final Simplified i = Simplified.checkInitialized();
     return i.book_controller;
