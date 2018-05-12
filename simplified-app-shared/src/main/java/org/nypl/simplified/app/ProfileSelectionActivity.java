@@ -16,6 +16,9 @@ import android.widget.TextView;
 
 import com.google.common.util.concurrent.FluentFuture;
 import com.google.common.util.concurrent.FutureCallback;
+import com.io7m.jfunctional.None;
+import com.io7m.jfunctional.OptionVisitorType;
+import com.io7m.jfunctional.Some;
 import com.io7m.jfunctional.Unit;
 import com.io7m.jnull.NullCheck;
 
@@ -92,9 +95,25 @@ public final class ProfileSelectionActivity extends SimplifiedActivity {
     LOG.debug("selected profile: {} ({})", profile.id(), profile.displayName());
     final ProfilesControllerType profiles = Simplified.getProfilesController();
 
-    // TODO: Winnie -> Add gender to this string please!!
-    String message = "profile_selected," + profile.id().id() + "," + profile.displayName();
-    Simplified.getAnalyticsController().logToAnalytics(message);
+    profile.preferences().gender().accept(new OptionVisitorType<String, Unit>() {
+      @Override
+      public Unit none(None<String> none) {
+        final String message = "profile_selected," + profile.id().id()
+            + "," + profile.displayName();
+        Simplified.getAnalyticsController().logToAnalytics(message);
+        return Unit.unit();
+      }
+
+      @Override
+      public Unit some(Some<String> some) {
+        final String message = "profile_selected," + profile.id().id()
+            + "," + profile.displayName()
+            + "," + some.get();
+        Simplified.getAnalyticsController().logToAnalytics(message);
+        return Unit.unit();
+      }
+    });
+
     if ( Simplified.getNetworkConnectivity().isNetworkAvailable() ) {
       String deviceId = Settings.Secure.getString(getApplicationContext().getContentResolver(), Settings.Secure.ANDROID_ID);
       Simplified.getAnalyticsController().attemptToPushAnalytics(deviceId);
