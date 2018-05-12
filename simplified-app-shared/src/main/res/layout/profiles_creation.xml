@@ -23,6 +23,7 @@
         android:ems="10"
         android:inputType="textPersonName|textCapWords"
         android:hint="@string/profiles_name_field"
+        android:imeOptions="actionDone"
         android:text=""/>
 
     <LinearLayout
