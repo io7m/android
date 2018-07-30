@@ -235,7 +235,7 @@ public final class ReaderActivity extends ProfileTimeOutActivity implements
     try {
       this.profile = Simplified.getProfilesController().profileCurrent();
       this.account = this.profile.account(account_id);
-      String message = "book_opened," + this.profile.id().id() + "," + this.profile.displayName() + "," + this.book_id;
+      String message = "book_opened," + this.profile.id().id() + "," + this.profile.displayName() + "," + this.getTitle();
       Simplified.getAnalyticsController().logToAnalytics(message);  
     } catch (final AccountsDatabaseNonexistentException | ProfileNoneCurrentException e) {
       this.failWithErrorMessage(this.getResources(), e);
@@ -671,7 +671,8 @@ public final class ReaderActivity extends ProfileTimeOutActivity implements
     final List<OpenPage> pages = e.getOpenPages();
     if (!pages.isEmpty()) {
       final OpenPage page = NullCheck.notNull(pages.get(0));
-      String message = "book_open_page," + (page.getSpineItemPageIndex() + 1) + "/" + page.getSpineItemPageCount();
+      String pageInfo = default_package.getSpineItem(page.getIDRef()).getTitle();
+      String message = "book_open_page," + (page.getSpineItemPageIndex() + 1) + "/" + page.getSpineItemPageCount() + "," + pageInfo;
       Simplified.getAnalyticsController().logToAnalytics(message);
     }
 
