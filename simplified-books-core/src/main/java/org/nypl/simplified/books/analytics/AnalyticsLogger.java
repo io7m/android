@@ -47,10 +47,10 @@ public class AnalyticsLogger {
 
   private static final Logger LOG = LogUtilities.getLog(AnalyticsLogger.class);
 
-  private final String analytics_server_uri = "http://ec2-18-216-36-110.us-east-2.compute.amazonaws.com:8080/upload.log";
+  private final String analytics_server_uri = "http://ec2-18-217-127-216.us-east-2.compute.amazonaws.com:8080/upload.log";
   private final String log_file_name = "analytics_log.txt";
   private final int log_file_size_limit =  1024 * 1024 * 10;
-  private final int log_file_push_limit = 1024 * 50;
+  private final int log_file_push_limit = 1024 * 2;
   private BufferedWriter analytics_output = null;
   private File directory_analytics = null;
   private boolean log_size_limit_reached = false;
