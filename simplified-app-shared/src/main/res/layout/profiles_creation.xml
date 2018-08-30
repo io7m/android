@@ -60,7 +60,8 @@
             android:hint=""
             android:maxLength="32"
             android:inputType="textPersonName|textCapWords"
-            android:layout_marginBottom="2dp"/>
+            android:layout_marginBottom="2dp"
+            android:imeOptions="actionDone"/>
 
     </LinearLayout>
 
