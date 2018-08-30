@@ -101,8 +101,6 @@ public final class CatalogBookDetailView
   private final Activity activity;
   private final ViewGroup book_download;
   private final LinearLayout book_download_buttons;
-  private final Button book_download_report_button;
-  private final Button related_books_button;
   private final TextView book_download_text;
   private final ViewGroup book_downloading;
   private final Button book_downloading_cancel;
@@ -239,12 +237,6 @@ public final class CatalogBookDetailView
       read_more_button.setVisibility(View.INVISIBLE);
     });
 
-    final ViewGroup related_layout =
-        NullCheck.notNull(layout.findViewById(R.id.book_related_layout));
-    this.related_books_button =
-        NullCheck.notNull(related_layout.findViewById(R.id.related_books_button));
-    this.book_download_report_button =
-        NullCheck.notNull(related_layout.findViewById(R.id.book_dialog_report_button));
 
     /*
      * Assuming a roughly fixed height for cover images, assume a 4:3 aspect
@@ -977,48 +969,6 @@ public final class CatalogBookDetailView
     } else {
       UIThread.runOnUIThread(() -> CatalogBookDetailView.this.onBookStatusNone(e));
     }
-
-    final OptionType<URI> related_book_link = CatalogBookDetailView.this.entry.get().getFeedEntry().getRelated();
-
-    final OnClickListener related_book_listener = v -> related_book_link.accept(
-        new OptionVisitorType<URI, Object>() {
-          @Override
-          public Object none(final None<URI> n) {
-            return null;
-          }
-
-          @Override
-          public Object some(final Some<URI> s) {
-
-            final ImmutableStack<CatalogFeedArgumentsType> empty =
-                ImmutableStack.empty();
-
-            final CatalogFeedArgumentsRemote remote_args =
-                new CatalogFeedArgumentsRemote(
-                    false,
-                    NullCheck.notNull(empty),
-                    "Related Books",
-                    s.get(),
-                    false);
-
-            final Bundle b = new Bundle();
-            CatalogFeedActivity.setActivityArguments(b, remote_args);
-            final Intent i = new Intent(CatalogBookDetailView.this.activity, MainCatalogActivity.class);
-            i.putExtras(b);
-
-            CatalogBookDetailView.this.activity.startActivity(i, null);
-            return null;
-          }
-        }
-    );
-
-    if (related_book_link.isSome()) {
-      final Button books_button = CatalogBookDetailView.this.related_books_button;
-      books_button.setOnClickListener(related_book_listener);
-    }
-
-    final Button report_button = this.book_download_report_button;
-    report_button.setOnClickListener(new CatalogBookReport(this.activity, e));
   }
 
   void onBookEvent(final BookStatusEvent event) {
