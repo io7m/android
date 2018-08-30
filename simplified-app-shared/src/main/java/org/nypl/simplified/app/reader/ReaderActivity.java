@@ -25,7 +25,6 @@ import com.io7m.jnull.NullCheck;
 import com.io7m.jnull.Nullable;
 
 import org.nypl.simplified.app.ProfileTimeOutActivity;
-import org.nypl.simplified.app.SimplifiedActivity;
 import org.nypl.simplified.app.R;
 import org.nypl.simplified.app.Simplified;
 import org.nypl.simplified.app.reader.ReaderPaginationChangedEvent.OpenPage;
@@ -235,9 +234,13 @@ public final class ReaderActivity extends ProfileTimeOutActivity implements
     try {
       this.profile = Simplified.getProfilesController().profileCurrent();
       this.account = this.profile.account(account_id);
-      String message = "book_opened," + this.profile.id().id() + "," + this.profile.displayName() + "," + this.getTitle();
+      String message = "book_opened," + this.profile.id().id()
+          + "," + this.profile.displayName()
+          + "," + this.account.bookDatabase().entry(book_id).book().entry().getTitle();
       Simplified.getAnalyticsController().logToAnalytics(message);  
-    } catch (final AccountsDatabaseNonexistentException | ProfileNoneCurrentException e) {
+    } catch (final AccountsDatabaseNonexistentException
+        | BookDatabaseException
+        | ProfileNoneCurrentException e) {
       this.failWithErrorMessage(this.getResources(), e);
       return;
     }
@@ -672,7 +675,9 @@ public final class ReaderActivity extends ProfileTimeOutActivity implements
     if (!pages.isEmpty()) {
       final OpenPage page = NullCheck.notNull(pages.get(0));
       String pageInfo = default_package.getSpineItem(page.getIDRef()).getTitle();
-      String message = "book_open_page," + (page.getSpineItemPageIndex() + 1) + "/" + page.getSpineItemPageCount() + "," + pageInfo;
+      String message = "book_open_page," + (page.getSpineItemPageIndex() + 1)
+          + "/" + page.getSpineItemPageCount()
+          + "," + pageInfo;
       Simplified.getAnalyticsController().logToAnalytics(message);
     }
 
