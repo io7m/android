@@ -24,6 +24,7 @@ import org.nypl.simplified.books.accounts.AccountProvider;
 import org.nypl.simplified.books.accounts.AccountProviderAuthenticationDescription;
 import org.nypl.simplified.books.accounts.AccountProviderCollection;
 import org.nypl.simplified.books.accounts.AccountsDatabases;
+import org.nypl.simplified.books.analytics.AnalyticsLogger;
 import org.nypl.simplified.books.book_database.BookID;
 import org.nypl.simplified.books.book_registry.BookRegistry;
 import org.nypl.simplified.books.book_registry.BookRegistryType;
@@ -128,6 +129,12 @@ public abstract class ProfilesControllerContract {
         FeedLoader.newFeedLoader(
             task_exec, books, bundled_content, parser, transport, OPDSSearchParser.newParser());
 
+    final File analytics_directory =
+        new File("/tmp/aulfa-android-tests");
+
+    final AnalyticsLogger analytics_logger =
+        AnalyticsLogger.create(analytics_directory);
+
     return Controller.create(
         task_exec,
         http,
@@ -135,6 +142,7 @@ public abstract class ProfilesControllerContract {
         feed_loader,
         downloader,
         profiles,
+        analytics_logger,
         books,
         bundled_content,
         account_providers,
