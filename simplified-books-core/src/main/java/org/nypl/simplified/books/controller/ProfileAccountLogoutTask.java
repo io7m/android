@@ -82,7 +82,7 @@ final class ProfileAccountLogoutTask implements Callable<AccountEventLogout> {
 
     LOG.debug("clearing account credentials");
     account.setCredentials(Option.none());
-    final Set<BookID> account_books = new HashSet<>(account.bookDatabase().books().keySet());
+    final Set<BookID> account_books = account.bookDatabase().books();
     try {
       LOG.debug("deleting book database");
       account.bookDatabase().delete();

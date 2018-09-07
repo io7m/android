@@ -155,7 +155,7 @@ final class BookSyncTask implements Callable<Unit> {
      */
 
     final BookDatabaseType book_database = this.account.bookDatabase();
-    final Set<BookID> existing = book_database.books().keySet();
+    final Set<BookID> existing = book_database.books();
 
     /*
      * Handle each book in the received feed.

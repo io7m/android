@@ -84,12 +84,12 @@ public abstract class BookDatabaseContract {
         BookDatabase.open(parser, serializer, AccountID.create(1), directory);
 
     Assert.assertEquals(3, db1.books().size());
-    Assert.assertTrue(db1.books().containsKey(id0));
-    Assert.assertTrue(db1.books().containsKey(id1));
-    Assert.assertTrue(db1.books().containsKey(id2));
-    Assert.assertEquals(db1.books().get(id0).entry().getID(), entry0.getID());
-    Assert.assertEquals(db1.books().get(id1).entry().getID(), entry1.getID());
-    Assert.assertEquals(db1.books().get(id2).entry().getID(), entry2.getID());
+    Assert.assertTrue(db1.books().contains(id0));
+    Assert.assertTrue(db1.books().contains(id1));
+    Assert.assertTrue(db1.books().contains(id2));
+    Assert.assertEquals(db1.entry(id0).book().id().value(), entry0.getID());
+    Assert.assertEquals(db1.entry(id1).book().id().value(), entry1.getID());
+    Assert.assertEquals(db1.entry(id2).book().id().value(), entry2.getID());
   }
 
   @Test

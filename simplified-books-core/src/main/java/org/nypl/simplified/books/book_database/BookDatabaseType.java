@@ -4,6 +4,7 @@ import org.nypl.simplified.books.accounts.AccountID;
 import org.nypl.simplified.opds.core.OPDSAcquisitionFeedEntry;
 
 import java.util.SortedMap;
+import java.util.SortedSet;
 
 /**
  * The type of book databases.
@@ -18,10 +19,14 @@ public interface BookDatabaseType {
   AccountID owner();
 
   /**
-   * @return A read-only map of the books available in the database
+   * Retrieve a read-only snapshot of the set of books currently in the database. The returned
+   * set is immutable and reflects the contents of the database at the time of retrieval. Subsequent
+   * changes to the database will *not* be reflected in the returned set.
+   *
+   * @return A read-only snapshot of the entries available in the database
    */
 
-  SortedMap<BookID, Book> books();
+  SortedSet<BookID> books();
 
   /**
    * Delete the book database.

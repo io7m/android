@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -46,16 +48,12 @@ public final class BookDatabase implements BookDatabaseType {
   private static final class BookMaps {
 
     private final Object maps_lock;
-    private final @GuardedBy("maps_lock") ConcurrentSkipListMap<BookID, Book> books;
-    private final @GuardedBy("maps_lock") SortedMap<BookID, Book> books_read;
     private final @GuardedBy("maps_lock") ConcurrentSkipListMap<BookID, DatabaseEntry> entries;
     private final @GuardedBy("maps_lock") SortedMap<BookID, BookDatabaseEntryType> entries_read;
 
     BookMaps()
     {
       this.maps_lock = new Object();
-      this.books = new ConcurrentSkipListMap<>();
-      this.books_read = Collections.unmodifiableSortedMap(this.books);
       this.entries = new ConcurrentSkipListMap<>();
       this.entries_read = Collections.unmodifiableSortedMap(this.entries);
     }
@@ -63,7 +61,6 @@ public final class BookDatabase implements BookDatabaseType {
     void clear() {
       synchronized (this.maps_lock) {
         LOG.debug("BookMaps.clear");
-        this.books.clear();
         this.entries.clear();
       }
     }
@@ -72,7 +69,6 @@ public final class BookDatabase implements BookDatabaseType {
       NullCheck.notNull(book_id, "Book ID");
       synchronized (this.maps_lock) {
         LOG.debug("BookMaps.delete: {}", book_id.value());
-        this.books.remove(book_id);
         this.entries.remove(book_id);
       }
     }
@@ -80,7 +76,6 @@ public final class BookDatabase implements BookDatabaseType {
     void addEntry(final DatabaseEntry entry) {
       synchronized (this.maps_lock) {
         LOG.debug("BookMaps.addEntry: {}", entry.id.value());
-        this.books.put(entry.id, entry.book());
         this.entries.put(entry.id, entry);
       }
     }
@@ -206,9 +201,9 @@ public final class BookDatabase implements BookDatabaseType {
   }
 
   @Override
-  public SortedMap<BookID, Book> books() {
+  public SortedSet<BookID> books() {
     synchronized (this.maps.maps_lock) {
-      return this.maps.books_read;
+      return new TreeSet<>(this.maps.entries.keySet());
     }
   }
 
